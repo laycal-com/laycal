@@ -18,6 +18,9 @@ export default function Home() {
             <Link href="/dashboard" className="text-blue-600 hover:text-blue-800">
               Dashboard
             </Link>
+            <Link href="/leads" className="text-green-600 hover:text-green-800">
+              Leads
+            </Link>
             <UserButton />
           </SignedIn>
         </div>

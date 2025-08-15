@@ -11,6 +11,10 @@
   "dependencies": {
     "@clerk/nextjs": "^6.31.1",
     "@paypal/react-paypal-js": "^8.8.3",
+    "csv-parser": "^3.2.0",
+    "formidable": "^3.5.4",
+    "mongoose": "^8.17.1",
+    "multer": "^2.0.2",
     "next": "15.4.6",
     "react": "19.1.0",
     "react-dom": "19.1.0"

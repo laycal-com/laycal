@@ -36,9 +36,14 @@ export default async function Dashboard() {
             <p className="text-gray-600 mb-4">Your active subscription.</p>
             <div className="text-2xl font-bold text-blue-600 mb-1">Starter Plan</div>
             <p className="text-sm text-gray-500 mb-4">$1.99/month</p>
-            <Link href="/pricing" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-block">
-              Manage Plan
-            </Link>
+            <div className="space-x-2">
+              <Link href="/pricing" className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-block text-sm">
+                Manage Plan
+              </Link>
+              <Link href="/leads" className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors inline-block text-sm">
+                View Leads
+              </Link>
+            </div>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md">
