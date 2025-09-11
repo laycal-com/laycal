@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Lead from '@/models/Lead';
+import Assistant from '@/models/Assistant';
 import { processCsvBuffer } from '@/lib/csvProcessor';
 import { vapiService } from '@/lib/vapi';
+import { tenantVapiService } from '@/lib/tenantVapi';
+import PhoneProvider from '@/models/PhoneProvider';
+import { usageValidator } from '@/lib/usageValidator';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
@@ -18,14 +22,37 @@ export async function POST(request: NextRequest) {
     // Connect to database
     await connectToDatabase();
 
-    // Get the uploaded file
+    // Get the uploaded file and assistant selection
     const data = await request.formData();
     const file = data.get('file') as File;
+    const assistantId = data.get('assistantId') as string;
 
     if (!file) {
       logger.warn('CSV_UPLOAD_NO_FILE', 'No file provided in upload request', { userId });
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
+
+    if (!assistantId) {
+      logger.warn('CSV_UPLOAD_NO_ASSISTANT', 'No assistant selected for upload', { userId });
+      return NextResponse.json({ error: 'Assistant selection is required' }, { status: 400 });
+    }
+
+    // Validate assistant belongs to user and is active
+    const assistant = await Assistant.findOne({ 
+      _id: assistantId, 
+      userId, 
+      isActive: true 
+    }).populate('phoneNumbers.phoneProviderId');
+
+    if (!assistant) {
+      logger.warn('CSV_UPLOAD_INVALID_ASSISTANT', 'Invalid or inactive assistant selected', { 
+        userId, 
+        assistantId 
+      });
+      return NextResponse.json({ error: 'Invalid assistant selected' }, { status: 400 });
+    }
+
+    // Assistants no longer need phone numbers - they use available phone providers
 
     // Log upload start
     logger.csvUpload.start(userId, file.name, file.size);
@@ -61,13 +88,51 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // CRITICAL: Check minute limits before starting calls
+    const estimatedMinutes = csvResult.leads.length * 3; // Estimate 3 minutes per call
+    const canCall = await usageValidator.canMakeCall(userId, estimatedMinutes);
+    if (!canCall.canCall) {
+      const currentUsage = await usageValidator.getCurrentUsage(userId);
+      const upgradeOptions = await usageValidator.getUpgradeOptions(userId);
+      
+      return NextResponse.json({
+        error: canCall.reason,
+        upgradeRequired: true,
+        currentUsage,
+        upgradeOptions,
+        estimatedMinutes,
+        estimatedCost: canCall.overage?.cost || 0
+      }, { status: 403 });
+    }
+
     // Save leads to database
-    logger.info('LEAD_BATCH_START', `Starting to process ${csvResult.leads.length} leads`, { userId });
+    logger.info('LEAD_BATCH_START', `Starting to process ${csvResult.leads.length} leads with assistant ${assistant.name}`, { 
+      userId, 
+      assistantId,
+      totalLeads: csvResult.leads.length
+    });
     const savedLeads = [];
     const vapiErrors = [];
 
+    // Use user's available phone providers (assistants are independent of phone numbers)
+    const availableProviders = await PhoneProvider.find({ userId, isActive: true });
+    if (availableProviders.length === 0) {
+      logger.error('CSV_UPLOAD_ERROR', 'No phone providers available for calls', { userId, assistantId });
+      return NextResponse.json({
+        error: 'No phone providers available',
+        details: 'Please configure at least one phone provider in Settings'
+      }, { status: 400 });
+    }
+    
+    // Round-robin through available phone providers
+    let phoneIndex = 0;
+
     for (const leadData of csvResult.leads) {
       try {
+        // Select phone provider for this lead (round-robin)
+        const selectedProvider = availableProviders[phoneIndex % availableProviders.length];
+        phoneIndex++;
+
         // Create lead in database
         logger.leadCreation.start(userId, leadData);
         
@@ -78,7 +143,9 @@ export async function POST(request: NextRequest) {
           email: leadData.email,
           company: leadData.company,
           notes: leadData.notes,
-          status: 'pending'
+          status: 'pending',
+          assignedAssistantId: assistant._id,
+          assignedPhoneNumber: selectedProvider.phoneNumber
         });
 
         await lead.save();
@@ -86,12 +153,16 @@ export async function POST(request: NextRequest) {
         
         logger.leadCreation.success(userId, lead._id.toString(), leadData.name);
 
-        // Initiate Vapi call
+        // Initiate Vapi call using the selected assistant and phone provider
         try {
           logger.vapiCall.initiate(userId, lead._id.toString(), leadData.phoneNumber);
           
-          const vapiResponse = await vapiService.initiateCall({
+          // Use tenant service with specific assistant and phone provider
+          const vapiResponse = await tenantVapiService.initiateCall({
+            userId,
             phoneNumber: leadData.phoneNumber,
+            assistantId: assistant.vapiAssistantId,
+            phoneProviderId: selectedProvider._id.toString(),
             customer: {
               name: leadData.name,
               email: leadData.email,
@@ -99,7 +170,9 @@ export async function POST(request: NextRequest) {
             metadata: {
               leadId: lead._id.toString(),
               userId: userId,
-              company: leadData.company, // Move company to metadata
+              company: leadData.company,
+              assistantId: assistant._id.toString(),
+              assistantName: assistant.name
             }
           });
 
@@ -129,6 +202,12 @@ export async function POST(request: NextRequest) {
           error: dbError instanceof Error ? dbError.message : 'Database error'
         });
       }
+    }
+
+    // Update assistant's lastUsed timestamp if any leads were processed
+    if (savedLeads.length > 0) {
+      assistant.lastUsed = new Date();
+      await assistant.save();
     }
 
     logger.csvUpload.complete(userId, savedLeads.length, vapiErrors);

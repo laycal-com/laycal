@@ -9,6 +9,8 @@ export interface ILead extends Document {
   notes?: string;
   status: 'pending' | 'calling' | 'completed' | 'failed';
   vapiCallId?: string;
+  assignedAssistantId?: mongoose.Types.ObjectId;
+  assignedPhoneNumber?: string;
   callResults?: {
     answered: boolean;
     duration?: number;
@@ -17,6 +19,9 @@ export interface ILead extends Document {
     endReason?: string;
     cost?: number;
     evaluation?: 'positive' | 'neutral' | 'negative';
+    appointmentCreated?: boolean;
+    appointmentTitle?: string;
+    appointmentTime?: string;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -58,6 +63,15 @@ const LeadSchema = new Schema<ILead>({
     type: String,
     default: null
   },
+  assignedAssistantId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Assistant',
+    default: null
+  },
+  assignedPhoneNumber: {
+    type: String,
+    default: null
+  },
   callResults: {
     answered: {
       type: Boolean,
@@ -87,6 +101,18 @@ const LeadSchema = new Schema<ILead>({
       type: String,
       enum: ['positive', 'neutral', 'negative'],
       default: null
+    },
+    appointmentCreated: {
+      type: Boolean,
+      default: false
+    },
+    appointmentTitle: {
+      type: String,
+      default: null
+    },
+    appointmentTime: {
+      type: String,
+      default: null
     }
   },
   createdAt: {
@@ -111,5 +137,7 @@ LeadSchema.pre('save', function(next) {
 LeadSchema.index({ userId: 1, createdAt: -1 });
 LeadSchema.index({ status: 1 });
 LeadSchema.index({ vapiCallId: 1 });
+LeadSchema.index({ assignedAssistantId: 1 });
+LeadSchema.index({ userId: 1, assignedAssistantId: 1 });
 
 export default mongoose.models.Lead || mongoose.model<ILead>('Lead', LeadSchema);

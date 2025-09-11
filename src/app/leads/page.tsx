@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import { toast } from 'sonner';
 import CsvUpload from "@/components/CsvUpload";
 
 interface Lead {
@@ -138,11 +138,15 @@ export default function LeadsPage() {
       await fetchLeads();
 
       // Show success notification
-      alert('Call retry initiated successfully!');
+      toast.success('Call Retry Initiated', {
+        description: 'The call retry has been started successfully'
+      });
 
     } catch (error) {
       console.error('Retry error:', error);
-      alert(`Retry failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error('Retry Failed', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred'
+      });
     } finally {
       setRetryingLeads(prev => {
         const newSet = new Set(prev);
@@ -166,26 +170,14 @@ export default function LeadsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="text-2xl font-bold text-gray-800">
-              SaaS Template
-            </Link>
-            <span className="text-gray-400">|</span>
-            <h1 className="text-xl font-semibold text-gray-700">Leads Management</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-blue-600 hover:text-blue-800">
-              Dashboard
-            </Link>
-            <UserButton />
-          </div>
-        </div>
-      </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Page Title */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Leads Management</h1>
+          <p className="text-gray-600 mt-2">Manage and track your leads</p>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-white p-4 rounded-lg shadow-sm">
@@ -368,7 +360,7 @@ export default function LeadsPage() {
 
       {/* Lead Details Modal */}
       {selectedLead && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/75 bg-opacity-50 flex items-center justify-center p-4 z-50 text-gray-800">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">

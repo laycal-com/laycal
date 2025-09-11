@@ -1,19 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Lead from '@/models/Lead';
+import Assistant from '@/models/Assistant';
+import PendingAppointment from '@/models/PendingAppointment';
+import { usageValidator } from '@/lib/usageValidator';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   let payload: any = null;
-  
   try {
-    console.log('🔔 Webhook received at:', new Date().toISOString());
+    // Webhook received log is now handled by the logger below
     
     // Connect to database
     await connectToDatabase();
 
     // Get the webhook payload
     payload = await request.json();
+    
+    // Log the full webhook payload for debugging
+    logger.info('WEBHOOK_PAYLOAD', 'Full webhook payload received', {
+      data: { 
+        fullPayload: payload,
+        headers: Object.fromEntries(request.headers.entries()),
+        timestamp: new Date().toISOString(),
+        url: request.url
+      }
+    });
     
     // Extract call information from webhook
     // Support both new format and Vapi's actual format
@@ -29,19 +41,38 @@ export async function POST(request: NextRequest) {
     }
 
     // Find the lead associated with this call
-    // Try to find by metadata.leadId first, then by vapiCallId
+    // Try to find by metadata.leadId first, then by vapiCallId, then by phone number
     let lead;
     const leadId = payload.metadata?.leadId || call.metadata?.leadId;
     if (leadId) {
-      lead = await Lead.findById(leadId);
+      lead = await Lead.findById(leadId).populate('assignedAssistantId');
     }
     
     if (!lead) {
-      lead = await Lead.findOne({ vapiCallId: call.id });
+      lead = await Lead.findOne({ vapiCallId: call.id }).populate('assignedAssistantId');
+    }
+
+    // If still no lead found, try to match by phone number for appointment processing
+    if (!lead && call.phoneNumber) {
+      lead = await Lead.findOne({ phoneNumber: call.phoneNumber }).populate('assignedAssistantId');
+      if (lead) {
+        logger.info('LEAD_MATCHED_BY_PHONE', 'Matched lead by phone number', {
+          leadId: lead._id.toString(),
+          phoneNumber: call.phoneNumber,
+          vapiCallId: call.id
+        });
+      }
     }
 
     if (!lead) {
       logger.webhook.leadNotFound(call.id);
+      
+      // For appointment-only webhooks, we can still process if we have enough data
+      // Check if this is an appointment webhook with appointment data
+      if ((payload.appointment || message?.appointment) && eventType === 'end-of-call-report') {
+        return await processStandaloneAppointment(payload, call, message);
+      }
+      
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
@@ -95,9 +126,20 @@ export async function POST(request: NextRequest) {
         };
         await lead.save();
 
+        // CRITICAL: Track usage for billing
+        await trackCallUsage(lead, message);
+
+        // Update assistant lastUsed timestamp if assigned
+        if (lead.assignedAssistantId) {
+          await Assistant.findByIdAndUpdate(lead.assignedAssistantId, {
+            lastUsed: new Date()
+          });
+        }
+
         logger.info('END_OF_CALL_REPORT_SAVED', `End-of-call report saved for lead: ${lead.name}`, {
           leadId: lead._id.toString(),
           vapiCallId: call.id,
+          assistantId: lead.assignedAssistantId?.toString(),
           data: { 
             finalStatus: reportStatus,
             evaluation: evaluation,
@@ -105,6 +147,9 @@ export async function POST(request: NextRequest) {
             endedReason: message.endedReason
           }
         });
+
+        // Check for appointment confirmation in the call
+        await processAppointmentFromCall(lead, call, message, payload);
         break;
 
       case 'status-update':
@@ -176,6 +221,9 @@ export async function POST(request: NextRequest) {
         lead.callResults = callResults;
         await lead.save();
 
+        // CRITICAL: Track usage for billing
+        await trackCallUsage(lead, { durationSeconds: call.duration });
+
         logger.webhook.leadUpdate(lead._id.toString(), finalStatus, call.id);
         logger.info('CALL_RESULTS_SAVED', `Saved call results for lead: ${lead.name}`, {
           leadId: lead._id.toString(),
@@ -246,7 +294,393 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Process appointment creation from call data
+async function processAppointmentFromCall(lead: any, call: any, message: any, payload: any) {
+  try {
+    logger.info('APPOINTMENT_PROCESSING_START', 'Starting appointment processing', {
+      leadId: lead._id.toString(),
+      callId: call.id,
+      data: {
+        hasPayloadAppointment: !!payload.appointment,
+        hasMessageAppointment: !!message?.appointment,
+        hasMessage: !!message,
+        messageKeys: message ? Object.keys(message) : [],
+        payloadKeys: Object.keys(payload)
+      }
+    });
+
+    // Check if the call was successful and contains appointment information
+    let appointmentData = null;
+
+    // Method 1: Check if appointment data is directly in the payload
+    if (payload.appointment) {
+      appointmentData = payload.appointment;
+      logger.info('APPOINTMENT_DIRECT', 'Appointment data found directly in payload', {
+        leadId: lead._id.toString(),
+        data: { title: appointmentData.title }
+      });
+    }
+    
+    // Method 2: Check if appointment data is in the message
+    else if (message.appointment) {
+      appointmentData = message.appointment;
+      logger.info('APPOINTMENT_MESSAGE', 'Appointment data found in message', {
+        leadId: lead._id.toString(),
+        data: { title: appointmentData.title }
+      });
+    }
+    
+    // Method 3: Check structured data for appointment information
+    else if (message.analysis?.structuredData) {
+      const structuredData = message.analysis.structuredData;
+      logger.info('APPOINTMENT_STRUCTURED_DATA', 'Checking structured data for appointment', {
+        leadId: lead._id.toString(),
+        data: {
+          structuredData: structuredData,
+          hasEmail: !!structuredData.email,
+          hasTime: !!structuredData.time
+        }
+      });
+
+      // Check if structured data contains appointment time
+      if (structuredData.time && structuredData.email) {
+        try {
+          const appointmentTime = new Date(structuredData.time);
+          if (!isNaN(appointmentTime.getTime())) {
+            // Create appointment data from structured data
+            appointmentData = {
+              title: `Demo Appointment`,
+              startTime: appointmentTime.toISOString(),
+              endTime: new Date(appointmentTime.getTime() + 30 * 60 * 1000).toISOString(), // 30 minutes
+              customer: {
+                name: lead.name,
+                phone: lead.phoneNumber,
+                email: structuredData.email
+              },
+              notes: message.summary || 'Appointment scheduled during call'
+            };
+
+            logger.info('APPOINTMENT_FROM_STRUCTURED_DATA', 'Created appointment from structured data', {
+              leadId: lead._id.toString(),
+              data: {
+                title: appointmentData.title,
+                startTime: appointmentData.startTime,
+                email: structuredData.email
+              }
+            });
+          }
+        } catch (error) {
+          logger.error('APPOINTMENT_STRUCTURED_DATA_ERROR', 'Failed to parse structured data time', {
+            leadId: lead._id.toString(),
+            error,
+            data: { time: structuredData.time }
+          });
+        }
+      }
+    }
+
+    // Method 4: Fallback to text extraction if no structured data
+    if (!appointmentData && (message.summary || message.transcript)) {
+      logger.info('APPOINTMENT_TEXT_EXTRACTION', 'Attempting to extract appointment from text as fallback', {
+        leadId: lead._id.toString(),
+        data: {
+          hasSummary: !!message.summary,
+          hasTranscript: !!message.transcript,
+          summaryLength: message.summary ? message.summary.length : 0,
+          transcriptLength: message.transcript ? message.transcript.length : 0,
+          summaryPreview: message.summary ? message.summary.substring(0, 100) + '...' : null
+        }
+      });
+
+      appointmentData = extractAppointmentFromText(
+        message.summary || message.transcript,
+        lead.name,
+        lead.phoneNumber
+      );
+      
+      if (appointmentData) {
+        logger.info('APPOINTMENT_EXTRACTED', 'Appointment data extracted from call text', {
+          leadId: lead._id.toString(),
+          data: { title: appointmentData.title }
+        });
+      } else {
+        logger.info('APPOINTMENT_NOT_EXTRACTED', 'No appointment data found in call text', {
+          leadId: lead._id.toString()
+        });
+      }
+    }
+
+    // If we found appointment data, store it as pending confirmation
+    if (appointmentData && appointmentData.startTime && appointmentData.endTime) {
+      await storePendingAppointment(call, message, appointmentData, lead);
+
+      // Update lead with appointment information
+      if (lead.callResults) {
+        lead.callResults.appointmentCreated = true;
+        lead.callResults.appointmentTitle = appointmentData.title;
+        lead.callResults.appointmentTime = appointmentData.startTime;
+        await lead.save();
+      }
+
+      logger.info('APPOINTMENT_PROCESSING_SUCCESS', 'Appointment processing completed successfully', {
+        leadId: lead._id.toString(),
+        callId: call.id,
+        data: { title: appointmentData.title }
+      });
+    } else {
+      logger.info('APPOINTMENT_PROCESSING_NONE', 'No valid appointment data found - skipping appointment creation', {
+        leadId: lead._id.toString(),
+        callId: call.id,
+        data: {
+          hasAppointmentData: !!appointmentData,
+          hasStartTime: appointmentData?.startTime,
+          hasEndTime: appointmentData?.endTime
+        }
+      });
+    }
+
+  } catch (error) {
+    logger.error('APPOINTMENT_PROCESSING_ERROR', 'Failed to process appointment from call', {
+      leadId: lead._id.toString(),
+      vapiCallId: call.id,
+      error
+    });
+  }
+}
+
+// Extract appointment information from call text using simple pattern matching
+function extractAppointmentFromText(text: string, customerName: string, customerPhone: string): any | null {
+  try {
+    const lowerText = text.toLowerCase();
+    
+    // Look for appointment-related keywords
+    const appointmentKeywords = [
+      'appointment', 'meeting', 'scheduled', 'booking', 'reserved',
+      'visit', 'consultation', 'session', 'call back'
+    ];
+    
+    const hasAppointmentKeyword = appointmentKeywords.some(keyword => 
+      lowerText.includes(keyword)
+    );
+    
+    if (!hasAppointmentKeyword) {
+      return null;
+    }
+
+    // Try to extract date/time information
+    // This is a simple implementation - you might want to use a more sophisticated
+    // date/time parsing library like chrono-node for production use
+    
+    const dateTimePatterns = [
+      // ISO format: 2025-08-15T14:00:00Z
+      /(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z?)/gi,
+      // Date and time: August 15, 2025 at 2:00 PM
+      /((?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4})\s+(?:at\s+)?(\d{1,2}:\d{2}\s*(?:am|pm))/gi,
+      // Simple format: 08/15/2025 14:00
+      /(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{1,2}:\d{2})/gi
+    ];
+
+    let startTime = null;
+    let endTime = null;
+
+    for (const pattern of dateTimePatterns) {
+      const matches = text.match(pattern);
+      if (matches && matches.length > 0) {
+        try {
+          // For ISO format, use directly
+          if (matches[0].includes('T')) {
+            startTime = matches[0];
+            // Default to 30 minute appointment if no end time specified
+            const start = new Date(startTime);
+            const end = new Date(start.getTime() + 30 * 60 * 1000);
+            endTime = end.toISOString();
+            break;
+          }
+        } catch (e) {
+          // Continue to next pattern if parsing fails
+        }
+      }
+    }
+
+    if (startTime && endTime) {
+      return {
+        title: `Appointment with ${customerName}`,
+        startTime,
+        endTime,
+        customer: {
+          name: customerName,
+          phone: customerPhone
+        },
+        notes: text.substring(0, 200) + (text.length > 200 ? '...' : '')
+      };
+    }
+
+    return null;
+  } catch (error) {
+    logger.error('APPOINTMENT_EXTRACTION_ERROR', 'Failed to extract appointment from text', {
+      error,
+      data: { textLength: text.length }
+    });
+    return null;
+  }
+}
+
+// Store pending appointment for manual confirmation
+async function storePendingAppointment(call: any, message: any, appointmentData: any, lead?: any) {
+  try {
+    // Extract customer information
+    let customerName = appointmentData.customer?.name;
+    let customerPhone = call.phoneNumber;
+    let customerEmail = null;
+
+    // If we have a lead, use lead information
+    if (lead) {
+      customerName = customerName || lead.name;
+      customerPhone = customerPhone || lead.phoneNumber;
+      customerEmail = lead.email;
+    }
+
+    // Try to extract email from call data if not from lead
+    if (!customerEmail && message?.analysis?.structuredData?.email) {
+      customerEmail = message.analysis.structuredData.email;
+    }
+
+    // Create pending appointment record
+    const pendingAppointment = new PendingAppointment({
+      vapiCallId: call.id,
+      phoneNumberId: call.phoneNumberId || 'unknown', // Vapi phone number ID
+      appointmentData: {
+        title: appointmentData.title || `Appointment with ${customerName || 'Customer'}`,
+        startTime: appointmentData.startTime,
+        endTime: appointmentData.endTime,
+        customer: {
+          name: customerName || 'Customer',
+          phone: customerPhone,
+          email: customerEmail
+        },
+        notes: appointmentData.notes || message?.summary || ''
+      },
+      callData: {
+        duration: message?.durationSeconds,
+        summary: message?.summary,
+        transcript: message?.transcript,
+        endReason: message?.endedReason
+      }
+    });
+
+    await pendingAppointment.save();
+
+    logger.info('PENDING_APPOINTMENT_STORED', 'Stored pending appointment for confirmation', {
+      callId: call.id,
+      phoneNumberId: call.phoneNumberId,
+      data: {
+        title: pendingAppointment.appointmentData.title,
+        customerName: customerName,
+        startTime: appointmentData.startTime
+      }
+    });
+
+    return pendingAppointment;
+
+  } catch (error) {
+    logger.error('STORE_PENDING_APPOINTMENT_ERROR', 'Failed to store pending appointment', {
+      callId: call.id,
+      error
+    });
+    throw error;
+  }
+}
+
+// Process standalone appointment without a lead record
+async function processStandaloneAppointment(payload: any, call: any, message: any) {
+  try {
+    logger.info('STANDALONE_APPOINTMENT_START', 'Starting standalone appointment processing', {
+      callId: call.id,
+      data: { 
+        hasPayloadAppointment: !!payload.appointment,
+        hasMessageAppointment: !!message?.appointment,
+        phoneNumberId: call.phoneNumberId
+      }
+    });
+
+    // Extract appointment data
+    const appointmentData = payload.appointment || message?.appointment;
+    if (!appointmentData || !appointmentData.startTime || !appointmentData.endTime) {
+      logger.error('STANDALONE_APPOINTMENT_ERROR', 'Invalid appointment data', {
+        callId: call.id,
+        data: { 
+          hasAppointmentData: !!appointmentData,
+          hasStartTime: appointmentData?.startTime,
+          hasEndTime: appointmentData?.endTime
+        }
+      });
+      return NextResponse.json({ error: 'Invalid appointment data' }, { status: 400 });
+    }
+
+    // Store as pending appointment (no lead association)
+    await storePendingAppointment(call, message, appointmentData);
+
+    logger.info('STANDALONE_APPOINTMENT_STORED', 'Standalone appointment stored for confirmation', {
+      callId: call.id,
+      phoneNumberId: call.phoneNumberId,
+      data: { title: appointmentData.title }
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Appointment stored for confirmation'
+    });
+
+  } catch (error) {
+    logger.error('STANDALONE_APPOINTMENT_ERROR', 'Failed to process standalone appointment', {
+      callId: call.id,
+      error
+    });
+    return NextResponse.json({
+      error: 'Failed to process standalone appointment',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}
+
 // Handle GET requests for webhook verification
+// Track call usage for billing purposes
+async function trackCallUsage(lead: any, message: any) {
+  try {
+    if (!lead.assignedAssistantId || !lead.userId) return;
+    
+    const durationSeconds = message.durationSeconds || 0;
+    if (durationSeconds < 1) return; // Skip very short calls
+    
+    // Get assistant name
+    const assistant = await Assistant.findById(lead.assignedAssistantId);
+    const assistantName = assistant?.name || 'Unknown Assistant';
+    
+    // Track usage
+    await usageValidator.trackCallUsage(
+      lead.userId,
+      lead.assignedAssistantId.toString(),
+      assistantName,
+      durationSeconds
+    );
+    
+    logger.info('USAGE_TRACKED', 'Call usage tracked for billing', {
+      userId: lead.userId,
+      assistantId: lead.assignedAssistantId.toString(),
+      assistantName,
+      durationSeconds,
+      leadId: lead._id.toString()
+    });
+    
+  } catch (error) {
+    logger.error('USAGE_TRACKING_ERROR', 'Failed to track call usage', {
+      error,
+      leadId: lead._id?.toString(),
+      assignedAssistantId: lead.assignedAssistantId?.toString()
+    });
+  }
+}
+
 export async function GET(request: NextRequest) {
   // Some webhook services send verification requests
   const searchParams = request.nextUrl.searchParams;

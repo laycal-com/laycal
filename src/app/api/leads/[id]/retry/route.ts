@@ -3,6 +3,8 @@ import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Lead from '@/models/Lead';
 import { vapiService } from '@/lib/vapi';
+import { tenantVapiService } from '@/lib/tenantVapi';
+import PhoneProvider from '@/models/PhoneProvider';
 
 export async function POST(
   request: NextRequest,
@@ -40,20 +42,48 @@ export async function POST(
       lead.vapiCallId = undefined;
       lead.status = 'pending';
       
-      // Initiate new Vapi call
-      const vapiResponse = await vapiService.initiateCall({
-        phoneNumber: lead.phoneNumber,
-        customer: {
-          name: lead.name,
-          email: lead.email,
-        },
-        metadata: {
-          leadId: lead._id.toString(),
-          userId: userId,
-          company: lead.company, // Move company to metadata
-          retry: true,
-        }
+      // Check if user has a configured phone provider
+      const phoneProvider = await PhoneProvider.findOne({
+        userId,
+        isActive: true,
+        isDefault: true
       });
+
+      // Initiate new Vapi call - use tenant service if provider is configured, fallback to system default
+      let vapiResponse;
+      
+      if (phoneProvider) {
+        // Use tenant-specific provider
+        vapiResponse = await tenantVapiService.initiateCall({
+          userId,
+          phoneNumber: lead.phoneNumber,
+          customer: {
+            name: lead.name,
+            email: lead.email,
+          },
+          metadata: {
+            leadId: lead._id.toString(),
+            userId: userId,
+            company: lead.company,
+            retry: true,
+          }
+        });
+      } else {
+        // Fallback to system default (existing behavior)
+        vapiResponse = await vapiService.initiateCall({
+          phoneNumber: lead.phoneNumber,
+          customer: {
+            name: lead.name,
+            email: lead.email,
+          },
+          metadata: {
+            leadId: lead._id.toString(),
+            userId: userId,
+            company: lead.company,
+            retry: true,
+          }
+        });
+      }
 
       // Update lead with new Vapi call ID
       lead.vapiCallId = vapiResponse.id;

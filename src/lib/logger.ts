@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+
 export enum LogLevel {
   DEBUG = 'DEBUG',
   INFO = 'INFO',
@@ -19,11 +22,56 @@ export interface LogEntry {
 
 class Logger {
   private isDevelopment = process.env.NODE_ENV === 'development';
+  private logsDir: string;
+
+  constructor() {
+    this.logsDir = path.join(process.cwd(), 'logs');
+    this.ensureLogsDirectory();
+  }
+
+  private ensureLogsDirectory() {
+    if (!fs.existsSync(this.logsDir)) {
+      fs.mkdirSync(this.logsDir, { recursive: true });
+    }
+  }
 
   private formatLog(entry: LogEntry): string {
     const prefix = `[${entry.timestamp}] [${entry.level}]`;
     const context = this.buildContext(entry);
     return `${prefix}${context} ${entry.operation}: ${entry.message}`;
+  }
+
+  private formatLogForFile(entry: LogEntry): string {
+    const baseLog = this.formatLog(entry);
+    const dataStr = entry.data ? `\nDATA: ${JSON.stringify(entry.data, null, 2)}` : '';
+    const errorStr = entry.error ? `\nERROR: ${JSON.stringify(entry.error, null, 2)}` : '';
+    return `${baseLog}${dataStr}${errorStr}\n${'='.repeat(80)}\n`;
+  }
+
+  private writeToFile(entry: LogEntry) {
+    try {
+      const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      const filename = `${date}.log`;
+      const filepath = path.join(this.logsDir, filename);
+      
+      const logLine = this.formatLogForFile(entry);
+      
+      fs.appendFileSync(filepath, logLine);
+      
+      // Also write to specific log files for webhooks and errors
+      if (entry.operation.includes('WEBHOOK')) {
+        const webhookFile = path.join(this.logsDir, `webhooks-${date}.log`);
+        fs.appendFileSync(webhookFile, logLine);
+      }
+      
+      if (entry.level === LogLevel.ERROR) {
+        const errorFile = path.join(this.logsDir, `errors-${date}.log`);
+        fs.appendFileSync(errorFile, logLine);
+      }
+    } catch (error) {
+      // Don't throw errors for logging failures, just console log
+      console.error('Failed to write to log file:', error);
+    }
   }
 
   private buildContext(entry: LogEntry): string {
@@ -68,6 +116,9 @@ class Logger {
         }
         break;
     }
+
+    // Write to file
+    this.writeToFile(entry);
 
     // In production, you could also send logs to external services like:
     // - DataDog, LogRocket, Sentry, etc.
@@ -237,6 +288,99 @@ class Logger {
     leadNotFound: (vapiCallId: string) => {
       this.warn('WEBHOOK_LEAD_NOT_FOUND', `Lead not found for Vapi call: ${vapiCallId}`, {
         vapiCallId
+      });
+    }
+  };
+
+  assistant = {
+    create: {
+      start: (userId: string, name: string, language: string, voiceGender: string) => {
+        this.info('ASSISTANT_CREATE_START', `Creating assistant: ${name}`, {
+          userId,
+          data: { name, language, voiceGender }
+        });
+      },
+      success: (userId: string, assistantId: string, vapiAssistantId: string, name: string) => {
+        this.info('ASSISTANT_CREATE_SUCCESS', `Assistant created successfully: ${name}`, {
+          userId,
+          data: { assistantId, vapiAssistantId, name }
+        });
+      },
+      error: (userId: string, error: any, name?: string) => {
+        this.error('ASSISTANT_CREATE_ERROR', `Failed to create assistant: ${name || 'Unknown'}`, {
+          userId,
+          data: { name },
+          error
+        });
+      }
+    },
+    update: {
+      start: (userId: string, assistantId: string, name: string) => {
+        this.info('ASSISTANT_UPDATE_START', `Updating assistant: ${name}`, {
+          userId,
+          data: { assistantId, name }
+        });
+      },
+      success: (userId: string, assistantId: string, name: string) => {
+        this.info('ASSISTANT_UPDATE_SUCCESS', `Assistant updated successfully: ${name}`, {
+          userId,
+          data: { assistantId, name }
+        });
+      },
+      error: (userId: string, assistantId: string, error: any, name?: string) => {
+        this.error('ASSISTANT_UPDATE_ERROR', `Failed to update assistant: ${name || 'Unknown'}`, {
+          userId,
+          data: { assistantId, name },
+          error
+        });
+      }
+    },
+    delete: {
+      start: (userId: string, assistantId: string, vapiAssistantId: string, name: string) => {
+        this.info('ASSISTANT_DELETE_START', `Deleting assistant: ${name}`, {
+          userId,
+          data: { assistantId, vapiAssistantId, name }
+        });
+      },
+      success: (userId: string, assistantId: string, name: string) => {
+        this.info('ASSISTANT_DELETE_SUCCESS', `Assistant deleted successfully: ${name}`, {
+          userId,
+          data: { assistantId, name }
+        });
+      },
+      error: (userId: string, assistantId: string, error: any, name?: string) => {
+        this.error('ASSISTANT_DELETE_ERROR', `Failed to delete assistant: ${name || 'Unknown'}`, {
+          userId,
+          data: { assistantId, name },
+          error
+        });
+      }
+    },
+    test: {
+      start: (userId: string, assistantId: string, name: string, phoneNumber: string) => {
+        this.info('ASSISTANT_TEST_START', `Testing assistant: ${name}`, {
+          userId,
+          data: { assistantId, name, phoneNumber }
+        });
+      },
+      success: (userId: string, assistantId: string, callId: string, name: string) => {
+        this.info('ASSISTANT_TEST_SUCCESS', `Assistant test call initiated: ${name}`, {
+          userId,
+          data: { assistantId, callId, name }
+        });
+      },
+      error: (userId: string, assistantId: string, error: any, name?: string) => {
+        this.error('ASSISTANT_TEST_ERROR', `Failed to test assistant: ${name || 'Unknown'}`, {
+          userId,
+          data: { assistantId, name },
+          error
+        });
+      }
+    },
+    usage: (userId: string, assistantId: string, name: string, action: string) => {
+      this.info('ASSISTANT_USAGE', `Assistant used: ${name} for ${action}`, {
+        userId,
+        data: { assistantId, name, action }
       });
     }
   };
