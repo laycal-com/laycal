@@ -1061,7 +1061,7 @@ export default function Home() {
               },
               {
                 question: "How much does it cost per call?",
-                answer: "Calls start at just $0.07/minute, making it 80-90% cheaper than hiring human callers while delivering consistent results 24/7."
+                answer: `Calls start at just $${pricing?.cost_per_minute_payg || 0.07}/minute, making it 80-90% cheaper than hiring human callers while delivering consistent results 24/7.`
               },
               {
                 question: "What integrations do you support?",

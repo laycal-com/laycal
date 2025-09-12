@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from 'sonner';
 import CalendarSettings from '@/components/CalendarSettings';
+import { PaymentGateWrapper } from '@/components/PaymentGateWrapper';
 
 interface PhoneProvider {
   id: string;
@@ -357,7 +358,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <PaymentGateWrapper>
+      <div className="min-h-screen bg-gray-50">
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -626,6 +628,7 @@ export default function SettingsPage() {
           <CalendarSettings />
         </div>
       </div>
-    </div>
+      </div>
+    </PaymentGateWrapper>
   );
 }

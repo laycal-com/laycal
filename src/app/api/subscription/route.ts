@@ -45,10 +45,10 @@ export async function POST(request: NextRequest) {
 
     const { planType, paypalSubscriptionId } = await request.json();
 
-    if (!planType || !['starter', 'growth', 'pro', 'enterprise', 'payg'].includes(planType)) {
+    if (!planType || planType !== 'payg') {
       return NextResponse.json({
-        error: 'Invalid plan type',
-        validPlans: ['starter', 'growth', 'pro', 'enterprise', 'payg']
+        error: 'Invalid plan type - only pay-as-you-go is supported',
+        validPlans: ['payg']
       }, { status: 400 });
     }
 

@@ -82,7 +82,7 @@ export default function TermsOfServicePage() {
                   <div>
                     <h3 className="text-lg font-semibold text-[#1f2937] mb-2">Pricing</h3>
                     <p className="text-[#64748b] leading-relaxed">
-                      Our current pricing is $0.07 per minute for calls. Pricing may change with 30 days' notice. You will be charged only for successful call connections.
+                      Our pricing is based on per-minute usage for calls, as displayed on our pricing page. Pricing may change with 30 days' notice. You will be charged only for successful call connections.
                     </p>
                   </div>
                   <div>

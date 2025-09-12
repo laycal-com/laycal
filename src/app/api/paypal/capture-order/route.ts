@@ -159,8 +159,13 @@ export async function POST(request: NextRequest) {
         balanceBefore
       );
     } catch (creditError) {
-      // Credit logging is non-critical, continue if it fails
-      logger.error('CREDIT_LOG_ERROR', 'Failed to log credit transaction', { creditError });
+      // If it's a duplicate key error (E11000), that's expected and fine
+      if (creditError.code === 11000) {
+        logger.info('CREDIT_DUPLICATE_PREVENTED', 'Duplicate credit transaction prevented', { orderId });
+      } else {
+        // Other errors are unexpected
+        logger.error('CREDIT_LOG_ERROR', 'Failed to log credit transaction', { creditError });
+      }
     }
 
     logger.info('PAYPAL_CREDITS_ADDED', 'Credits added to account', {

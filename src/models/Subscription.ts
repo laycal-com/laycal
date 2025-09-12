@@ -257,11 +257,7 @@ SubscriptionSchema.methods.resetBillingPeriod = function(): void {
 // Static methods for plan definitions
 SubscriptionSchema.statics.getPlanDetails = function(planType: string) {
   const plans = {
-    starter: { minuteLimit: 500, assistantLimit: 1, price: 49 },
-    growth: { minuteLimit: 2000, assistantLimit: 3, price: 149 },
-    pro: { minuteLimit: 7000, assistantLimit: 10, price: 399 },
-    enterprise: { minuteLimit: -1, assistantLimit: -1, price: 999 },
-    payg: { minuteLimit: -1, assistantLimit: -1, price: 19 }
+    payg: { minuteLimit: -1, assistantLimit: -1, price: 0 } // No monthly fee for PAYG
   };
   return plans[planType as keyof typeof plans];
 };

@@ -108,7 +108,22 @@ export async function POST(request: NextRequest) {
       const affordability = subscription.canAffordAssistant();
       if (affordability.useCredits && subscription.creditBalance >= 20) {
         // Deduct credits
+        const oldBalance = subscription.creditBalance;
         subscription.creditBalance -= 20;
+        
+        // Create credit transaction record for Recent Activity
+        try {
+          const Credit = require('@/models/Credit').default;
+          await Credit.createAssistantPurchase(
+            userId,
+            assistant._id,
+            name,
+            oldBalance
+          );
+        } catch (creditError) {
+          logger.error('CREDIT_LOG_ERROR', 'Failed to log assistant purchase transaction', { creditError });
+        }
+        
         logger.info('ASSISTANT_PAYMENT_DEDUCTED', 'Credits deducted for assistant creation', {
           userId,
           assistantId: assistant._id.toString(),

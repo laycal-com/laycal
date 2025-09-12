@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Laycal - AI-Powered Sales Calling Platform",
-  description: "Scale your sales calls with AI agents that work 24/7. Get 15-30% higher contact rates at $0.07/minute with automated lead calling, real-time analytics, and seamless CRM integration.",
+  description: "Scale your sales calls with AI agents that work 24/7. Get 15-30% higher contact rates with affordable per-minute pricing, automated lead calling, real-time analytics, and seamless CRM integration.",
   keywords: "AI calling, sales automation, lead generation, outbound calling, AI voice agents, sales calls, CRM integration, automated calling",
   authors: [{ name: "Laycal" }],
   creator: "Laycal",
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Laycal - AI-Powered Sales Calling Platform",
-    description: "Scale your sales calls with AI agents that work 24/7. Get 15-30% higher contact rates at $0.07/minute.",
+    description: "Scale your sales calls with AI agents that work 24/7. Get 15-30% higher contact rates with affordable per-minute pricing.",
     url: "https://laycal.com",
     siteName: "Laycal",
     locale: "en_US",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Laycal - AI-Powered Sales Calling Platform",
-    description: "Scale your sales calls with AI agents that work 24/7. Get 15-30% higher contact rates at $0.07/minute.",
+    description: "Scale your sales calls with AI agents that work 24/7. Get 15-30% higher contact rates with affordable per-minute pricing.",
   },
   robots: {
     index: true,

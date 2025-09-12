@@ -5,18 +5,13 @@ import Link from "next/link";
 import { UsageWidget } from './UsageWidget';
 import { UpgradeModal } from './UpgradeModal';
 import { CreditWidget } from './CreditWidget';
-import { PaymentRequired } from './PaymentRequired';
 import { toast } from 'sonner';
 
 export function DashboardClient() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [activatingPayg, setActivatingPayg] = useState(false);
-  const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkSubscriptionStatus();
-    
     const urlParams = new URLSearchParams(window.location.search);
     
     // Check if user came from PAYG activation
@@ -32,25 +27,6 @@ export function DashboardClient() {
       handlePaymentSuccess(token, payerId);
     }
   }, []);
-
-  const checkSubscriptionStatus = async () => {
-    try {
-      const response = await fetch('/api/subscription');
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Subscription data:', data); // Debug log
-        setHasSubscription(data.subscription.planType !== 'none');
-      } else {
-        console.log('Subscription API error:', response.status); // Debug log
-        setHasSubscription(false);
-      }
-    } catch (error) {
-      console.log('Subscription check error:', error); // Debug log
-      setHasSubscription(false);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handlePaymentSuccess = async (token: string, payerId: string) => {
     try {
@@ -81,8 +57,6 @@ export function DashboardClient() {
         
         // Clean up URL and refresh subscription status
         window.history.replaceState({}, '', '/dashboard');
-        setHasSubscription(true);
-        setLoading(false);
         
         // Force refresh of the page to update all widgets
         setTimeout(() => {
@@ -140,22 +114,6 @@ export function DashboardClient() {
     }
   };
 
-  // Show loading screen
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3b82f6] mx-auto mb-4"></div>
-          <p className="text-[#64748b]">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show payment required screen for users without subscription
-  if (hasSubscription === false) {
-    return <PaymentRequired />;
-  }
 
   // Show activating screen during PAYG setup
   if (activatingPayg) {
@@ -186,7 +144,7 @@ export function DashboardClient() {
           
           {/* Credit Widget */}
           <div>
-            <CreditWidget key={hasSubscription ? 'subscribed' : 'no-subscription'} />
+            <CreditWidget />
           </div>
 
           {/* Quick Actions */}

@@ -439,29 +439,25 @@ export class UsageValidator {
   async getUpgradeOptions(userId: string): Promise<UpgradeOption[]> {
     try {
       const subscription = await this.getOrCreateSubscription(userId);
-      const currentPlan = subscription.planType;
+      const currentPlan = subscription?.planType || 'none';
       
-      const allPlans = [
-        { planType: 'starter', planName: 'Starter', monthlyPrice: 49, minuteLimit: 500, assistantLimit: 1 },
-        { planType: 'growth', planName: 'Growth', monthlyPrice: 149, minuteLimit: 2000, assistantLimit: 3 },
-        { planType: 'pro', planName: 'Pro', monthlyPrice: 399, minuteLimit: 7000, assistantLimit: 10 },
-        { planType: 'enterprise', planName: 'Enterprise', monthlyPrice: 999, minuteLimit: -1, assistantLimit: -1 },
-        { planType: 'payg', planName: 'Pay-as-you-go', monthlyPrice: 19, minuteLimit: -1, assistantLimit: -1 }
-      ];
+      // Only PAYG is supported
+      if (currentPlan === 'none') {
+        // User hasn't paid yet - offer PAYG
+        return [
+          { 
+            planType: 'payg', 
+            planName: 'Pay-as-you-go', 
+            monthlyPrice: 0, // No monthly fee, pay per minute
+            minuteLimit: -1, // Unlimited
+            assistantLimit: -1, // Unlimited
+            savings: undefined 
+          }
+        ];
+      }
       
-      const planHierarchy = ['starter', 'growth', 'pro', 'enterprise'];
-      const currentIndex = planHierarchy.indexOf(currentPlan);
-      
-      // Return plans higher than current plan
-      return allPlans
-        .filter(plan => {
-          const planIndex = planHierarchy.indexOf(plan.planType);
-          return planIndex > currentIndex || plan.planType === 'payg';
-        })
-        .map(plan => ({
-          ...plan,
-          savings: plan.planType !== 'payg' ? subscription.monthlyPrice - plan.monthlyPrice : undefined
-        }));
+      // User already has PAYG - no upgrade options needed
+      return [];
         
     } catch (error) {
       logger.error('UPGRADE_OPTIONS_ERROR', 'Failed to get upgrade options', { userId, error });

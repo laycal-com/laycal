@@ -84,7 +84,11 @@ const CreditSchema = new Schema<ICredit>({
 // Compound indexes for performance
 CreditSchema.index({ userId: 1, createdAt: -1 });
 CreditSchema.index({ userId: 1, transactionType: 1 });
-CreditSchema.index({ relatedOrderId: 1 });
+// Unique index on relatedOrderId to prevent duplicate PayPal transactions
+CreditSchema.index({ relatedOrderId: 1 }, { 
+  unique: true, 
+  partialFilterExpression: { relatedOrderId: { $ne: null } } 
+});
 
 // Static methods for creating credit transactions
 CreditSchema.statics.createTopup = async function(

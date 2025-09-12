@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Phone, User, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { PaymentGateWrapper } from '@/components/PaymentGateWrapper';
 import { toast } from 'sonner';
 
 interface PendingAppointment {
@@ -153,8 +154,9 @@ export default function AppointmentsPage() {
   }
 
   return (
-    <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', color: '#000000' }}>
-      <div className="container mx-auto py-8">
+    <PaymentGateWrapper>
+      <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', color: '#000000' }}>
+        <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold">Appointments</h1>
@@ -308,7 +310,8 @@ export default function AppointmentsPage() {
           })}
         </div>
       )}
+        </div>
       </div>
-    </div>
+    </PaymentGateWrapper>
   );
 }

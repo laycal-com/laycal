@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { CreditCard, Zap, Shield, Users } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PricingData {
   assistant_base_cost: number;
@@ -17,6 +18,7 @@ interface PricingData {
 
 export function PaymentRequired() {
   const [pricing, setPricing] = useState<PricingData | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchPricing = async () => {
@@ -42,6 +44,42 @@ export function PaymentRequired() {
     
     fetchPricing();
   }, []);
+
+  const handlePaymentStart = async () => {
+    setLoading(true);
+    try {
+      const chargeAmount = pricing?.initial_payg_charge || 25;
+      
+      // Create PayPal order for initial charge
+      const orderResponse = await fetch('/api/paypal/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: chargeAmount,
+          description: `Pay-as-you-go Activation ($${chargeAmount} - includes first assistant + credits)`,
+          planType: 'payg'
+        })
+      });
+
+      if (!orderResponse.ok) {
+        throw new Error('Failed to create PayPal order');
+      }
+
+      const orderData = await orderResponse.json();
+      
+      // Redirect to PayPal for payment
+      if (orderData.approvalUrl) {
+        window.location.href = orderData.approvalUrl;
+      } else {
+        throw new Error('PayPal approval URL not found');
+      }
+
+    } catch (error) {
+      console.error('Payment initiation error:', error);
+      toast.error('Failed to start payment process. Please try again.');
+      setLoading(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-4" style={{ paddingTop: '80px' }}>
       <div className="max-w-4xl w-full">
@@ -134,10 +172,20 @@ export function PaymentRequired() {
               
               <Button 
                 className="w-full bg-[#10b981] hover:bg-[#059669] text-white py-4 text-lg font-semibold"
-                onClick={() => window.location.href = '/dashboard'}
+                onClick={handlePaymentStart}
+                disabled={loading}
               >
-                <CreditCard className="w-5 h-5 mr-2" />
-                🚀 Dial Into Success
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-5 h-5 mr-2" />
+                    🚀 Dial Into Success
+                  </>
+                )}
               </Button>
               
               <div className="mt-4 text-center">

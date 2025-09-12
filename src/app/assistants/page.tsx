@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Bot, Phone, Edit, Trash2, TestTube, Languages, Mic } from 'lucide-react';
 import { AssistantForm } from '@/components/AssistantForm';
+import { PaymentGateWrapper } from '@/components/PaymentGateWrapper';
 import { toast } from 'sonner';
 
 interface Assistant {
@@ -139,23 +140,24 @@ export default function AssistantsPage() {
   }
 
   return (
-    <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', color: '#000000', paddingTop: '80px' }}>
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>AI Assistants</h1>
-            <p className="text-gray-600 mt-2">
-              Manage your AI voice assistants for outbound calling campaigns
-            </p>
+    <PaymentGateWrapper>
+      <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', color: '#000000', paddingTop: '80px' }}>
+        <div className="container mx-auto py-8 px-4">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>AI Assistants</h1>
+              <p className="text-gray-600 mt-2">
+                Manage your AI voice assistants for outbound calling campaigns
+              </p>
+            </div>
+            <Button 
+              onClick={() => setShowForm(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Assistant
+            </Button>
           </div>
-          <Button 
-            onClick={() => setShowForm(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Assistant
-          </Button>
-        </div>
 
       {loading ? (
         <div className="flex justify-center p-8">
@@ -283,6 +285,7 @@ export default function AssistantsPage() {
           }}
         />
       )}
-    </div>
+      </div>
+    </PaymentGateWrapper>
   );
 }
