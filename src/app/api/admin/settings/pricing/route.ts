@@ -35,7 +35,20 @@ export async function PUT(request: NextRequest) {
 
     await connectToDatabase();
 
-    // Validate the settings
+    // Define defaults for missing settings
+    const defaultSettings = {
+      'assistant_base_cost': 20,
+      'cost_per_minute_payg': 0.07,
+      'cost_per_minute_overage': 0.05,
+      'minimum_topup_amount': 5,
+      'initial_payg_charge': 25,
+      'payg_initial_credits': 5
+    };
+
+    // Merge provided settings with defaults
+    const settingsToUpdate = { ...defaultSettings, ...settings };
+
+    // Validate the final settings
     const requiredSettings = [
       'assistant_base_cost',
       'cost_per_minute_payg',
@@ -46,7 +59,7 @@ export async function PUT(request: NextRequest) {
     ];
 
     for (const key of requiredSettings) {
-      if (!(key in settings) || typeof settings[key] !== 'number' || settings[key] < 0) {
+      if (typeof settingsToUpdate[key] !== 'number' || settingsToUpdate[key] < 0) {
         return NextResponse.json(
           { error: `Invalid value for ${key}` },
           { status: 400 }
@@ -56,7 +69,7 @@ export async function PUT(request: NextRequest) {
 
     // Update each setting
     const updatedSettings: Record<string, any> = {};
-    for (const [key, value] of Object.entries(settings)) {
+    for (const [key, value] of Object.entries(settingsToUpdate)) {
       if (requiredSettings.includes(key)) {
         await SystemSettings.setSetting(
           key,
