@@ -22,16 +22,29 @@ export interface LogEntry {
 
 class Logger {
   private isDevelopment = process.env.NODE_ENV === 'development';
+  private isProduction = process.env.NODE_ENV === 'production';
   private logsDir: string;
+  private canWriteFiles: boolean;
 
   constructor() {
     this.logsDir = path.join(process.cwd(), 'logs');
-    this.ensureLogsDirectory();
+    this.canWriteFiles = this.ensureLogsDirectory();
   }
 
-  private ensureLogsDirectory() {
-    if (!fs.existsSync(this.logsDir)) {
-      fs.mkdirSync(this.logsDir, { recursive: true });
+  private ensureLogsDirectory(): boolean {
+    // Skip file operations in production/serverless environments
+    if (this.isProduction) {
+      return false;
+    }
+    
+    try {
+      if (!fs.existsSync(this.logsDir)) {
+        fs.mkdirSync(this.logsDir, { recursive: true });
+      }
+      return true;
+    } catch (error) {
+      console.warn('Cannot create logs directory, file logging disabled:', error.message);
+      return false;
     }
   }
 
@@ -49,6 +62,11 @@ class Logger {
   }
 
   private writeToFile(entry: LogEntry) {
+    // Skip file writing in production or if logs directory couldn't be created
+    if (!this.canWriteFiles) {
+      return;
+    }
+
     try {
       const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
       const filename = `${date}.log`;
