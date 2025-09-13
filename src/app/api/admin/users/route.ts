@@ -5,6 +5,7 @@ import Subscription from '@/models/Subscription';
 import Assistant from '@/models/Assistant';
 import UsageTracking from '@/models/UsageTracking';
 import { logger } from '@/lib/logger';
+import { clerkClient } from '@clerk/nextjs/server';
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,16 +35,30 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Get subscriptions with user data
-    const subscriptions = await Subscription.find(searchQuery)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    // Get latest subscription per user (in case of multiple subscriptions)
+    const subscriptions = await Subscription.aggregate([
+      { $match: searchQuery },
+      { $sort: { userId: 1, createdAt: -1 } },
+      {
+        $group: {
+          _id: "$userId",
+          latestSubscription: { $first: "$$ROOT" }
+        }
+      },
+      { $replaceRoot: { newRoot: "$latestSubscription" } },
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit }
+    ]);
 
-    const total = await Subscription.countDocuments(searchQuery);
+    const totalAgg = await Subscription.aggregate([
+      { $match: searchQuery },
+      { $group: { _id: "$userId" } },
+      { $count: "total" }
+    ]);
+    const total = totalAgg[0]?.total || 0;
 
-    // Enrich with additional data
+    // Enrich with additional data and populate missing metadata
     const enrichedUsers = await Promise.all(
       subscriptions.map(async (sub) => {
         const assistantsCount = await Assistant.countDocuments({ 
@@ -62,11 +77,41 @@ export async function GET(request: NextRequest) {
           return callDate.toDateString() === today.toDateString();
         })?.length || 0;
 
+        // If metadata is missing, try to get it from Clerk
+        let email = sub.metadata?.email;
+        let name = sub.metadata?.name;
+        
+        if (!email || !name) {
+          try {
+            const clerkUser = await clerkClient.users.getUser(sub.userId);
+            email = clerkUser.emailAddresses?.[0]?.emailAddress || email;
+            name = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || name;
+            
+            // Update the subscription with the metadata (async, don't wait)
+            if (!sub.metadata?.email && (email || name)) {
+              Subscription.findByIdAndUpdate(sub._id, {
+                metadata: {
+                  ...sub.metadata,
+                  email,
+                  name,
+                  clerkCreatedAt: new Date(clerkUser.createdAt)
+                }
+              }).catch(() => {}); // Silent fail, it's just caching
+            }
+          } catch (clerkError) {
+            // User might not exist in Clerk anymore, use fallback
+            logger.warn('ADMIN_CLERK_USER_NOT_FOUND', 'Could not fetch user from Clerk', {
+              userId: sub.userId,
+              error: clerkError instanceof Error ? clerkError.message : 'Unknown error'
+            });
+          }
+        }
+
         return {
           _id: sub._id,
           userId: sub.userId,
-          email: sub.metadata?.email,
-          name: sub.metadata?.name,
+          email: email || null,
+          name: name || null,
           planType: sub.planType,
           planName: sub.planName,
           creditBalance: sub.creditBalance || 0,

@@ -4,6 +4,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import Subscription from '@/models/Subscription';
 import { usageValidator } from '@/lib/usageValidator';
 import { logger } from '@/lib/logger';
+import { ensureUserExists } from '@/lib/userRegistration';
 
 // GET - Get current subscription details and usage
 export async function GET() {
@@ -14,6 +15,9 @@ export async function GET() {
     }
 
     await connectToDatabase();
+    
+    // Ensure user exists in database (fallback mechanism)
+    await ensureUserExists(userId);
 
     const usage = await usageValidator.getCurrentUsage(userId);
     const upgradeOptions = await usageValidator.getUpgradeOptions(userId);
@@ -53,6 +57,9 @@ export async function POST(request: NextRequest) {
     }
 
     await connectToDatabase();
+    
+    // Ensure user exists in database (fallback mechanism)
+    await ensureUserExists(userId);
 
     // Get plan details
     const planDetails = Subscription.getPlanDetails(planType);

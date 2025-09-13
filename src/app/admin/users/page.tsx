@@ -24,18 +24,32 @@ interface CreditAdjustment {
   reason: string;
 }
 
+interface UserActivation {
+  userId: string;
+  amount: number;
+  description: string;
+}
+
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showCreditModal, setShowCreditModal] = useState(false);
+  const [showActivateModal, setShowActivateModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [creditAdjustment, setCreditAdjustment] = useState<CreditAdjustment>({
     userId: '',
     amount: 0,
     reason: ''
   });
+  const [userActivation, setUserActivation] = useState<UserActivation>({
+    userId: '',
+    amount: 25,
+    description: ''
+  });
   const [adjusting, setAdjusting] = useState(false);
+  const [activating, setActivating] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
   const usersPerPage = 20;
@@ -127,6 +141,66 @@ export default function AdminUsers() {
     setShowCreditModal(true);
   };
 
+  const openActivateModal = (user: User) => {
+    setSelectedUser(user);
+    setUserActivation({
+      userId: user.userId,
+      amount: 25, // Default to $25
+      description: `Initial activation for ${user.email || user.name || 'user'}`
+    });
+    setShowActivateModal(true);
+  };
+
+  const handleUserActivation = async () => {
+    if (!userActivation.userId || !userActivation.description.trim()) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    if (userActivation.amount <= 0) {
+      toast.error('Amount must be greater than zero');
+      return;
+    }
+
+    setActivating(true);
+    try {
+      const response = await fetch(`/api/admin/users/${userActivation.userId}/activate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: userActivation.amount,
+          description: userActivation.description
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(data.message);
+        
+        // Update the user in the list
+        setUsers(users.map(user => 
+          user.userId === userActivation.userId 
+            ? { ...user, creditBalance: data.subscription.creditBalance, isActive: data.subscription.isActive }
+            : user
+        ));
+
+        // Close modal and reset form
+        setShowActivateModal(false);
+        setUserActivation({ userId: '', amount: 25, description: '' });
+        setSelectedUser(null);
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to activate user account');
+      }
+    } catch (error) {
+      toast.error('Failed to activate user account');
+    } finally {
+      setActivating(false);
+    }
+  };
+
   const filteredUsers = users.filter(user =>
     user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -202,7 +276,7 @@ export default function AdminUsers() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredUsers.map((user) => (
-                <tr key={user.userId} className="hover:bg-gray-50">
+                <tr key={user._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900">
@@ -215,15 +289,24 @@ export default function AdminUsers() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.planType === 'payg' ? 'bg-green-100 text-green-800' :
-                      user.planType === 'starter' ? 'bg-blue-100 text-blue-800' :
-                      user.planType === 'growth' ? 'bg-purple-100 text-purple-800' :
-                      user.planType === 'pro' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {user.planType?.toUpperCase() || 'NONE'}
-                    </span>
+                    <div className="space-y-1">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        user.planType === 'payg' ? 'bg-green-100 text-green-800' :
+                        user.planType === 'starter' ? 'bg-blue-100 text-blue-800' :
+                        user.planType === 'growth' ? 'bg-purple-100 text-purple-800' :
+                        user.planType === 'pro' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {user.planType?.toUpperCase() || 'NONE'}
+                      </span>
+                      {!user.isActive && (
+                        <div>
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                            INACTIVE
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
@@ -245,14 +328,26 @@ export default function AdminUsers() {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {!user.isActive ? (
+                      <button
+                        onClick={() => openActivateModal(user)}
+                        className="text-green-600 hover:text-green-900 mr-3 font-medium"
+                      >
+                        Activate Account
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => openCreditModal(user)}
+                        className="text-blue-600 hover:text-blue-900 mr-3"
+                      >
+                        Adjust Credits
+                      </button>
+                    )}
                     <button
-                      onClick={() => openCreditModal(user)}
-                      className="text-blue-600 hover:text-blue-900 mr-3"
-                    >
-                      Adjust Credits
-                    </button>
-                    <button
-                      onClick={() => {/* TODO: View details */}}
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setShowDetailsModal(true);
+                      }}
                       className="text-gray-600 hover:text-gray-900"
                     >
                       View Details
@@ -314,6 +409,175 @@ export default function AdminUsers() {
           </div>
         )}
       </div>
+
+      {/* User Activation Modal */}
+      {showActivateModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Activate User Account</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                User: {selectedUser?.email || selectedUser?.name || selectedUser?.userId}
+              </p>
+              <p className="text-sm text-gray-600">
+                This will create a Pay-as-you-go subscription with initial credits
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Initial Credit Amount ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  value={userActivation.amount}
+                  onChange={(e) => setUserActivation({
+                    ...userActivation,
+                    amount: parseFloat(e.target.value) || 0
+                  })}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="25.00"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Recommended: $25 for initial PAYG activation
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Description
+                </label>
+                <textarea
+                  value={userActivation.description}
+                  onChange={(e) => setUserActivation({
+                    ...userActivation,
+                    description: e.target.value
+                  })}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  rows={3}
+                  placeholder="Reason for manual activation..."
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowActivateModal(false);
+                  setUserActivation({ userId: '', amount: 25, description: '' });
+                  setSelectedUser(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUserActivation}
+                disabled={activating || !userActivation.description.trim() || userActivation.amount <= 0}
+                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {activating ? 'Activating...' : 'Activate Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Details Modal */}
+      {showDetailsModal && selectedUser && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mb-4">
+              <h3 className="text-lg font-medium text-gray-900">User Details</h3>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              <div>
+                <label className="font-medium text-gray-700">Name:</label>
+                <p className="text-gray-900">{selectedUser.name || 'Not provided'}</p>
+              </div>
+              
+              <div>
+                <label className="font-medium text-gray-700">Email:</label>
+                <p className="text-gray-900">{selectedUser.email || 'Not provided'}</p>
+              </div>
+              
+              <div>
+                <label className="font-medium text-gray-700">User ID:</label>
+                <p className="text-gray-900 font-mono text-xs break-all">{selectedUser.userId}</p>
+              </div>
+              
+              <div>
+                <label className="font-medium text-gray-700">Plan:</label>
+                <p className="text-gray-900">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    selectedUser.planType === 'payg' ? 'bg-green-100 text-green-800' :
+                    selectedUser.planType === 'starter' ? 'bg-blue-100 text-blue-800' :
+                    selectedUser.planType === 'growth' ? 'bg-purple-100 text-purple-800' :
+                    selectedUser.planType === 'pro' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {selectedUser.planType?.toUpperCase() || 'NONE'}
+                  </span>
+                  {!selectedUser.isActive && (
+                    <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                      INACTIVE
+                    </span>
+                  )}
+                </p>
+              </div>
+              
+              <div>
+                <label className="font-medium text-gray-700">Credit Balance:</label>
+                <p className="text-gray-900 font-medium">${selectedUser.creditBalance?.toFixed(2) || '0.00'}</p>
+              </div>
+              
+              <div>
+                <label className="font-medium text-gray-700">Assistants Created:</label>
+                <p className="text-gray-900">{selectedUser.assistantsCreated || 0}</p>
+              </div>
+              
+              <div>
+                <label className="font-medium text-gray-700">Calls Today:</label>
+                <p className="text-gray-900">{selectedUser.callsToday || 0}</p>
+              </div>
+              
+              <div>
+                <label className="font-medium text-gray-700">Total Spent:</label>
+                <p className="text-gray-900">${selectedUser.totalSpent?.toFixed(2) || '0.00'}</p>
+              </div>
+              
+              <div>
+                <label className="font-medium text-gray-700">Joined:</label>
+                <p className="text-gray-900">{new Date(selectedUser.createdAt).toLocaleDateString()}</p>
+              </div>
+              
+              <div>
+                <label className="font-medium text-gray-700">Last Activity:</label>
+                <p className="text-gray-900">{selectedUser.lastActivity ? new Date(selectedUser.lastActivity).toLocaleDateString() : 'Never'}</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Credit Adjustment Modal */}
       {showCreditModal && (

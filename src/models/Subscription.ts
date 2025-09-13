@@ -5,7 +5,7 @@ export interface ISubscription extends Document {
   userId: string;
   
   // Plan details
-  planType: 'starter' | 'growth' | 'pro' | 'enterprise' | 'payg';
+  planType: 'starter' | 'growth' | 'pro' | 'enterprise' | 'payg' | 'none';
   planName: string;
   monthlyPrice: number;
   
@@ -36,6 +36,17 @@ export interface ISubscription extends Document {
   trialEndsAt?: Date;
   
   // Metadata
+  metadata?: {
+    email?: string;
+    name?: string;
+    clerkCreatedAt?: Date;
+    deletedAt?: Date;
+    deletedReason?: string;
+    webhookSource?: boolean;
+    clerkUserId?: string;
+    primaryEmailId?: string;
+    rawUserData?: any;
+  };
   createdAt: Date;
   updatedAt: Date;
   cancelledAt?: Date;
@@ -51,7 +62,7 @@ const SubscriptionSchema = new Schema<ISubscription>({
   // Plan details
   planType: {
     type: String,
-    enum: ['starter', 'growth', 'pro', 'enterprise', 'payg'],
+    enum: ['starter', 'growth', 'pro', 'enterprise', 'payg', 'none'],
     required: true
   },
   planName: {
@@ -137,8 +148,7 @@ const SubscriptionSchema = new Schema<ISubscription>({
   
   // Payment details
   paypalSubscriptionId: {
-    type: String,
-    index: true
+    type: String
   },
   isActive: {
     type: Boolean,
@@ -165,6 +175,12 @@ const SubscriptionSchema = new Schema<ISubscription>({
   },
   cancelledAt: {
     type: Date
+  },
+  
+  // User metadata from Clerk
+  metadata: {
+    type: Schema.Types.Mixed,
+    default: {}
   }
 }, {
   timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' }

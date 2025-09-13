@@ -6,6 +6,7 @@ import PhoneProvider from '@/models/PhoneProvider';
 import { tenantVapiService } from '@/lib/tenantVapi';
 import { usageValidator } from '@/lib/usageValidator';
 import { logger } from '@/lib/logger';
+import { ensureUserExists } from '@/lib/userRegistration';
 
 export async function GET() {
   try {
@@ -15,6 +16,9 @@ export async function GET() {
     }
 
     await connectToDatabase();
+    
+    // Ensure user exists in database (fallback mechanism)
+    await ensureUserExists(userId);
 
     const assistants = await Assistant.find({ userId })
       .populate('phoneNumbers.phoneProviderId', 'displayName phoneNumber')
@@ -50,6 +54,9 @@ export async function POST(request: NextRequest) {
     }
 
     await connectToDatabase();
+    
+    // Ensure user exists in database (fallback mechanism)
+    await ensureUserExists(userId);
 
     // CRITICAL: Check assistant limits before creation
     const canCreate = await usageValidator.canCreateAssistant(userId);
