@@ -7,15 +7,24 @@ export async function GET(request: NextRequest) {
   let userId: string | null = null;
   
   try {
-    console.log('[GOOGLE_CALLBACK] Starting Google Calendar callback handler');
-    console.log('[GOOGLE_CALLBACK] Request URL:', request.url);
+    // Track successful entry
+    Sentry.addBreadcrumb({
+      message: 'Google Calendar callback started',
+      category: 'navigation',
+      data: { url: request.url }
+    });
     
     const authResult = await auth();
     userId = authResult.userId;
-    console.log('[GOOGLE_CALLBACK] User ID:', userId);
+    
+    Sentry.addBreadcrumb({
+      message: 'User authenticated',
+      category: 'auth',
+      data: { userId: userId || 'none' }
+    });
 
     if (!userId) {
-      console.log('[GOOGLE_CALLBACK] No user ID found, redirecting to sign-in');
+      Sentry.captureMessage('Google callback: No user ID found', 'warning');
       return NextResponse.redirect(new URL('/sign-in', request.url));
     }
 
@@ -23,17 +32,20 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get('code');
     const error = searchParams.get('error');
     
-    console.log('[GOOGLE_CALLBACK] Search params:', {
-      code: code ? `${code.substring(0, 20)}...` : null,
-      error,
-      allParams: Object.fromEntries(searchParams.entries())
+    Sentry.addBreadcrumb({
+      message: 'Search params parsed',
+      category: 'http',
+      data: {
+        hasCode: !!code,
+        error,
+        allParams: Object.fromEntries(searchParams.entries())
+      }
     });
 
     if (error) {
       const errorMsg = `Google Calendar authentication error: ${error}`;
-      console.error('[GOOGLE_CALLBACK] Authentication error:', errorMsg);
       Sentry.captureException(new Error(errorMsg), {
-        tags: { component: 'google-calendar-callback' },
+        tags: { component: 'google-calendar-callback', step: 'oauth-error' },
         extra: { userId, error }
       });
       return NextResponse.redirect(
@@ -43,9 +55,8 @@ export async function GET(request: NextRequest) {
 
     if (!code) {
       const errorMsg = 'No authorization code received from Google';
-      console.error('[GOOGLE_CALLBACK] No code error:', errorMsg);
       Sentry.captureException(new Error(errorMsg), {
-        tags: { component: 'google-calendar-callback' },
+        tags: { component: 'google-calendar-callback', step: 'no-code' },
         extra: { userId, searchParams: Object.fromEntries(searchParams.entries()) }
       });
       return NextResponse.redirect(
@@ -53,13 +64,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('[GOOGLE_CALLBACK] Getting Google provider from calendar manager');
+    Sentry.addBreadcrumb({
+      message: 'Getting Google provider',
+      category: 'provider'
+    });
+    
     const googleProvider = calendarManager.getProvider('google');
     if (!googleProvider) {
       const errorMsg = 'Google Calendar provider not available';
-      console.error('[GOOGLE_CALLBACK] Provider error:', errorMsg);
       Sentry.captureException(new Error(errorMsg), {
-        tags: { component: 'google-calendar-callback' },
+        tags: { component: 'google-calendar-callback', step: 'provider-missing' },
         extra: { userId }
       });
       return NextResponse.redirect(
@@ -67,12 +81,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('[GOOGLE_CALLBACK] Starting token exchange with Google');
+    Sentry.addBreadcrumb({
+      message: 'Starting token exchange',
+      category: 'oauth'
+    });
+    
     // Exchange code for tokens and save to database
     await googleProvider.authenticate(userId, { code });
-    console.log('[GOOGLE_CALLBACK] Token exchange completed successfully');
+    
+    Sentry.addBreadcrumb({
+      message: 'Token exchange completed',
+      category: 'oauth'
+    });
 
-    console.log('[GOOGLE_CALLBACK] Google Calendar authentication completed successfully for user:', userId);
+    // Success message to Sentry
+    Sentry.captureMessage('Google Calendar authentication completed successfully', 'info');
 
     return NextResponse.redirect(
       new URL('/settings?calendar_success=google_connected', request.url)
@@ -80,15 +103,15 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error in Google Calendar callback';
-    console.error('[GOOGLE_CALLBACK] Critical error:', errorMsg);
-    console.error('[GOOGLE_CALLBACK] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     Sentry.captureException(error, {
-      tags: { component: 'google-calendar-callback' },
+      tags: { component: 'google-calendar-callback', step: 'critical-error' },
       extra: { 
         userId,
         url: request.url,
-        searchParams: request.nextUrl.searchParams ? Object.fromEntries(request.nextUrl.searchParams.entries()) : null
+        searchParams: request.nextUrl.searchParams ? Object.fromEntries(request.nextUrl.searchParams.entries()) : null,
+        errorMessage: errorMsg,
+        errorStack: error instanceof Error ? error.stack : null
       }
     });
 
