@@ -7,68 +7,42 @@ export async function GET(request: NextRequest) {
   let userId: string | null = null;
   
   try {
-    Sentry.addBreadcrumb({
-      message: 'Google Calendar auth started',
-      category: 'navigation'
-    });
+    Sentry.logger.info('Google Calendar auth started');
     
     const authResult = await auth();
     userId = authResult.userId;
     
-    Sentry.addBreadcrumb({
-      message: 'User authenticated',
-      category: 'auth',
-      data: { userId: userId || 'none' }
-    });
+    Sentry.logger.info('Google Calendar auth user authenticated', { userId: userId || 'none' });
 
     if (!userId) {
-      Sentry.captureMessage('Google auth: No user ID found', 'warning');
+      Sentry.logger.warn('Google Calendar auth no user ID found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    Sentry.addBreadcrumb({
-      message: 'Getting Google provider',
-      category: 'provider'
-    });
+    Sentry.logger.info('Getting Google Calendar provider from manager');
     
     const googleProvider = calendarManager.getProvider('google') as any;
     if (!googleProvider) {
-      const errorMsg = 'Google Calendar provider not available';
-      Sentry.captureException(new Error(errorMsg), {
-        tags: { component: 'google-calendar-auth', step: 'provider-missing' },
-        extra: { userId }
-      });
+      Sentry.logger.error('Google Calendar provider not available', { userId });
       return NextResponse.json({ error: 'Google Calendar provider not available' }, { status: 500 });
     }
 
-    Sentry.addBreadcrumb({
-      message: 'Generating auth URL',
-      category: 'oauth'
-    });
+    Sentry.logger.info('Generating Google Calendar auth URL', { userId });
     
     const authUrl = googleProvider.getAuthUrl();
     
-    Sentry.addBreadcrumb({
-      message: 'Auth URL generated',
-      category: 'oauth',
-      data: { authUrl }
-    });
-
-    Sentry.captureMessage('Google Calendar authentication initiated successfully', 'info');
+    Sentry.logger.info('Google Calendar auth URL generated successfully', { userId, authUrl });
 
     return NextResponse.json({ authUrl });
 
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error in Google auth';
     
-    Sentry.captureException(error, {
-      tags: { component: 'google-calendar-auth', step: 'critical-error' },
-      extra: { 
-        userId, 
-        url: request.url,
-        errorMessage: errorMsg,
-        errorStack: error instanceof Error ? error.stack : null
-      }
+    Sentry.logger.error('Google Calendar auth critical error', {
+      userId, 
+      url: request.url,
+      errorMessage: errorMsg,
+      errorStack: error instanceof Error ? error.stack : null
     });
 
     return NextResponse.json({

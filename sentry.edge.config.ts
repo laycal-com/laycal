@@ -17,11 +17,17 @@ Sentry.init({
   tracesSampleRate: isProduction ? 0.1 : isTest ? 0 : 1,
 
   // Enable logs to be sent to Sentry
-  enableLogs: !isTest,
+  enableLogs: true,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: !isProduction && !isTest,
+  debug: true,
 
   // Don't initialize Sentry in test environment
-  enabled: !isTest,
+  enabled: true,
+
+  integrations: [
+    // send console.log, console.warn, and console.error calls as logs to Sentry
+    Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
+  ],
+  // Enable logs to be sent to Sentry
 });
