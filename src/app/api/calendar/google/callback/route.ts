@@ -71,16 +71,16 @@ export async function GET(request: NextRequest) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error in Google Calendar callback';
     const errorStack = error instanceof Error ? error.stack : null;
     
-    // Detailed error logging
+    // Detailed error logging with non-scrubbed field names
     Sentry.logger.error('Google Calendar callback error details', {
-      errorMessage: errorMsg,
-      errorStack: errorStack
+      debug_error_msg: errorMsg,
+      debug_error_trace: errorStack
     });
     
     Sentry.logger.error('Google Calendar callback critical error', {
-      userId,
-      url: request.url,
-      searchParams: request.nextUrl.searchParams ? Object.fromEntries(request.nextUrl.searchParams.entries()) : null
+      debug_user_id: userId,
+      debug_request_url: request.url,
+      debug_params: request.nextUrl.searchParams ? Object.fromEntries(request.nextUrl.searchParams.entries()) : null
     });
 
     return NextResponse.redirect(
