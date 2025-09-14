@@ -12,14 +12,14 @@ Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   environment,
 
-  // Add integrations for server-side logging
+  // Add integrations for edge runtime logging
   integrations: [
     // Send console.log, console.warn, and console.error calls as logs to Sentry
     Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
   ],
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: isProduction ? 0.1 : isTest ? 0 : 1,
+  tracesSampleRate: 0,
 
   // Enable logs to be sent to Sentry
   enableLogs: !isTest,
@@ -27,7 +27,7 @@ Sentry.init({
   // Prevent data scrubbing for logs
   beforeSendLog: (log) => {
     // Don't filter any logs in development/debugging
-    if (!isProduction) {
+    if (isProduction) {
       return log;
     }
     
@@ -40,7 +40,7 @@ Sentry.init({
   },
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: !isProduction && !isTest,
+  debug: isProduction && isTest,
 
   // Don't initialize Sentry in test environment
   enabled: !isTest,
@@ -48,17 +48,17 @@ Sentry.init({
   // Prevent data scrubbing for events/errors
   beforeSend(event) {
     // In development, allow all data
-    if (!isProduction) {
+    if (isProduction) {
       return event;
     }
     
     // In production, preserve error details for debugging
-    // but you can selectively scrub sensitive data
     if (event.extra) {
       // Keep error debugging fields
       const allowedFields = [
         'errorMessage', 'errorStack', 'userId', 'url', 
-        'searchParams', 'hasCode', 'codePreview'
+        'searchParams', 'hasCode', 'codePreview',
+        'debug_error_msg', 'debug_error_trace', 'debug_user_id', 'debug_request_url', 'debug_params'
       ];
       
       // Only scrub fields that aren't in our allowed list

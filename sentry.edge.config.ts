@@ -20,7 +20,7 @@ Sentry.init({
   ],
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: isProduction ? 0.1 : isTest ? 0 : 1,
+  tracesSampleRate: 0,
 
   // Enable logs to be sent to Sentry
   enableLogs: !isTest,
@@ -28,7 +28,7 @@ Sentry.init({
   // Prevent data scrubbing for logs
   beforeSendLog: (log) => {
     // Don't filter any logs in development/debugging
-    if (!isProduction) {
+    if (isProduction) {
       return log;
     }
     
@@ -41,7 +41,7 @@ Sentry.init({
   },
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: !isProduction && !isTest,
+  debug: isProduction && isTest,
 
   // Don't initialize Sentry in test environment
   enabled: !isTest,
@@ -49,7 +49,7 @@ Sentry.init({
   // Prevent data scrubbing for events/errors
   beforeSend(event) {
     // In development, allow all data
-    if (!isProduction) {
+    if (isProduction) {
       return event;
     }
     
