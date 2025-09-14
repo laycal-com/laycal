@@ -1,21 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { calendarManager } from '@/lib/calendar/manager';
-import * as Sentry from '@sentry/nextjs';
+
+const logToService = async (level: 'info' | 'error' | 'debug', data: any) => {
+  if (!process.env.LOGGING_APP_URL) return;
+  try {
+    await fetch(`${process.env.LOGGING_APP_URL}/${level}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  } catch (e) {
+    // Silent fail for logging service
+  }
+};
 
 export async function GET(request: NextRequest) {
   let userId: string | null = null;
   
   try {
-    Sentry.logger.info('Google Calendar callback started', { url: request.url });
+    await logToService('info', { message: 'Google Calendar callback started', url: request.url });
     
     const authResult = await auth();
     userId = authResult.userId;
     
-    Sentry.logger.info('Google Calendar callback user authenticated', { userId: userId || 'none' });
+    await logToService('info', { message: 'Google Calendar callback user authenticated', userId: userId || 'none' });
 
     if (!userId) {
-      Sentry.logger.warn('Google Calendar callback no user ID found', { redirect: 'sign-in' });
+      await logToService('error', { message: 'Google Calendar callback no user ID found', redirect: 'sign-in' });
       return NextResponse.redirect(new URL('/sign-in', request.url));
     }
 
@@ -30,38 +42,38 @@ export async function GET(request: NextRequest) {
       allParams: Object.fromEntries(searchParams.entries())
     };
     
-    Sentry.logger.info('Google Calendar callback params parsed', paramsData);
+    await logToService('info', { message: 'Google Calendar callback params parsed', ...paramsData });
 
     if (error) {
-      Sentry.logger.error('Google Calendar authentication error', { userId, error });
+      await logToService('error', { message: 'Google Calendar authentication error', userId, error });
       return NextResponse.redirect(
         new URL('/settings?calendar_error=authentication_failed', request.url)
       );
     }
 
     if (!code) {
-      Sentry.logger.error('Google Calendar callback no authorization code', { userId, searchParams: Object.fromEntries(searchParams.entries()) });
+      await logToService('error', { message: 'Google Calendar callback no authorization code', userId, searchParams: Object.fromEntries(searchParams.entries()) });
       return NextResponse.redirect(
         new URL('/settings?calendar_error=no_code', request.url)
       );
     }
 
-    Sentry.logger.info('Getting Google Calendar provider from manager');
+    await logToService('info', { message: 'Getting Google Calendar provider from manager' });
     
     const googleProvider = calendarManager.getProvider('google');
     if (!googleProvider) {
-      Sentry.logger.error('Google Calendar provider not available', { userId });
+      await logToService('error', { message: 'Google Calendar provider not available', userId });
       return NextResponse.redirect(
         new URL('/settings?calendar_error=provider_unavailable', request.url)
       );
     }
 
-    Sentry.logger.info('Starting Google Calendar token exchange', { userId });
+    await logToService('info', { message: 'Starting Google Calendar token exchange', userId });
     
     // Exchange code for tokens and save to database
     await googleProvider.authenticate(userId, { code });
     
-    Sentry.logger.info('Google Calendar authentication completed successfully', { userId });
+    await logToService('info', { message: 'Google Calendar authentication completed successfully', userId });
 
     return NextResponse.redirect(
       new URL('/settings?calendar_success=google_connected', request.url)
@@ -71,16 +83,14 @@ export async function GET(request: NextRequest) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error in Google Calendar callback';
     const errorStack = error instanceof Error ? error.stack : null;
     
-    // Detailed error logging with non-scrubbed field names
-    Sentry.logger.error('Google Calendar callback error details', {
-      debug_error_msg: errorMsg,
-      debug_error_trace: errorStack
-    });
-    
-    Sentry.logger.error('Google Calendar callback critical error', {
-      debug_user_id: userId,
-      debug_request_url: request.url,
-      debug_params: request.nextUrl.searchParams ? Object.fromEntries(request.nextUrl.searchParams.entries()) : null
+    // Detailed error logging
+    await logToService('error', {
+      message: 'Google Calendar callback critical error',
+      errorMessage: errorMsg,
+      errorStack: errorStack,
+      userId,
+      url: request.url,
+      searchParams: request.nextUrl.searchParams ? Object.fromEntries(request.nextUrl.searchParams.entries()) : null
     });
 
     return NextResponse.redirect(
