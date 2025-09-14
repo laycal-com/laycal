@@ -126,19 +126,30 @@ const PhoneProviderSchema = new Schema<IPhoneProvider>({
 const algorithm = 'aes-256-gcm';
 const secretKey = process.env.PHONE_PROVIDER_ENCRYPTION_KEY || 'default-32-char-secret-key-change-me!';
 
+// Ensure key is exactly 32 bytes
+const key = crypto.scryptSync(secretKey, 'salt', 32);
+
 function encrypt(text: string): string {
   const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipher('aes256', secretKey);
+  const cipher = crypto.createCipherGCM(algorithm, key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  return iv.toString('hex') + ':' + encrypted;
+  const authTag = cipher.getAuthTag();
+  return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
 }
 
 function decrypt(encryptedData: string): string {
   const parts = encryptedData.split(':');
+  if (parts.length !== 3) {
+    throw new Error('Invalid encrypted data format');
+  }
+  
   const iv = Buffer.from(parts[0], 'hex');
-  const encrypted = parts[1];
-  const decipher = crypto.createDecipher('aes256', secretKey);
+  const authTag = Buffer.from(parts[1], 'hex');
+  const encrypted = parts[2];
+  
+  const decipher = crypto.createDecipherGCM(algorithm, key, iv);
+  decipher.setAuthTag(authTag);
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
   return decrypted;
