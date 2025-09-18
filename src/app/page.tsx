@@ -1161,6 +1161,19 @@ export default function Home() {
               <p className="text-[#64748b]">
                 Scale your sales calls with AI agents that work 24/7 to connect with more prospects than ever before.
               </p>
+              
+              {/* Product Hunt Badge */}
+              <div className="pt-4">
+                <a href="https://www.producthunt.com/products/laycal?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-laycal" target="_blank" rel="noopener noreferrer">
+                  <img 
+                    src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1017391&theme=light&t=1758238858493" 
+                    alt="Laycal - Your AI Sales Rep, On Call 24/7. | Product Hunt" 
+                    style={{ width: '250px', height: '54px' }} 
+                    width="250" 
+                    height="54" 
+                  />
+                </a>
+              </div>
             </div>
 
             {/* Product Links */}
