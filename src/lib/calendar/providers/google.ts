@@ -3,19 +3,7 @@ import { CalendarProvider, CalendarEvent, CalendarEventResult } from '../types';
 import { logger } from '@/lib/logger';
 import CalendarConnection from '@/models/CalendarConnection';
 import { connectToDatabase } from '@/lib/mongodb';
-
-const logToService = async (level: 'info' | 'error' | 'debug', data: any) => {
-  if (!process.env.LOGGING_APP_URL) return;
-  try {
-    await fetch(`${process.env.LOGGING_APP_URL}/${level}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-  } catch (e) {
-    // Silent fail for logging service
-  }
-};
+import * as Sentry from '@sentry/nextjs';
 
 export class GoogleCalendarProvider implements CalendarProvider {
   name = 'google';
@@ -69,15 +57,19 @@ export class GoogleCalendarProvider implements CalendarProvider {
 
   async authenticate(userId: string, authData: { code: string }): Promise<void> {
     try {
-      await logToService('info', { message: 'Google Calendar authenticate starting', userId, hasCode: !!authData.code });
+      console.log('Google Calendar authenticate starting', { userId, hasCode: !!authData.code });
       
       await connectToDatabase();
-      await logToService('info', { message: 'Google Calendar authenticate database connected', userId });
+      console.log('Google Calendar authenticate database connected', { userId });
 
       // Exchange authorization code for tokens
-      await logToService('info', { message: 'Google Calendar authenticate exchanging code for tokens', userId });
+      console.log('Google Calendar authenticate exchanging code for tokens', { userId });
       const { tokens } = await this.oauth2Client.getToken(authData.code);
-      await logToService('info', { message: 'Google Calendar authenticate tokens received', userId, hasAccessToken: !!tokens.access_token, hasRefreshToken: !!tokens.refresh_token });
+      console.log('Google Calendar authenticate tokens received', { 
+        userId, 
+        hasAccessToken: !!tokens.access_token, 
+        hasRefreshToken: !!tokens.refresh_token 
+      });
       
       logger.info('GOOGLE_AUTH_SUCCESS', 'Google Calendar authentication successful', {
         userId,
@@ -89,7 +81,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
       });
 
       // Save or update calendar connection
-      await logToService('info', { message: 'Google Calendar authenticate saving to database', userId });
+      console.log('Google Calendar authenticate saving to database', { userId });
       await CalendarConnection.findOneAndUpdate(
         { userId, provider: 'google' },
         {
@@ -104,20 +96,26 @@ export class GoogleCalendarProvider implements CalendarProvider {
         },
         { upsert: true, new: true }
       );
-      await logToService('info', { message: 'Google Calendar authenticate successfully saved to database', userId });
+      console.log('Google Calendar authenticate successfully saved to database', { userId });
 
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : null;
       
-      // Detailed error logging
-      await logToService('error', {
-        message: 'Google Calendar authenticate failed',
+      console.error('Google Calendar authenticate failed', {
         errorMessage: errorMsg,
-        errorStack: errorStack,
         userId,
         hasCode: !!authData.code,
         codePreview: authData.code ? `${authData.code.substring(0, 20)}...` : null
+      });
+      
+      Sentry.captureException(error, {
+        tags: {
+          component: 'google-calendar-authenticate'
+        },
+        extra: {
+          userId,
+          hasCode: !!authData.code
+        }
       });
       
       logger.error('GOOGLE_AUTH_ERROR', 'Google Calendar authentication failed', {
