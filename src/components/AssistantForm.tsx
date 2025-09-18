@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { UpgradeModal } from './UpgradeModal';
+import { PromptWizard } from './PromptWizard';
 
 
 interface AssistantFormProps {
@@ -50,12 +51,15 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
     },
     mainPrompt: '',
     language: 'en-US',
-    firstMessage: ''
+    firstMessage: '',
+    summary: '',
+    structuredData: ''
   });
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showWizard, setShowWizard] = useState(!assistant); // Show wizard for new assistants
 
   useEffect(() => {
     // Pre-populate form if editing
@@ -65,7 +69,9 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
         voice: assistant.voice,
         mainPrompt: assistant.mainPrompt,
         language: assistant.language,
-        firstMessage: assistant.firstMessage || ''
+        firstMessage: assistant.firstMessage || '',
+        summary: assistant.summary || '',
+        structuredData: assistant.structuredData || ''
       });
     }
   }, [assistant]);
@@ -89,6 +95,16 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleWizardComplete = (prompt: string, summary: string, structuredData?: string) => {
+    setFormData(prev => ({
+      ...prev,
+      mainPrompt: prompt,
+      summary,
+      structuredData
+    }));
+    setShowWizard(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -176,6 +192,16 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
           </CardContent>
         </Card>
       </div>
+    );
+  }
+
+  // Show wizard for new assistants
+  if (showWizard) {
+    return (
+      <PromptWizard
+        onComplete={handleWizardComplete}
+        onCancel={onCancel}
+      />
     );
   }
 
@@ -303,12 +329,23 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
           </div>
 
           <div>
-            <Label htmlFor="mainPrompt">Main Prompt *</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="mainPrompt">Main Prompt *</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowWizard(true)}
+                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+              >
+                🪄 Use Prompt Wizard
+              </Button>
+            </div>
             <Textarea
               id="mainPrompt"
               value={formData.mainPrompt}
               onChange={(e) => setFormData(prev => ({ ...prev, mainPrompt: e.target.value }))}
-              placeholder="You are a helpful sales assistant. Your goal is to..."
+              placeholder="Click 'Use Prompt Wizard' to generate a professional prompt, or write your own..."
               className={`min-h-[120px] ${errors.mainPrompt ? 'border-red-500' : ''}`}
               maxLength={5000}
             />

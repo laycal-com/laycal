@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
-    const { name, voice, mainPrompt, language, phoneNumbers, firstMessage } = data;
+    const { name, voice, mainPrompt, language, phoneNumbers, firstMessage, summary, structuredData } = data;
 
     if (!name || !voice || !mainPrompt || !language) {
       return NextResponse.json(
@@ -89,7 +89,9 @@ export async function POST(request: NextRequest) {
       voice,
       mainPrompt,
       language,
-      firstMessage: firstMessage || "Hello! How can I help you today?"
+      firstMessage: firstMessage || "Hello! How can I help you today?",
+      summaryPrompt: summary || "You are an expert note-taker. You will be given a transcript of a call. Summarize the call in 2-3 sentences, highlighting key points and outcomes.",
+      ...(structuredData && { structuredDataPrompt: structuredData })
     };
 
     const vapiAssistant = await tenantVapiService.createAssistant(vapiConfig);

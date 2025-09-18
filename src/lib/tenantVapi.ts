@@ -41,6 +41,8 @@ export interface VapiAssistantConfig {
   mainPrompt: string;
   language: string;
   firstMessage?: string;
+  summaryPrompt?: string;
+  structuredDataPrompt?: string;
   model?: {
     provider: string;
     model: string;
@@ -348,6 +350,7 @@ export class TenantVapiService {
     return response.json();
   }
 
+
   async createAssistant(config: VapiAssistantConfig): Promise<VapiAssistantResponse> {
     if (!this.apiKey) {
       throw new Error('Vapi API key is required');
@@ -358,14 +361,17 @@ export class TenantVapiService {
       model: 'gpt-3.5-turbo'
     };
 
+    // Analysis plan will be added to the request body below
+
     const requestBody = {
       name: config.name,
       voice: {
-        provider: config.voice.provider,
-        voiceId: config.voice.voiceId
+        voiceId: config.voice.voiceId,
+        provider: config.voice.provider
       },
       model: {
-        ...(config.model || defaultModel),
+        model: config.model?.model || defaultModel.model,
+        provider: config.model?.provider || defaultModel.provider,
         messages: [
           {
             role: 'system',
@@ -373,15 +379,61 @@ export class TenantVapiService {
           }
         ]
       },
-      firstMessage: config.firstMessage || "Hello! How can I help you today?",
+      firstMessage: config.firstMessage || "",
+      voicemailMessage: "Please call back when you're available.",
+      endCallFunctionEnabled: false,
+      endCallMessage: "Goodbye.",
       transcriber: {
-        provider: 'deepgram',
         model: 'nova-2',
-        language: config.language
+        language: config.language || 'en',
+        provider: 'deepgram',
+        endpointing: 300
       },
-      endCallFunctionEnabled: true,
-      recordingEnabled: true,
-      ...(VAPI_WEBHOOK_URL && { serverUrl: VAPI_WEBHOOK_URL })
+      serverMessages: [
+        "end-of-call-report",
+        "status-update"
+      ],
+      backgroundSound: "off",
+      firstMessageMode: "assistant-speaks-first-with-model-generated-message",
+      interruptionsEnabled: true,
+      ...(VAPI_WEBHOOK_URL && { 
+        server: {
+          url: VAPI_WEBHOOK_URL,
+          timeoutSeconds: 20
+        }
+      }),
+      ...((config.summaryPrompt || config.structuredDataPrompt) && {
+        analysisPlan: {
+          ...(config.summaryPrompt && {
+            summaryPrompt: config.summaryPrompt
+          }),
+          ...(config.structuredDataPrompt && {
+            structuredDataPrompt: config.structuredDataPrompt,
+            structuredDataSchema: {
+              type: 'object',
+              properties: {
+                email: {
+                  type: 'string',
+                  description: 'prospect\'s email address'
+                },
+                name: {
+                  type: 'string', 
+                  description: 'prospect\'s name if mentioned'
+                },
+                phoneNumber: {
+                  type: 'string',
+                  description: 'prospect\'s phone number'
+                },
+                slot_booked: {
+                  type: 'string',
+                  description: 'appointment date/time in ISO format with timezone'
+                }
+              },
+              required: []
+            }
+          })
+        }
+      })
     };
 
     logger.info('VAPI_CREATE_ASSISTANT', 'Creating assistant on Vapi', {
@@ -408,11 +460,17 @@ export class TenantVapiService {
 
     const result = await response.json();
     logger.info('VAPI_CREATE_ASSISTANT_SUCCESS', 'Assistant created successfully on Vapi', {
-      data: { assistantId: result.id, name: config.name }
+      data: { 
+        assistantId: result.id, 
+        name: config.name,
+        hasSummary: !!config.summaryPrompt,
+        hasStructuredData: !!config.structuredDataPrompt
+      }
     });
 
     return result;
   }
+
 
   async updateAssistant(assistantId: string, config: VapiAssistantConfig): Promise<VapiAssistantResponse> {
     if (!this.apiKey) {
@@ -438,10 +496,12 @@ export class TenantVapiService {
       transcriber: {
         provider: 'deepgram',
         model: 'nova-2',
-        language: config.language
+        language: config.language,
+        endpointing: 300
       },
-      endCallFunctionEnabled: true,
+      endCallFunctionEnabled: false,
       recordingEnabled: true,
+      interruptionsEnabled: true,
       ...(VAPI_WEBHOOK_URL && { serverUrl: VAPI_WEBHOOK_URL })
     };
 
