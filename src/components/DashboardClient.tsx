@@ -192,17 +192,17 @@ export function DashboardClient() {
           <h3 className="text-xl font-semibold mb-4 text-[#1f2937]">Getting Started</h3>
           <div className="grid md:grid-cols-3 gap-4">
             <div className="p-4 border border-[#e2e8f0] rounded-lg hover:border-[#3b82f6] hover:shadow-md transition-all">
-              <h4 className="font-semibold text-[#1f2937] mb-2">1. Create an Assistant</h4>
-              <p className="text-sm text-[#64748b] mb-3">Configure your AI voice assistant with custom prompts and voice settings.</p>
-              <Link href="/assistants" className="text-[#3b82f6] hover:text-[#2563eb] text-sm font-medium">
-                Create Assistant →
-              </Link>
-            </div>
-            <div className="p-4 border border-[#e2e8f0] rounded-lg hover:border-[#3b82f6] hover:shadow-md transition-all">
-              <h4 className="font-semibold text-[#1f2937] mb-2">2. Configure Phone Numbers</h4>
+              <h4 className="font-semibold text-[#1f2937] mb-2">1. Configure Phone Numbers</h4>
               <p className="text-sm text-[#64748b] mb-3">Set up your phone providers (Twilio, Plivo, etc.) for outbound calling.</p>
               <Link href="/settings" className="text-[#3b82f6] hover:text-[#2563eb] text-sm font-medium">
                 Setup Phones →
+              </Link>
+            </div>
+            <div className="p-4 border border-[#e2e8f0] rounded-lg hover:border-[#3b82f6] hover:shadow-md transition-all">
+              <h4 className="font-semibold text-[#1f2937] mb-2">2. Create an Assistant</h4>
+              <p className="text-sm text-[#64748b] mb-3">Configure your AI voice assistant with custom prompts and voice settings.</p>
+              <Link href="/assistants" className="text-[#3b82f6] hover:text-[#2563eb] text-sm font-medium">
+                Create Assistant →
               </Link>
             </div>
             <div className="p-4 border border-[#e2e8f0] rounded-lg hover:border-[#3b82f6] hover:shadow-md transition-all">
