@@ -90,14 +90,14 @@ export default function SettingsPage() {
 
       const result = await response.json();
       
-      // Show success message with Vapi status
+      // Show success message with phone number status
       if (result.vapiPhoneNumberId) {
         toast.success('Provider Created Successfully', {
-          description: `Vapi phone number: ${result.vapiPhoneNumberId}`
+          description: `Phone number configured: ${result.vapiPhoneNumberId}`
         });
       } else if (result.vapiError) {
         toast.warning('Provider Created with Warning', {
-          description: `Vapi phone number failed: ${result.vapiError}. You can retry using the "Create Vapi #" button.`
+          description: `Phone number setup failed: ${result.vapiError}. You can retry using the "Setup Phone #" button.`
         });
       } else {
         toast.success('Provider Updated Successfully');
@@ -204,7 +204,7 @@ export default function SettingsPage() {
   };
 
   const handleCreateVapiNumber = async (id: string) => {
-    if (!confirm('This will create a new phone number in Vapi using your provider credentials. Continue?')) {
+    if (!confirm('This will configure a new phone number using your provider credentials. Continue?')) {
       return;
     }
     
@@ -216,18 +216,18 @@ export default function SettingsPage() {
       const result = await response.json();
       
       if (result.success) {
-        toast.success('Vapi Phone Number Created', {
+        toast.success('Phone Number Configured Successfully', {
           description: `ID: ${result.vapiPhoneNumberId}`
         });
         fetchProviders(); // Refresh to show updated info
       } else {
-        toast.error('Failed to Create Vapi Phone Number', {
+        toast.error('Failed to Configure Phone Number', {
           description: result.details || result.error
         });
       }
     } catch (error) {
-      console.error('Error creating Vapi phone number:', error);
-      toast.error('Failed to Create Vapi Phone Number', {
+      console.error('Error configuring phone number:', error);
+      toast.error('Failed to Configure Phone Number', {
         description: 'An unknown error occurred'
       });
     }
@@ -425,13 +425,13 @@ export default function SettingsPage() {
                           {provider.providerName.charAt(0).toUpperCase() + provider.providerName.slice(1)} • {provider.phoneNumber}
                         </p>
                         
-                        {/* Vapi Status */}
+                        {/* Phone Status */}
                         <div className="flex items-center gap-2 mt-1">
                           <span className={`w-2 h-2 rounded-full ${
                             provider.vapiPhoneNumberId ? 'bg-green-500' : 'bg-red-500'
                           }`} />
                           <span className="text-xs text-gray-500">
-                            Vapi: {provider.vapiPhoneNumberId 
+                            Status: {provider.vapiPhoneNumberId 
                               ? `Connected (${provider.vapiPhoneNumberId.slice(-8)})` 
                               : 'Not configured'}
                           </span>
@@ -549,7 +549,7 @@ export default function SettingsPage() {
                       required
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Phone number in E.164 format (e.g., +1234567890). This number will be automatically configured in Vapi using your provider credentials.
+                      Phone number in E.164 format (e.g., +1234567890). This number will be automatically configured using your provider credentials.
                     </p>
                   </div>
 
@@ -568,15 +568,15 @@ export default function SettingsPage() {
                     </label>
                   </div>
 
-                  {/* Vapi Integration Section */}
+                  {/* Phone Integration Section */}
                   {editingProvider && (
                     <div className="border-t border-gray-200 pt-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-3">Vapi Integration</h4>
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">Phone Integration</h4>
                       {editingProvider.vapiPhoneNumberId ? (
                         <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
                           <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                           <span className="text-sm text-green-700">
-                            Connected to Vapi (ID: {editingProvider.vapiPhoneNumberId.slice(-8)})
+                            Phone number configured (ID: {editingProvider.vapiPhoneNumberId.slice(-8)})
                           </span>
                         </div>
                       ) : (
@@ -584,7 +584,7 @@ export default function SettingsPage() {
                           <div className="flex items-center gap-2 p-3 bg-yellow-50 rounded-lg">
                             <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
                             <span className="text-sm text-yellow-700">
-                              Not connected to Vapi
+                              Phone number not configured
                             </span>
                           </div>
                           <button
@@ -592,7 +592,7 @@ export default function SettingsPage() {
                             onClick={() => handleCreateVapiNumber(editingProvider.id)}
                             className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
                           >
-                            Create Vapi Phone Number
+                            Configure Phone Number
                           </button>
                         </div>
                       )}

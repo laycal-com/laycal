@@ -247,7 +247,7 @@ export default function AdminDashboard() {
                   <span className="text-green-600 font-medium">Operational</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Vapi Integration</span>
+                  <span className="text-gray-600">AI Voice Integration</span>
                   <span className="text-green-600 font-medium">Active</span>
                 </div>
                 <div className="flex justify-between">

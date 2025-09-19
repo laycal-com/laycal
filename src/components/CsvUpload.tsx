@@ -15,7 +15,7 @@ interface UploadResult {
     validLeads: number;
     savedLeads: number;
     csvErrors: string[];
-    vapiErrors: Array<{ leadName: string; error: string; }>;
+    callErrors: Array<{ leadName: string; error: string; }>;
   };
   error?: string;
   details?: string;
@@ -24,7 +24,7 @@ interface UploadResult {
 interface Assistant {
   _id: string;
   name: string;
-  vapiAssistantId: string;
+  assistantId: string;
   voice: {
     gender: 'male' | 'female';
     provider: string;
@@ -359,9 +359,9 @@ export default function CsvUpload() {
                   <p>• Total rows processed: {uploadResult.data.totalProcessed}</p>
                   <p>• Valid leads: {uploadResult.data.validLeads}</p>
                   <p>• Leads saved: {uploadResult.data.savedLeads}</p>
-                  {uploadResult.data.vapiErrors.length > 0 && (
+                  {uploadResult.data.callErrors.length > 0 && (
                     <p className="text-yellow-600">
-                      • Vapi call errors: {uploadResult.data.vapiErrors.length}
+                      • Call errors: {uploadResult.data.callErrors.length}
                     </p>
                   )}
                 </div>

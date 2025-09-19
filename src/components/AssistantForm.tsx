@@ -149,7 +149,7 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
         } else if (error.message.includes('Unauthorized')) {
           errorMessage = 'Please sign in to create assistants';
         } else if (error.message.includes('Vapi')) {
-          errorMessage = 'Failed to create assistant on Vapi platform: ' + error.message;
+          errorMessage = 'Failed to create AI assistant: ' + error.message;
         } else {
           errorMessage = error.message;
         }

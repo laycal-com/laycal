@@ -986,7 +986,7 @@ For slot_booked, convert any mentioned dates/times to ISO format in the ${data.u
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
-                <strong>Ready to create your assistant!</strong> The generated prompt will be used to configure your AI assistant in VAPI.
+                <strong>Ready to create your assistant!</strong> The generated prompt will be used to configure your AI assistant.
               </p>
             </div>
           </div>

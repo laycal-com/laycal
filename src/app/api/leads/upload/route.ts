@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
         validLeads: csvResult.validRows,
         savedLeads: savedLeads.length,
         csvErrors: csvResult.errors,
-        vapiErrors: vapiErrors,
+        callErrors: vapiErrors,
         leads: savedLeads.map(lead => ({
           id: lead._id,
           name: lead.name,
