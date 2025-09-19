@@ -5,6 +5,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import ConditionalNavbar from "@/components/ConditionalNavbar";
+import { Analytics } from "@vercel/analytics/next";
 
 interface ClientLayoutWrapperProps {
   children: React.ReactNode;
@@ -24,6 +25,7 @@ export default function ClientLayoutWrapper({
     return (
       <body className={`${geistSans} ${geistMono} antialiased`}>
         {children}
+        <Analytics />
       </body>
     );
   }
@@ -42,6 +44,7 @@ export default function ClientLayoutWrapper({
           <main>{children}</main>
           <Toaster />
         </ThemeProvider>
+        <Analytics />
       </body>
     </ClerkProvider>
   );
