@@ -69,6 +69,9 @@ export async function POST(
       });
     }
 
+    // Check for existing inactive subscription to copy metadata
+    const inactiveSubscription = await Subscription.findOne({ userId, isActive: false });
+    
     // Create new PAYG subscription for user
     const pricing = await PricingService.getPricing();
     
@@ -81,7 +84,9 @@ export async function POST(
       assistantLimit: -1, // Unlimited with credits
       creditBalance: amount,
       isActive: true,
-      isTrial: false
+      isTrial: false,
+      // Copy metadata from inactive subscription if it exists
+      ...(inactiveSubscription?.metadata && { metadata: inactiveSubscription.metadata })
     });
 
     await subscription.save();
