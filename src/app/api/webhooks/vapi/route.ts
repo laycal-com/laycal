@@ -338,14 +338,14 @@ async function processAppointmentFromCall(lead: any, call: any, message: any, pa
         data: {
           structuredData: structuredData,
           hasEmail: !!structuredData.email,
-          hasTime: !!structuredData.time
+          hasSlotBooked: !!structuredData.slot_booked
         }
       });
 
-      // Check if structured data contains appointment time
-      if (structuredData.time && structuredData.email) {
+      // Check if structured data contains appointment time using slot_booked
+      if (structuredData.slot_booked && structuredData.email) {
         try {
-          const appointmentTime = new Date(structuredData.time);
+          const appointmentTime = new Date(structuredData.slot_booked);
           if (!isNaN(appointmentTime.getTime())) {
             // Create appointment data from structured data
             appointmentData = {
@@ -353,8 +353,8 @@ async function processAppointmentFromCall(lead: any, call: any, message: any, pa
               startTime: appointmentTime.toISOString(),
               endTime: new Date(appointmentTime.getTime() + 30 * 60 * 1000).toISOString(), // 30 minutes
               customer: {
-                name: lead.name,
-                phone: lead.phoneNumber,
+                name: structuredData.name || lead.name,
+                phone: structuredData.phoneNumber || lead.phoneNumber,
                 email: structuredData.email
               },
               notes: message.summary || 'Appointment scheduled during call'
@@ -365,15 +365,16 @@ async function processAppointmentFromCall(lead: any, call: any, message: any, pa
               data: {
                 title: appointmentData.title,
                 startTime: appointmentData.startTime,
-                email: structuredData.email
+                email: structuredData.email,
+                slot_booked: structuredData.slot_booked
               }
             });
           }
         } catch (error) {
-          logger.error('APPOINTMENT_STRUCTURED_DATA_ERROR', 'Failed to parse structured data time', {
+          logger.error('APPOINTMENT_STRUCTURED_DATA_ERROR', 'Failed to parse structured data slot_booked', {
             leadId: lead._id.toString(),
             error,
-            data: { time: structuredData.time }
+            data: { slot_booked: structuredData.slot_booked }
           });
         }
       }
