@@ -35,7 +35,7 @@ export default function PublicNavbar() {
             <Link href="/about" className="text-white hover:text-gray-200 transition-colors">
               About
             </Link>
-            <Link href="/blog" className="text-white hover:text-gray-200 transition-colors">
+            <Link href="/blogs" className="text-white hover:text-gray-200 transition-colors">
               Blog
             </Link>
             <Link href="/contact" className="text-white hover:text-gray-200 transition-colors">

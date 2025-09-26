@@ -14,7 +14,7 @@ const staticRoutes = [
   { url: '/features', priority: 0.9, changeFrequency: 'weekly' as const },
   { url: '/about', priority: 0.8, changeFrequency: 'monthly' as const },
   { url: '/contact', priority: 0.8, changeFrequency: 'monthly' as const },
-  { url: '/blog', priority: 0.9, changeFrequency: 'daily' as const },
+  { url: '/blogs', priority: 0.9, changeFrequency: 'daily' as const },
   
   // Alternative/comparison pages
   { url: '/justcall-alternative', priority: 0.8, changeFrequency: 'weekly' as const },

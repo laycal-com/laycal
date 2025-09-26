@@ -15,12 +15,12 @@ export const metadata: Metadata = {
   keywords: "ai voice agent blog, automated calling system blog, ai powered phone calls, sales tips, ai appointment setter, sales automation, cold calling tips, business phone systems, ai for sales",
   metadataBase: new URL("https://laycal.com"),
   alternates: {
-    canonical: "/blog",
+    canonical: "/blogs",
   },
   openGraph: {
     title: "Laycal Blog - AI Voice Agent & Sales Automation Insights",
     description: "Get the latest insights on AI voice agents, automated calling systems, sales strategies, and industry news. Learn how to increase sales efficiency with AI powered phone calls and appointment setters.",
-    url: "https://laycal.com/blog",
+    url: "https://laycal.com/blogs",
     type: "website",
   },
   twitter: {
