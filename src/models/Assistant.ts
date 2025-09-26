@@ -63,7 +63,7 @@ const AssistantSchema = new Schema<IAssistant>({
   mainPrompt: {
     type: String,
     required: true,
-    maxlength: 5000
+    maxlength: 10000
   },
   language: {
     type: String,

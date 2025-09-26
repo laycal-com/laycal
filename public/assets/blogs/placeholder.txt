@@ -1,0 +1,10 @@
+# Blog Images
+
+This directory contains images for blog posts. Each blog post should have its own subdirectory named after the blog post slug.
+
+Example structure:
+/assets/blogs/blog-post-slug/hero.jpg
+/assets/blogs/blog-post-slug/image1.png
+/assets/blogs/blog-post-slug/image2.jpg
+
+For now, blog posts will use placeholder gradient backgrounds until actual images are added.

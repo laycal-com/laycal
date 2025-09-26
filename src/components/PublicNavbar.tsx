@@ -26,14 +26,17 @@ export default function PublicNavbar() {
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="/#features" className="text-white hover:text-gray-200 transition-colors">
+            <Link href="/features" className="text-white hover:text-gray-200 transition-colors">
               Features
             </Link>
-            <Link href="/#pricing" className="text-white hover:text-gray-200 transition-colors">
+            <Link href="/pricing" className="text-white hover:text-gray-200 transition-colors">
               Pricing
             </Link>
-            <Link href="/#how-it-works" className="text-white hover:text-gray-200 transition-colors">
-              How It Works
+            <Link href="/about" className="text-white hover:text-gray-200 transition-colors">
+              About
+            </Link>
+            <Link href="/blog" className="text-white hover:text-gray-200 transition-colors">
+              Blog
             </Link>
             <Link href="/contact" className="text-white hover:text-gray-200 transition-colors">
               Contact

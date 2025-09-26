@@ -173,6 +173,7 @@ export default function AdminSupport() {
       case 'bug_report': return 'bg-red-100 text-red-800';
       case 'feature_request': return 'bg-green-100 text-green-800';
       case 'account': return 'bg-indigo-100 text-indigo-800';
+      case 'phone_number_request': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };

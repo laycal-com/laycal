@@ -7,7 +7,7 @@ export interface ISupportTicket extends Document {
   userName?: string;
   subject: string;
   description: string;
-  category: 'technical' | 'billing' | 'feature_request' | 'bug_report' | 'account' | 'general';
+  category: 'technical' | 'billing' | 'feature_request' | 'bug_report' | 'account' | 'phone_number_request' | 'general';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'open' | 'in_progress' | 'waiting_customer' | 'waiting_internal' | 'resolved' | 'closed';
   assignedTo?: string; // Admin ID
@@ -76,7 +76,7 @@ const supportTicketSchema = new Schema<ISupportTicket>({
   },
   category: {
     type: String,
-    enum: ['technical', 'billing', 'feature_request', 'bug_report', 'account', 'general'],
+    enum: ['technical', 'billing', 'feature_request', 'bug_report', 'account', 'phone_number_request', 'general'],
     default: 'general'
   },
   priority: {

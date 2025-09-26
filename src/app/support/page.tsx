@@ -467,7 +467,7 @@ export default function SupportPage() {
                 Need immediate assistance? You can also reach us directly:
               </p>
               <p className="text-sm">
-                <strong>Email:</strong> support@laycal.com<br />
+                <strong>Email:</strong> contact@laycal.com<br />
                 <strong>Response Time:</strong> Usually within 24 hours
               </p>
             </CardContent>

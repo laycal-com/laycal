@@ -5,7 +5,8 @@ import { motion, useInView, LazyMotion, domAnimation } from 'framer-motion';
 import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Facebook, Instagram, Youtube, Twitter } from 'lucide-react';
+import { Instagram, Twitter } from 'lucide-react';
+import Footer from '@/components/Footer';
 
 interface PricingData {
   assistant_base_cost: number;
@@ -35,6 +36,7 @@ export default function Home() {
   const metricsRef = useRef(null);
   const featuresRef = useRef(null);
   const resultsRef = useRef(null);
+  const comparisonRef = useRef(null);
   const pricingRef = useRef(null);
   const trustRef = useRef(null);
   const faqRef = useRef(null);
@@ -48,6 +50,7 @@ export default function Home() {
   const metricsInView = useInView(metricsRef, { once: true, threshold: 0.3 });
   const featuresInView = useInView(featuresRef, { once: true, threshold: 0.3 });
   const resultsInView = useInView(resultsRef, { once: true, threshold: 0.3 });
+  const comparisonInView = useInView(comparisonRef, { once: true, threshold: 0.3 });
   const pricingInView = useInView(pricingRef, { once: true, threshold: 0.3 });
   const trustInView = useInView(trustRef, { once: true, threshold: 0.3 });
   const faqInView = useInView(faqRef, { once: true, threshold: 0.3 });
@@ -127,6 +130,74 @@ export default function Home() {
   return (
     <LazyMotion features={domAnimation}>
     <div className="min-h-screen bg-white">
+      {/* SEO Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Laycal",
+            "description": "AI-powered sales calling platform - the best alternative to JustCall and Nooks. Enterprise-grade features at startup prices.",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web-based",
+            "offers": {
+              "@type": "Offer",
+              "price": "0.07",
+              "priceCurrency": "USD",
+              "description": "Pay-per-minute pricing starting at $0.07/minute"
+            },
+            "author": {
+              "@type": "Organization",
+              "name": "Laycal",
+              "url": "https://laycal.com"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.9",
+              "bestRating": "5",
+              "ratingCount": "127"
+            },
+            "featureList": [
+              "AI Voice Agents",
+              "500+ Simultaneous Calls",
+              "Pay-as-you-go Pricing",
+              "Google Calendar Integration",
+              "Lead Management",
+              "Real-time Analytics",
+              "Multiple Voice Providers"
+            ]
+          })
+        }}
+      />
+      
+      {/* Additional SEO for competitor alternatives */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": "Best JustCall and Nooks Alternative - Laycal AI Calling Platform",
+            "description": "Compare Laycal vs JustCall vs Nooks. Why thousands choose Laycal as the better alternative for AI sales calling.",
+            "author": {
+              "@type": "Organization",
+              "name": "Laycal"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Laycal",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://laycal.com/assets/logo.png"
+              }
+            },
+            "datePublished": "2025-01-01",
+            "dateModified": new Date().toISOString().split('T')[0],
+            "mainEntityOfPage": "https://laycal.com"
+          })
+        }}
+      />
       {/* Navigation Header */}
       <nav className={`${isScrolled ? 'fixed top-0' : 'relative'} w-full bg-[#1e40af] z-50 transition-all duration-300 ${isScrolled ? 'shadow-lg' : ''}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -156,6 +227,12 @@ export default function Home() {
                 className="text-white hover:text-gray-200 transition-colors"
               >
                 Pricing
+              </button>
+              <button 
+                onClick={() => scrollToSection(comparisonRef)}
+                className="text-white hover:text-gray-200 transition-colors"
+              >
+                Why Laycal?
               </button>
               <button 
                 onClick={() => scrollToSection(howItWorksRef)}
@@ -222,6 +299,15 @@ export default function Home() {
                 <span className="text-[#3b82f6]">500+ Simultaneous</span>{' '}
                 Conversations
               </motion.h1>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={heroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="text-lg font-medium text-[#3b82f6] mb-2"
+              >
+                The #1 JustCall & Nooks Alternative
+              </motion.div>
               
               <motion.p
                 initial={{ opacity: 0, y: 30 }}
@@ -230,7 +316,7 @@ export default function Home() {
                 className="text-xl text-[#64748b] leading-relaxed max-w-2xl"
               >
                 Transform your lead list into a 24/7 AI-powered calling machine. 
-                Make hundreds of calls while you sleep.
+                Enterprise-grade features at startup prices - no more overpriced alternatives.
               </motion.p>
 
               {/* Live Stats Ticker */}
@@ -801,6 +887,310 @@ export default function Home() {
         </div>
       </motion.section>
 
+      {/* Comparison Section */}
+      <motion.section 
+        ref={comparisonRef}
+        className="py-20 bg-gradient-to-br from-[#1e40af] to-[#3b82f6] relative overflow-hidden"
+      >
+        {/* Animated background elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl animate-pulse"></div>
+          <div className="absolute bottom-20 right-10 w-48 h-48 bg-white/5 rounded-full blur-2xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse delay-2000"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={comparisonInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-5xl font-bold text-white mb-6">
+              ⚡ Laycal vs <span className="text-yellow-300">JustCall</span> vs <span className="text-green-300">Nooks</span>
+            </h2>
+            <p className="text-xl text-blue-100 max-w-3xl mx-auto">
+              See why thousands of businesses choose Laycal over expensive alternatives
+            </p>
+          </motion.div>
+
+          {/* Comparison Table */}
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-lg font-bold text-gray-900">What You Get</th>
+                    <th className="px-6 py-4 text-center text-lg font-bold text-[#1e40af]">
+                      <div className="flex items-center justify-center space-x-2">
+                        <span>🚀 Laycal</span>
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-center text-lg font-bold text-gray-700">
+                      <div className="flex items-center justify-center">
+                        <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center p-2 shadow-sm">
+                          <Image
+                            src="/assets/justcall.svg"
+                            alt="JustCall"
+                            width={40}
+                            height={40}
+                            className="object-contain max-w-full max-h-full"
+                          />
+                        </div>
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-center text-lg font-bold text-gray-700">
+                      <div className="flex items-center justify-center">
+                        <div className="w-16 h-16 bg-gray-900 rounded-lg flex items-center justify-center p-2 shadow-sm">
+                          <Image
+                            src="/assets/nooks.avif"
+                            alt="Nooks"
+                            width={40}
+                            height={40}
+                            className="object-contain max-w-full max-h-full rounded"
+                          />
+                        </div>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {[
+                    {
+                      feature: "Massive Call Power",
+                      laycal: "🚀 Run hundreds of AI-driven calls at once. 24/7, non-stop.",
+                      justcall: "Limited to user seats & subscriptions.",
+                      nooks: "Slower live connections, not built for raw volume."
+                    },
+                    {
+                      feature: "Pricing That Makes Sense",
+                      laycal: "💸 Pay-as-you-go. No contracts. No tricks.",
+                      justcall: "Confusing, expensive seat-based plans. Hidden fees & sudden price hikes.",
+                      nooks: "Opaque enterprise pricing. \"Ridiculously expensive\" (users quote $75K+ yearly)."
+                    },
+                    {
+                      feature: "Prompt Builder Control",
+                      laycal: "🎛️ Full control of your AI agent with our Prompt Builder. You decide tone, script, flow.",
+                      justcall: "Limited call scripts, rigid workflows.",
+                      nooks: "Requires setup and training, less direct control."
+                    },
+                    {
+                      feature: "Ease of Use",
+                      laycal: "✅ Upload leads → Click Start → Calls go live. Dead simple.",
+                      justcall: "Steep setup, multiple modules, not beginner-friendly.",
+                      nooks: "More complex workflow tools; takes time to learn."
+                    },
+                    {
+                      feature: "Google Calendar Integration",
+                      laycal: "📅 Built-in — sync calls, follow-ups, and meetings automatically.",
+                      justcall: "Partial CRM/Calendar integrations.",
+                      nooks: "Integrations still maturing, not as smooth."
+                    },
+                    {
+                      feature: "Reliability",
+                      laycal: "🔒 Multiple voice providers ensure no downtime.",
+                      justcall: "Complaints of dropped calls, bugs, blocked numbers.",
+                      nooks: "Reports of lag, bugs, and immature features."
+                    },
+                    {
+                      feature: "Customer Support",
+                      laycal: "🤝 Fast, human support — we want you to win.",
+                      justcall: "Many reports of slow or dismissive support.",
+                      nooks: "Still early; smaller support team, slower response."
+                    },
+                    {
+                      feature: "Value for Money",
+                      laycal: "⭐ Premium outbound power without draining your wallet.",
+                      justcall: "Users complain plans feel overpriced and bloated.",
+                      nooks: "Enterprise-only pricing — great if you're Salesforce, not if you're scrappy."
+                    }
+                  ].map((row, index) => (
+                    <motion.tr 
+                      key={index}
+                      initial={{ opacity: 0, x: -50 }}
+                      animate={comparisonInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
+                      transition={{ duration: 0.6, delay: index * 0.1 }}
+                      className="hover:bg-blue-50/50 transition-colors"
+                    >
+                      <td className="px-6 py-6 font-semibold text-gray-900 border-r border-gray-100">
+                        {row.feature}
+                      </td>
+                      <td className="px-6 py-6 text-center bg-gradient-to-r from-blue-50/50 to-blue-100/50 border-r border-blue-200">
+                        <div className="text-sm font-medium text-[#1e40af]">
+                          {row.laycal}
+                        </div>
+                      </td>
+                      <td className="px-6 py-6 text-center border-r border-gray-100">
+                        <div className="text-sm text-gray-600">
+                          {row.justcall}
+                        </div>
+                      </td>
+                      <td className="px-6 py-6 text-center">
+                        <div className="text-sm text-gray-600">
+                          {row.nooks}
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Bottom Line */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={comparisonInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="mt-16 text-center"
+          >
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+              <h3 className="text-3xl font-bold text-white mb-6">🔥 Bottom Line:</h3>
+              <div className="grid md:grid-cols-3 gap-6 mb-8">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="bg-white/20 rounded-xl p-6 backdrop-blur-sm"
+                >
+                  <div className="text-2xl font-bold text-white mb-2">🚀 Laycal</div>
+                  <div className="text-blue-100">Built to win at scale: more calls, more control, more results.</div>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="bg-white/10 rounded-xl p-6 backdrop-blur-sm"
+                >
+                  <div className="text-2xl font-bold text-white mb-2 flex items-center justify-center">
+                    <div className="w-12 h-12 bg-white rounded flex items-center justify-center p-2">
+                      <Image
+                        src="/assets/justcall.svg"
+                        alt="JustCall"
+                        width={28}
+                        height={28}
+                        className="object-contain max-w-full max-h-full"
+                      />
+                    </div>
+                  </div>
+                  <div className="text-blue-100">A phone system with hidden costs.</div>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="bg-white/10 rounded-xl p-6 backdrop-blur-sm"
+                >
+                  <div className="text-2xl font-bold text-white mb-2 flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gray-900 rounded flex items-center justify-center p-2">
+                      <Image
+                        src="/assets/nooks.avif"
+                        alt="Nooks"
+                        width={28}
+                        height={28}
+                        className="object-contain max-w-full max-h-full rounded-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="text-blue-100">A pricey assistant with bugs.</div>
+                </motion.div>
+              </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={comparisonInView ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ duration: 0.8, delay: 1 }}
+                className="text-xl text-white"
+              >
+                👉 With Laycal, you get <span className="text-yellow-300 font-bold">enterprise-grade power at startup prices</span> — while competitors drain your budget.
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={comparisonInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+            className="text-center mt-12"
+          >
+            <SignedOut>
+              <SignInButton>
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-yellow-400 text-[#1e40af] px-12 py-4 rounded-2xl text-xl font-bold hover:bg-yellow-300 transition-all duration-300 shadow-xl"
+                >
+                  Choose the Winner - Start Free 🏆
+                </motion.button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <Link href="/dashboard">
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-yellow-400 text-[#1e40af] px-12 py-4 rounded-2xl text-xl font-bold hover:bg-yellow-300 transition-all duration-300 shadow-xl"
+                >
+                  Go to Dashboard 🚀
+                </motion.button>
+              </Link>
+            </SignedIn>
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* SEO Alternative Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="prose prose-lg max-w-none">
+            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+              Why Choose Laycal Over JustCall and Nooks?
+            </h2>
+            
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
+              <div className="bg-gray-50 p-6 rounded-xl">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">🚀 Best JustCall Alternative</h3>
+                <p className="text-gray-700 mb-4">
+                  Tired of JustCall's expensive seat-based pricing and hidden fees? Laycal offers transparent pay-as-you-go pricing 
+                  with no contracts or surprise charges. Get the same calling power without the bloated costs.
+                </p>
+                <ul className="text-gray-700 space-y-2">
+                  <li>✅ No per-seat pricing - pay only for what you use</li>
+                  <li>✅ 500+ simultaneous calls vs JustCall's limitations</li>
+                  <li>✅ Built-in AI prompt builder (not available in JustCall)</li>
+                  <li>✅ Multiple voice providers for better reliability</li>
+                </ul>
+              </div>
+              
+              <div className="bg-gray-50 p-6 rounded-xl">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">💎 Best Nooks Alternative</h3>
+                <p className="text-gray-700 mb-4">
+                  Nooks charges $75K+ yearly for enterprise features. Laycal gives you the same AI calling capabilities 
+                  at a fraction of the cost, with better reliability and easier setup.
+                </p>
+                <ul className="text-gray-700 space-y-2">
+                  <li>✅ 95% cost savings compared to Nooks enterprise pricing</li>
+                  <li>✅ Simple setup - no complex training required</li>
+                  <li>✅ Better uptime and fewer bugs than Nooks</li>
+                  <li>✅ Perfect for startups and scale-ups, not just enterprises</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="text-center bg-blue-50 p-8 rounded-2xl">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Looking for a JustCall Alternative or Nooks Alternative?
+              </h3>
+              <p className="text-lg text-gray-700 mb-6">
+                Join thousands of businesses who switched from expensive alternatives to Laycal. 
+                Get enterprise-grade AI calling without enterprise prices.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-600">
+                <span className="bg-white px-3 py-1 rounded-full">✓ JustCall Alternative</span>
+                <span className="bg-white px-3 py-1 rounded-full">✓ Nooks Alternative</span>
+                <span className="bg-white px-3 py-1 rounded-full">✓ Sales Dialer Alternative</span>
+                <span className="bg-white px-3 py-1 rounded-full">✓ AI Calling Software</span>
+                <span className="bg-white px-3 py-1 rounded-full">✓ Outbound Calling Platform</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <motion.section 
         ref={pricingRef}
@@ -1151,114 +1541,7 @@ export default function Home() {
         </div>
       </motion.section>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-[#e2e8f0] py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            {/* Company Info */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-[#1f2937]">Laycal</h3>
-              <p className="text-[#64748b]">
-                Scale your sales calls with AI agents that work 24/7 to connect with more prospects than ever before.
-              </p>
-              
-              {/* Product Hunt Badge */}
-              <div className="pt-4">
-                <a href="https://www.producthunt.com/products/laycal?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-laycal" target="_blank" rel="noopener noreferrer">
-                  <img 
-                    src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1017391&theme=light&t=1758238858493" 
-                    alt="Laycal - Your AI Sales Rep, On Call 24/7. | Product Hunt" 
-                    style={{ width: '250px', height: '54px' }} 
-                    width="250" 
-                    height="54" 
-                  />
-                </a>
-              </div>
-            </div>
-
-            {/* Product Links */}
-            <div className="space-y-4">
-              <h4 className="font-semibold text-[#1f2937]">Product</h4>
-              <div className="flex flex-col space-y-2">
-                <button 
-                  onClick={() => scrollToSection(featuresRef)}
-                  className="text-[#64748b] hover:text-[#3b82f6] transition-colors text-left"
-                >
-                  Features
-                </button>
-                <button 
-                  onClick={() => scrollToSection(pricingRef)}
-                  className="text-[#64748b] hover:text-[#3b82f6] transition-colors text-left"
-                >
-                  Pricing
-                </button>
-                <button 
-                  onClick={() => scrollToSection(howItWorksRef)}
-                  className="text-[#64748b] hover:text-[#3b82f6] transition-colors text-left"
-                >
-                  How It Works
-                </button>
-              </div>
-            </div>
-
-            {/* Support Links */}
-            <div className="space-y-4">
-              <h4 className="font-semibold text-[#1f2937]">Support</h4>
-              <div className="flex flex-col space-y-2">
-                <Link href="/contact" className="text-[#64748b] hover:text-[#3b82f6] transition-colors">
-                  Contact Us
-                </Link>
-                <Link href="/status" className="text-[#64748b] hover:text-[#3b82f6] transition-colors">
-                  System Status
-                </Link>
-                <Link href="/privacy" className="text-[#64748b] hover:text-[#3b82f6] transition-colors">
-                  Privacy Policy
-                </Link>
-              </div>
-            </div>
-
-            {/* Connect */}
-            <div className="space-y-4">
-              <h4 className="font-semibold text-[#1f2937]">Connect</h4>
-              <div className="flex space-x-4">
-                <a
-                  href="#"
-                  className="text-[#64748b] hover:text-[#3b82f6] transition-colors p-2 border border-[#e2e8f0] rounded hover:border-[#3b82f6]"
-                >
-                  <Facebook className="h-5 w-5" />
-                </a>
-                <a
-                  href="#"
-                  className="text-[#64748b] hover:text-[#3b82f6] transition-colors p-2 border border-[#e2e8f0] rounded hover:border-[#3b82f6]"
-                >
-                  <Instagram className="h-5 w-5" />
-                </a>
-                <a
-                  href="#"
-                  className="text-[#64748b] hover:text-[#3b82f6] transition-colors p-2 border border-[#e2e8f0] rounded hover:border-[#3b82f6]"
-                >
-                  <Youtube className="h-5 w-5" />
-                </a>
-                <a
-                  href="#"
-                  className="text-[#64748b] hover:text-[#3b82f6] transition-colors p-2 border border-[#e2e8f0] rounded hover:border-[#3b82f6]"
-                >
-                  <Twitter className="h-5 w-5" />
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Bar */}
-          <div className="border-t border-[#e2e8f0] pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-[#64748b]">© 2024 Laycal. All rights reserved.</p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <Link href="/terms" className="text-[#64748b] hover:text-[#3b82f6] transition-colors text-sm">Terms</Link>
-              <Link href="/privacy" className="text-[#64748b] hover:text-[#3b82f6] transition-colors text-sm">Privacy</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
     </LazyMotion>
   );

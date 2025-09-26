@@ -44,6 +44,10 @@ interface WizardData {
   formalityLevel: string;
   language: string;
   specialInstructions: string;
+  
+  // Step 10 - Data Collection
+  dataCollectionEnabled: boolean;
+  dataFields: Array<{ field: string; isRequired: boolean; isCustom: boolean }>;
 }
 
 interface PromptWizardProps {
@@ -91,6 +95,26 @@ const timezones = [
   'Australia/Sydney'
 ];
 
+const predefinedDataFields = [
+  'First Name',
+  'Last Name', 
+  'Email Address',
+  'Phone Number',
+  'Date of Birth',
+  'Nationality',
+  'Location/Address',
+  'Social Security Number',
+  'Company Name',
+  'Job Title',
+  'Industry',
+  'Company Size',
+  'Annual Revenue',
+  'Current Provider/Solution',
+  'Budget Range',
+  'Decision Timeline',
+  'Pain Points/Challenges'
+];
+
 export function PromptWizard({ onComplete, onCancel }: PromptWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [data, setData] = useState<WizardData>({
@@ -115,7 +139,9 @@ export function PromptWizard({ onComplete, onCancel }: PromptWizardProps) {
     callDuration: '',
     formalityLevel: '',
     language: 'English',
-    specialInstructions: ''
+    specialInstructions: '',
+    dataCollectionEnabled: false,
+    dataFields: []
   });
 
   const [generatedPrompt, setGeneratedPrompt] = useState('');
@@ -216,6 +242,18 @@ ${data.objective === 'appointment' ? `\n[Email Collection Protocol - CRITICAL]
 - NEVER end the call without attempting email collection multiple times
 - If prospect absolutely refuses email, ask: "Would you prefer I call you back to confirm the appointment instead?"` : ''}
 
+${data.dataCollectionEnabled && data.dataFields.length > 0 ? `\n[Data Collection Protocol]
+During the conversation, naturally collect the following information from the prospect:
+${data.dataFields.map(field => `- ${field.field}${field.isRequired ? ' (Required)' : ' (Optional)'}`).join('\n')}
+
+IMPORTANT: Collect this information naturally throughout the conversation - don't make it feel like an interrogation.
+- Ask for required fields before ending the call
+- For optional fields, collect them when relevant to the conversation
+- If the prospect volunteers information about these fields, acknowledge and note it
+- Use conversational transitions like "That's helpful to know" or "I'd like to understand a bit more about..."
+${data.dataFields.filter(f => f.isRequired).length > 0 ? `\nREQUIRED FIELDS - Must be collected before ending the call:
+${data.dataFields.filter(f => f.isRequired).map(f => `- ${f.field}`).join('\n')}` : ''}` : ''}
+
 [Error Handling]
 - If responses are unclear, ask clarifying questions politely
 - If prospect declines, thank them and offer future assistance
@@ -231,35 +269,60 @@ ${data.specialInstructions ? `\n[Special Instructions]\n${data.specialInstructio
   };
 
   const generateStructuredDataPrompt = () => {
-    if (data.objective !== 'appointment') return undefined;
+    // Generate structured data prompt for all calls, not just appointments
+    const baseFields = data.objective === 'appointment' ? {
+      "email": "prospect's email address (REQUIRED - should be spelled out letter-by-letter in transcript)",
+      "name": "prospect's full name",
+      "phoneNumber": "prospect's phone number", 
+      "slot_booked": "appointment date/time in ISO format with timezone " + (data.userTimezone || 'UTC')
+    } : {
+      "name": "prospect's full name",
+      "phoneNumber": "prospect's phone number"
+    };
+
+    // Add custom data fields if data collection is enabled
+    const customFields: {[key: string]: string} = {};
+    if (data.dataCollectionEnabled && data.dataFields.length > 0) {
+      data.dataFields.forEach(field => {
+        if (field.field) {
+          const fieldKey = field.field.toLowerCase().replace(/[^a-z0-9]/g, '_');
+          customFields[fieldKey] = `${field.field}${field.isRequired ? ' (Required)' : ' (Optional)'}`;
+        }
+      });
+    }
+
+    const allFields = { ...baseFields, ...customFields };
 
     return `You are a data extraction specialist. Extract the following information from the call transcript and return it as valid JSON:
 
-Current date: {{ "now" | date: "%B %d, %Y", "${data.userTimezone}" }} | Current time: {{ "now" | date: "%I:%M %p", "${data.userTimezone}" }} | Timezone: ${data.userTimezone}
+${data.objective === 'appointment' ? `Current date: {{ "now" | date: "%B %d, %Y", "${data.userTimezone || 'UTC'}" }} | Current time: {{ "now" | date: "%I:%M %p", "${data.userTimezone || 'UTC'}" }} | Timezone: ${data.userTimezone || 'UTC'}
 
-IMPORTANT: The call should contain all required appointment booking information. If email is missing, this indicates the call was incomplete.
+IMPORTANT: The call should contain all required appointment booking information. If email is missing, this indicates the call was incomplete.` : ''}
 
 Extract and return JSON with these fields:
-{
-  "email": "prospect's email address (REQUIRED - should be spelled out letter-by-letter in transcript)",
-  "name": "prospect's full name",
-  "phoneNumber": "prospect's phone number", 
-  "slot_booked": "appointment date/time in ISO format with timezone ${data.userTimezone}"
-}
+${JSON.stringify(allFields, null, 2)}
 
-For slot_booked, convert any mentioned dates/times to ISO format in the ${data.userTimezone} timezone. Email field is CRITICAL for appointment confirmation - if not found, the agent did not complete the call properly.`;
+${data.objective === 'appointment' ? `For slot_booked, convert any mentioned dates/times to ISO format in the ${data.userTimezone || 'UTC'} timezone. Email field is CRITICAL for appointment confirmation - if not found, the agent did not complete the call properly.` : ''}
+
+${data.dataCollectionEnabled && data.dataFields.length > 0 ? `
+Data Collection Notes:
+${data.dataFields.map(field => `- ${field.field}: ${field.isRequired ? 'Required field - must be present' : 'Optional field - extract if mentioned'}`).join('\n')}
+
+If any required data fields are missing from the conversation, note this in the extraction result.` : ''}
+
+Return only valid JSON. If information is not available, use null as the value.`;
   };
 
   const nextStep = () => {
     if (currentStep === 1 && data.hasExistingPrompt) {
-      setCurrentStep(10); // Skip to review if using existing prompt
-    } else if (currentStep < 10) {
+      setCurrentStep(11); // Skip to review if using existing prompt
+    } else if (currentStep < 11) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const prevStep = () => {
-    if (currentStep === 10 && data.hasExistingPrompt) {
+    if (currentStep === 11 && data.hasExistingPrompt) {
       setCurrentStep(1); // Go back to prompt choice
     } else if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
@@ -277,7 +340,8 @@ For slot_booked, convert any mentioned dates/times to ISO format in the ${data.u
       case 7: return data.objectionHandling;
       case 8: return data.closingStyle && (data.objective !== 'appointment' || data.userTimezone);
       case 9: return true; // All optional
-      case 10: return true;
+      case 10: return true; // Data collection is optional
+      case 11: return true;
       default: return false;
     }
   };
@@ -291,7 +355,7 @@ For slot_booked, convert any mentioned dates/times to ISO format in the ${data.u
   };
 
   useEffect(() => {
-    if (currentStep === 10) {
+    if (currentStep === 11) {
       setGeneratedPrompt(generatePrompt());
     }
   }, [currentStep, data]);
@@ -931,6 +995,178 @@ For slot_booked, convert any mentioned dates/times to ISO format in the ${data.u
         return (
           <div className="space-y-6">
             <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Data Collection</h2>
+              <p className="text-gray-600">Configure what information the assistant should collect from prospects.</p>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="font-medium text-blue-900">Data Collection Benefits</span>
+              </div>
+              <p className="text-sm text-blue-800">
+                Enable data collection to gather valuable prospect information during calls. 
+                This data will be extracted and displayed in call summaries.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={data.dataCollectionEnabled}
+                  onChange={(e) => updateData('dataCollectionEnabled', e.target.checked)}
+                  className="rounded"
+                />
+                <span className="font-medium">Enable data collection during calls</span>
+              </label>
+            </div>
+
+            {data.dataCollectionEnabled && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="space-y-6"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-medium text-gray-900">Select Information to Collect</h4>
+                    <button
+                      onClick={() => {
+                        const newFields = [...data.dataFields, { field: '', isRequired: false, isCustom: true }];
+                        updateData('dataFields', newFields);
+                      }}
+                      className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                    >
+                      Add Custom Field
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    {predefinedDataFields.map(field => {
+                      const isSelected = data.dataFields.some(df => df.field === field && !df.isCustom);
+                      const selectedField = data.dataFields.find(df => df.field === field && !df.isCustom);
+                      
+                      return (
+                        <label key={field} className="flex items-center space-x-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                const newFields = [...data.dataFields, { field, isRequired: false, isCustom: false }];
+                                updateData('dataFields', newFields);
+                              } else {
+                                const newFields = data.dataFields.filter(df => !(df.field === field && !df.isCustom));
+                                updateData('dataFields', newFields);
+                              }
+                            }}
+                            className="rounded"
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">{field}</div>
+                            {isSelected && (
+                              <label className="flex items-center space-x-2 mt-1">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedField?.isRequired || false}
+                                  onChange={(e) => {
+                                    const newFields = data.dataFields.map(df => 
+                                      df.field === field && !df.isCustom 
+                                        ? { ...df, isRequired: e.target.checked }
+                                        : df
+                                    );
+                                    updateData('dataFields', newFields);
+                                  }}
+                                  className="rounded text-xs"
+                                />
+                                <span className="text-xs text-gray-600">Required</span>
+                              </label>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {/* Custom Fields */}
+                  {data.dataFields.filter(df => df.isCustom).length > 0 && (
+                    <div className="space-y-3">
+                      <h5 className="font-medium text-gray-900">Custom Fields</h5>
+                      {data.dataFields.filter(df => df.isCustom).map((field, index) => (
+                        <div key={index} className="p-4 border rounded-lg space-y-3">
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="text"
+                              value={field.field}
+                              onChange={(e) => {
+                                const customFields = data.dataFields.filter(df => df.isCustom);
+                                customFields[index].field = e.target.value;
+                                const newFields = [
+                                  ...data.dataFields.filter(df => !df.isCustom),
+                                  ...customFields
+                                ];
+                                updateData('dataFields', newFields);
+                              }}
+                              placeholder="Enter field name (e.g., Company Size, Budget Range)"
+                              className="flex-1 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                            />
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={field.isRequired}
+                                onChange={(e) => {
+                                  const customFields = data.dataFields.filter(df => df.isCustom);
+                                  customFields[index].isRequired = e.target.checked;
+                                  const newFields = [
+                                    ...data.dataFields.filter(df => !df.isCustom),
+                                    ...customFields
+                                  ];
+                                  updateData('dataFields', newFields);
+                                }}
+                                className="rounded"
+                              />
+                              <span className="text-sm text-gray-600">Required</span>
+                            </label>
+                            <button
+                              onClick={() => {
+                                const newFields = data.dataFields.filter((_, i) => {
+                                  const customIndex = data.dataFields.filter(df => df.isCustom).indexOf(field);
+                                  return !(data.dataFields[i].isCustom && customIndex === index);
+                                });
+                                updateData('dataFields', newFields);
+                              }}
+                              className="text-red-600 text-sm hover:text-red-800"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {data.dataFields.length > 0 && (
+                  <div className="bg-gray-50 border rounded-lg p-4">
+                    <h5 className="font-medium text-gray-900 mb-2">Selected Fields Summary</h5>
+                    <div className="text-sm text-gray-700">
+                      <strong>Will collect:</strong> {data.dataFields.map(df => df.field).filter(Boolean).join(', ')}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      <strong>Required fields:</strong> {data.dataFields.filter(df => df.isRequired).map(df => df.field).join(', ') || 'None'}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </div>
+        );
+
+      case 11:
+        return (
+          <div className="space-y-6">
+            <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Review & Generate</h2>
               <p className="text-gray-600">Review your settings and generate the final prompt.</p>
             </div>
@@ -948,6 +1184,16 @@ For slot_booked, convert any mentioned dates/times to ISO format in the ${data.u
                   <div><strong>Closing:</strong> {data.closingStyle}</div>
                   {data.objective === 'appointment' && (
                     <div><strong>Timezone:</strong> {data.userTimezone}</div>
+                  )}
+                  {data.dataCollectionEnabled && data.dataFields.length > 0 && (
+                    <div>
+                      <strong>Data Collection:</strong> {data.dataFields.map(f => f.field).filter(Boolean).join(', ')}
+                      {data.dataFields.filter(f => f.isRequired).length > 0 && (
+                        <div className="text-xs text-gray-600 mt-1">
+                          Required: {data.dataFields.filter(f => f.isRequired).map(f => f.field).join(', ')}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -1005,7 +1251,7 @@ For slot_booked, convert any mentioned dates/times to ISO format in the ${data.u
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold text-gray-900">AI Prompt Wizard</h1>
-              <p className="text-sm text-gray-600">Step {currentStep} of 10</p>
+              <p className="text-sm text-gray-600">Step {currentStep} of 11</p>
             </div>
             <button
               onClick={onCancel}
@@ -1057,10 +1303,10 @@ For slot_booked, convert any mentioned dates/times to ISO format in the ${data.u
           </button>
 
           <div className="text-sm text-gray-500">
-            Step {currentStep} of 10
+            Step {currentStep} of 11
           </div>
 
-          {currentStep === 10 ? (
+          {currentStep === 11 ? (
             <button
               onClick={handleComplete}
               className="flex items-center space-x-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"

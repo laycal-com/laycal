@@ -86,8 +86,8 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
 
     if (!formData.mainPrompt.trim()) {
       newErrors.mainPrompt = 'Main prompt is required';
-    } else if (formData.mainPrompt.length > 5000) {
-      newErrors.mainPrompt = 'Main prompt must be less than 5000 characters';
+    } else if (formData.mainPrompt.length > 10000) {
+      newErrors.mainPrompt = 'Main prompt must be less than 10000 characters';
     }
 
     // Phone numbers are optional for assistant creation
@@ -347,12 +347,12 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
               onChange={(e) => setFormData(prev => ({ ...prev, mainPrompt: e.target.value }))}
               placeholder="Click 'Use Prompt Wizard' to generate a professional prompt, or write your own..."
               className={`min-h-[120px] ${errors.mainPrompt ? 'border-red-500' : ''}`}
-              maxLength={5000}
+              maxLength={10000}
             />
             <div className="flex justify-between items-center mt-1">
               {errors.mainPrompt && <p className="text-sm text-red-500">{errors.mainPrompt}</p>}
               <span className="text-xs text-gray-500 ml-auto">
-                {formData.mainPrompt.length}/5000
+                {formData.mainPrompt.length}/10000
               </span>
             </div>
           </div>

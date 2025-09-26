@@ -39,6 +39,12 @@ export default function SettingsPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProvider, setEditingProvider] = useState<PhoneProvider | null>(null);
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
+  const [showPhoneRequestForm, setShowPhoneRequestForm] = useState(false);
+  const [phoneRequestData, setPhoneRequestData] = useState({
+    region: '',
+    description: ''
+  });
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
   const [formData, setFormData] = useState<ProviderFormData>({
     providerName: 'twilio',
     displayName: '',
@@ -233,6 +239,52 @@ export default function SettingsPage() {
     }
   };
 
+  const handlePhoneNumberRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingRequest(true);
+    
+    try {
+      const response = await fetch('/api/phone-number-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(phoneRequestData),
+      });
+
+      let result;
+      try {
+        const text = await response.text();
+        result = text ? JSON.parse(text) : {};
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError);
+        toast.error('Failed to Submit Request', {
+          description: 'Server returned invalid response'
+        });
+        return;
+      }
+
+      if (response.ok && result.success) {
+        toast.success('Phone Number Request Submitted', {
+          description: `Ticket ID: ${result.ticketId || result.ticket?.ticketId || 'N/A'}. We'll get back to you soon!`
+        });
+        setShowPhoneRequestForm(false);
+        setPhoneRequestData({ region: '', description: '' });
+      } else {
+        toast.error('Failed to Submit Request', {
+          description: result.error || result.details || `Server error: ${response.status}`
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting phone number request:', error);
+      toast.error('Failed to Submit Request', {
+        description: 'An unknown error occurred'
+      });
+    } finally {
+      setIsSubmittingRequest(false);
+    }
+  };
+
   const renderCredentialFields = () => {
     switch (formData.providerName) {
       case 'twilio':
@@ -375,22 +427,30 @@ export default function SettingsPage() {
                 <h2 className="text-xl font-semibold text-gray-800">Phone Number Providers</h2>
                 <p className="text-gray-600 mt-1">Configure your phone number providers for making calls</p>
               </div>
-              <button
-                onClick={() => {
-                  setShowAddForm(true);
-                  setEditingProvider(null);
-                  setFormData({
-                    providerName: 'twilio',
-                    displayName: '',
-                    phoneNumber: '',
-                    credentials: {},
-                    isDefault: providers.length === 0
-                  });
-                }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-              >
-                Add Provider
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPhoneRequestForm(true)}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                >
+                  Request a New Phone Number
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAddForm(true);
+                    setEditingProvider(null);
+                    setFormData({
+                      providerName: 'twilio',
+                      displayName: '',
+                      phoneNumber: '',
+                      credentials: {},
+                      isDefault: providers.length === 0
+                    });
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Add Provider
+                </button>
+              </div>
             </div>
           </div>
 
@@ -611,6 +671,96 @@ export default function SettingsPage() {
                       onClick={() => {
                         setShowAddForm(false);
                         setEditingProvider(null);
+                      }}
+                      className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Phone Number Request Form */}
+        {showPhoneRequestForm && (
+          <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Request a New Phone Number
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setShowPhoneRequestForm(false);
+                      setPhoneRequestData({ region: '', description: '' });
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <p className="text-gray-600 text-sm mb-6">
+                  Submit a request for a new phone number. Our team will review your request and get back to you soon.
+                </p>
+
+                <form onSubmit={handlePhoneNumberRequest} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Preferred Region (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={phoneRequestData.region}
+                      onChange={(e) => setPhoneRequestData({ 
+                        ...phoneRequestData, 
+                        region: e.target.value 
+                      })}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-600"
+                      placeholder="e.g., United States, California, Area Code 415"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Specify your preferred region, country, or area code
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Additional Details (Optional)
+                    </label>
+                    <textarea
+                      value={phoneRequestData.description}
+                      onChange={(e) => setPhoneRequestData({ 
+                        ...phoneRequestData, 
+                        description: e.target.value 
+                      })}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-600"
+                      placeholder="Any specific requirements or preferences..."
+                      rows={3}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Let us know if you have any specific requirements
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="submit"
+                      disabled={isSubmittingRequest}
+                      className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSubmittingRequest ? 'Submitting...' : 'Submit Request'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPhoneRequestForm(false);
+                        setPhoneRequestData({ region: '', description: '' });
                       }}
                       className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors"
                     >

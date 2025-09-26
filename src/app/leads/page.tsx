@@ -28,6 +28,35 @@ interface Lead {
   calledAt?: string;
 }
 
+interface CallSummary {
+  _id: string;
+  vapiCallId: string;
+  phoneNumberId: string;
+  leadId?: string;
+  callData: {
+    duration?: number;
+    endReason?: string;
+    status: 'completed' | 'failed' | 'no-answer' | 'busy';
+    cost?: number;
+    startTime?: string;
+    endTime?: string;
+  };
+  transcript?: string;
+  summary?: string;
+  evaluation?: 'positive' | 'negative' | 'neutral';
+  structuredData?: {[key: string]: any};
+  extractedInfo: {[key: string]: any};
+  appointmentCreated?: boolean;
+  appointmentData?: {
+    title?: string;
+    startTime?: string;
+    endTime?: string;
+    confirmed?: boolean;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface StatusCounts {
   pending: number;
   calling: number;
@@ -63,6 +92,8 @@ export default function LeadsPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [retryingLeads, setRetryingLeads] = useState<Set<string>>(new Set());
+  const [leadCallSummary, setLeadCallSummary] = useState<CallSummary | null>(null);
+  const [loadingCallSummary, setLoadingCallSummary] = useState(false);
 
   const fetchLeads = async () => {
     try {
@@ -116,6 +147,35 @@ export default function LeadsPage() {
       minute: '2-digit',
     });
   };
+
+  const fetchCallSummary = async (leadId: string) => {
+    setLoadingCallSummary(true);
+    try {
+      const response = await fetch(`/api/call-summaries?leadId=${leadId}&limit=1`);
+      if (!response.ok) throw new Error('Failed to fetch call summary');
+      
+      const data = await response.json();
+      if (data.success && data.summaries && data.summaries.length > 0) {
+        setLeadCallSummary(data.summaries[0]);
+      } else {
+        setLeadCallSummary(null);
+      }
+    } catch (error) {
+      console.error('Error fetching call summary:', error);
+      setLeadCallSummary(null);
+    } finally {
+      setLoadingCallSummary(false);
+    }
+  };
+
+  // Fetch call summary when a lead is selected
+  useEffect(() => {
+    if (selectedLead) {
+      fetchCallSummary(selectedLead._id);
+    } else {
+      setLeadCallSummary(null);
+    }
+  }, [selectedLead]);
 
   const handleRetryCall = async (leadId: string) => {
     if (retryingLeads.has(leadId)) return;
@@ -458,6 +518,97 @@ export default function LeadsPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Call Summary Section */}
+                <div>
+                  <h4 className="font-medium text-gray-700">Call Data Analysis</h4>
+                  {loadingCallSummary ? (
+                    <div className="mt-2 flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      <span className="text-sm text-gray-600">Loading call analysis...</span>
+                    </div>
+                  ) : leadCallSummary ? (
+                    <div className="mt-2 space-y-3">
+                      {/* Extracted Information */}
+                      {Object.keys(leadCallSummary.extractedInfo).length > 0 && (
+                        <div>
+                          <strong className="text-sm">Extracted Information:</strong>
+                          <div className="mt-1 p-3 bg-blue-50 rounded text-sm space-y-1">
+                            {Object.entries(leadCallSummary.extractedInfo).map(([key, value]) => (
+                              value && (
+                                <div key={key} className="flex justify-between">
+                                  <span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span>
+                                  <span>{typeof value === 'string' ? value : JSON.stringify(value)}</span>
+                                </div>
+                              )
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Appointment Information */}
+                      {leadCallSummary.appointmentCreated && leadCallSummary.appointmentData && (
+                        <div>
+                          <strong className="text-sm">Appointment:</strong>
+                          <div className="mt-1 p-3 bg-green-50 rounded text-sm space-y-1">
+                            {leadCallSummary.appointmentData.title && (
+                              <p><strong>Title:</strong> {leadCallSummary.appointmentData.title}</p>
+                            )}
+                            {leadCallSummary.appointmentData.startTime && (
+                              <p><strong>Start:</strong> {formatDate(leadCallSummary.appointmentData.startTime)}</p>
+                            )}
+                            {leadCallSummary.appointmentData.endTime && (
+                              <p><strong>End:</strong> {formatDate(leadCallSummary.appointmentData.endTime)}</p>
+                            )}
+                            <p><strong>Status:</strong> 
+                              <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                                leadCallSummary.appointmentData.confirmed 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {leadCallSummary.appointmentData.confirmed ? 'Confirmed' : 'Pending'}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Structured Data */}
+                      {leadCallSummary.structuredData && Object.keys(leadCallSummary.structuredData).length > 0 && (
+                        <div>
+                          <strong className="text-sm">Additional Data:</strong>
+                          <div className="mt-1 p-3 bg-gray-50 rounded text-sm space-y-1">
+                            {Object.entries(leadCallSummary.structuredData).map(([key, value]) => (
+                              value && !['name', 'email', 'phoneNumber', 'slot_booked'].includes(key) && (
+                                <div key={key} className="flex justify-between">
+                                  <span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span>
+                                  <span>{typeof value === 'string' ? value : JSON.stringify(value)}</span>
+                                </div>
+                              )
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Call Summary Technical Details */}
+                      <div>
+                        <strong className="text-sm">Technical Details:</strong>
+                        <div className="mt-1 p-3 bg-gray-50 rounded text-sm space-y-1">
+                          <p><strong>Call ID:</strong> {leadCallSummary.vapiCallId}</p>
+                          <p><strong>Phone Number ID:</strong> {leadCallSummary.phoneNumberId}</p>
+                          {leadCallSummary.callData.startTime && (
+                            <p><strong>Call Start:</strong> {formatDate(leadCallSummary.callData.startTime)}</p>
+                          )}
+                          {leadCallSummary.callData.endTime && (
+                            <p><strong>Call End:</strong> {formatDate(leadCallSummary.callData.endTime)}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-500">No call analysis data available</p>
+                  )}
+                </div>
 
                 <div>
                   <h4 className="font-medium text-gray-700">Timestamps</h4>

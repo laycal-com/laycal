@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import Lead from '@/models/Lead';
 import Assistant from '@/models/Assistant';
 import PendingAppointment from '@/models/PendingAppointment';
+import CallSummary from '@/models/CallSummary';
 import { usageValidator } from '@/lib/usageValidator';
 import { logger } from '@/lib/logger';
 
@@ -150,6 +151,9 @@ export async function POST(request: NextRequest) {
 
         // Check for appointment confirmation in the call
         await processAppointmentFromCall(lead, call, message, payload);
+        
+        // Create call summary for data extraction and display
+        await createCallSummary(call, message, lead, payload);
         break;
 
       case 'status-update':
@@ -230,6 +234,9 @@ export async function POST(request: NextRequest) {
           vapiCallId: call.id,
           data: callResults
         });
+        
+        // Create call summary for data extraction and display
+        await createCallSummary(call, message, lead, payload);
         break;
 
       case 'call-analysis':
@@ -678,6 +685,121 @@ async function trackCallUsage(lead: any, message: any) {
       error,
       leadId: lead._id?.toString(),
       assignedAssistantId: lead.assignedAssistantId?.toString()
+    });
+  }
+}
+
+// Create or update call summary for data extraction and display
+async function createCallSummary(call: any, message: any, lead?: any, payload?: any) {
+  try {
+    // Extract basic call information
+    const phoneNumberId = call.phoneNumberId || payload.phoneNumberId || 'unknown';
+    const userId = lead?.userId;
+    
+    if (!userId) {
+      logger.warn('CALL_SUMMARY_NO_USER', 'Cannot create call summary without userId', {
+        vapiCallId: call.id,
+        phoneNumberId
+      });
+      return;
+    }
+
+    // Extract structured data from message.analysis.structuredData
+    const structuredData = message?.analysis?.structuredData || {};
+    
+    // Build extractedInfo from structured data
+    const extractedInfo: any = {};
+    if (structuredData.name) extractedInfo.name = structuredData.name;
+    if (structuredData.email) extractedInfo.email = structuredData.email;
+    if (structuredData.phoneNumber) extractedInfo.phoneNumber = structuredData.phoneNumber;
+    if (structuredData.slot_booked) extractedInfo.appointmentTime = structuredData.slot_booked;
+    
+    // Add any other custom fields from structured data
+    Object.keys(structuredData).forEach(key => {
+      if (!['name', 'email', 'phoneNumber', 'slot_booked'].includes(key)) {
+        extractedInfo[key] = structuredData[key];
+      }
+    });
+
+    // Determine call status
+    let callStatus: 'completed' | 'failed' | 'no-answer' | 'busy' = 'completed';
+    if (message?.endedReason === 'no-answer') callStatus = 'no-answer';
+    else if (message?.endedReason === 'busy') callStatus = 'busy';
+    else if (message?.endedReason === 'failed') callStatus = 'failed';
+
+    // Convert evaluation
+    let evaluation = null;
+    if (message?.analysis?.successEvaluation === 'true') {
+      evaluation = 'positive';
+    } else if (message?.analysis?.successEvaluation === 'false') {
+      evaluation = 'negative';
+    } else {
+      evaluation = 'neutral';
+    }
+
+    // Extract stereo recording URL from artifact
+    const stereoRecordingUrl = message?.artifact?.stereoRecordingUrl || payload?.artifact?.stereoRecordingUrl;
+
+    const callSummaryData = {
+      userId,
+      vapiCallId: call.id,
+      phoneNumberId,
+      leadId: lead?._id?.toString(),
+      
+      callData: {
+        duration: Math.round(message?.durationSeconds || 0),
+        endReason: message?.endedReason,
+        status: callStatus,
+        cost: message?.cost,
+        startTime: call.startTime ? new Date(call.startTime) : undefined,
+        endTime: call.endTime ? new Date(call.endTime) : new Date()
+      },
+      
+      transcript: message?.transcript,
+      summary: message?.summary || message?.analysis?.summary,
+      evaluation,
+      stereoRecordingUrl,
+      
+      structuredData,
+      extractedInfo,
+      
+      appointmentCreated: !!(structuredData.slot_booked || payload?.appointment),
+      appointmentData: payload?.appointment ? {
+        title: payload.appointment.title,
+        startTime: payload.appointment.startTime,
+        endTime: payload.appointment.endTime,
+        confirmed: false
+      } : undefined
+    };
+
+    // Create or update call summary
+    const callSummary = await CallSummary.findOneAndUpdate(
+      { vapiCallId: call.id },
+      callSummaryData,
+      { upsert: true, new: true }
+    );
+
+    logger.info('CALL_SUMMARY_CREATED', 'Call summary created/updated', {
+      callSummaryId: callSummary._id.toString(),
+      vapiCallId: call.id,
+      phoneNumberId,
+      userId,
+      leadId: lead?._id?.toString(),
+      data: {
+        hasStructuredData: Object.keys(structuredData).length > 0,
+        extractedFields: Object.keys(extractedInfo),
+        appointmentCreated: callSummaryData.appointmentCreated,
+        evaluation
+      }
+    });
+
+    return callSummary;
+
+  } catch (error) {
+    logger.error('CALL_SUMMARY_ERROR', 'Failed to create call summary', {
+      vapiCallId: call.id,
+      error,
+      userId: lead?.userId
     });
   }
 }

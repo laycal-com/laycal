@@ -1,22 +1,9 @@
-import type { Metadata } from 'next';
-import PrivacyPageClient from './PrivacyPageClient';
+'use client';
 
-export const metadata: Metadata = {
-  title: "Privacy Policy - Laycal AI Voice Agent & Automated Calling System",
-  description: "Privacy policy for Laycal's AI voice agent and automated calling system. Learn how we protect your data when using AI powered phone calls and AI appointment setter services.",
-  keywords: "privacy policy, ai voice agent privacy, automated calling system privacy, ai powered phone calls privacy, data protection",
-  alternates: {
-    canonical: "/privacy",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+import { Card, CardContent } from '@/components/ui/card';
+import PublicNavbar from '@/components/PublicNavbar';
 
-export default function PrivacyPolicyPage() {
-  return <PrivacyPageClient />;
-}
+export default function PrivacyPageClient() {
   return (
     <>
       <PublicNavbar />
@@ -131,7 +118,7 @@ export default function PrivacyPolicyPage() {
               </section>
 
               <section>
-                <h2 className="text-2xl font-semibold text-[#1f2937] mb-4">Data Retention</h2>
+                <h2 className="text-2xl font-semibent text-[#1f2937] mb-4">Data Retention</h2>
                 <p className="text-[#64748b] leading-relaxed">
                   We retain your data for as long as necessary to provide our services and comply with legal obligations. Call recordings are retained for 12 months unless you request earlier deletion. Account data is retained until you close your account, after which it is securely deleted within 90 days.
                 </p>

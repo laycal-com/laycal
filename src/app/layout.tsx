@@ -4,9 +4,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Laycal - AI-Powered Sales Calling Platform",
-  description: "Scale your sales calls with AI agents that work 24/7. Get 15-30% higher contact rates with affordable per-minute pricing, automated lead calling, real-time analytics, and seamless CRM integration.",
-  keywords: "AI calling, sales automation, lead generation, outbound calling, AI voice agents, sales calls, CRM integration, automated calling",
+  title: "Laycal - AI Voice Agent for Automated Sales Calls | Increase Sales Efficiency",
+  description: "Boost sales efficiency with AI powered phone calls. Our AI appointment setter handles automated sales calls, AI outbound calls, and AI lead generation. Advanced AI voice agent and AI sales assistant for cold calling automation.",
+  keywords: "increase sales efficiency, ai powered phone calls, ai appointment setter, ai outbound calls, automated sales calls, ai lead generation, ai for cold calling, ai voice agent, ai sales assistant, automated calling system, JustCall alternative, Nooks alternative",
   authors: [{ name: "Laycal" }],
   creator: "Laycal",
   publisher: "Laycal",
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "Laycal - AI-Powered Sales Calling Platform",
-    description: "Scale your sales calls with AI agents that work 24/7. Get 15-30% higher contact rates with affordable per-minute pricing.",
+    title: "Laycal - AI Voice Agent for Automated Sales Calls | Increase Sales Efficiency",
+    description: "Boost sales efficiency with AI powered phone calls. Our AI appointment setter handles automated sales calls, AI outbound calls, and AI lead generation. Advanced AI voice agent and AI sales assistant for cold calling automation.",
     url: "https://laycal.com",
     siteName: "Laycal",
     locale: "en_US",
@@ -29,8 +29,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Laycal - AI-Powered Sales Calling Platform",
-    description: "Scale your sales calls with AI agents that work 24/7. Get 15-30% higher contact rates with affordable per-minute pricing.",
+    title: "Laycal - AI Voice Agent for Automated Sales Calls | Increase Sales Efficiency",
+    description: "Boost sales efficiency with AI powered phone calls. Our AI appointment setter handles automated sales calls, AI outbound calls, and AI lead generation.",
   },
   robots: {
     index: true,
@@ -42,9 +42,6 @@ export const metadata: Metadata = {
       "max-image-preview": "large",
       "max-snippet": -1,
     },
-  },
-  verification: {
-    google: "your-google-verification-code",
   },
 };
 

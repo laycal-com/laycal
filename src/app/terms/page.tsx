@@ -183,7 +183,7 @@ export default function TermsOfServicePage() {
                 </p>
                 <div className="bg-[#f8fafc] p-4 rounded-lg border border-[#e2e8f0]">
                   <p className="text-[#64748b]">
-                    <strong>Email:</strong> legal@laycal.com<br />
+                    <strong>Email:</strong> contact@laycal.com<br />
                     <strong>Support:</strong> <a href="/contact" className="text-[#3b82f6] hover:text-[#2563eb]">Contact Form</a><br />
                     <strong>Mail:</strong> Laycal Legal Department<br />
                     123 AI Technology Drive<br />
