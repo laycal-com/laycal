@@ -10,6 +10,7 @@ import React from 'react';
 import PublicNavbar from '@/components/PublicNavbar';
 import Footer from '@/components/Footer';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import TableOfContents from '@/components/TableOfContents';
 
 interface BlogPost {
   title: string;
@@ -57,16 +58,20 @@ function generateTableOfContents(content: string): TocItem[] {
   while ((match = headingRegex.exec(content)) !== null) {
     const level = match[1].length;
     const title = match[2].trim();
-    const id = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+    
+    // Only include H2 headings (level 2) in table of contents
+    if (level === 2) {
+      const id = title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
 
-    toc.push({
-      id,
-      title,
-      level,
-    });
+      toc.push({
+        id,
+        title,
+        level,
+      });
+    }
   }
 
   return toc;
@@ -232,6 +237,18 @@ const components = {
       </figure>
     );
   },
+  // Links - ensure they're styled in blue
+  a: ({ href, children, ...props }: any) => (
+    <a 
+      href={href} 
+      className="text-blue-600 hover:text-blue-700 underline transition-colors font-medium"
+      target={href?.startsWith('http') ? '_blank' : undefined}
+      rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+      {...props}
+    >
+      {children}
+    </a>
+  ),
   // Videos/iframes - using figure elements 
   iframe: ({ src, title, width = "560", height = "315", ...props }: any) => {
     // Extract YouTube video ID if it's a YouTube URL
@@ -377,72 +394,14 @@ export default async function BlogPostPage({ params }: Props) {
           <div className="grid lg:grid-cols-4 gap-8">
             {/* Table of Contents - Desktop Sidebar */}
             {tableOfContents.length > 0 && (
-              <div className="lg:col-span-1">
-                <div className="lg:sticky lg:top-24">
-                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                      </svg>
-                      Table of Contents
-                    </h3>
-                    <nav>
-                      <ul className="space-y-2">
-                        {tableOfContents.map((item) => (
-                          <li key={item.id}>
-                            <a
-                              href={`#${item.id}`}
-                              className={`block text-sm hover:text-blue-600 transition-colors py-1 ${
-                                item.level === 1 ? 'font-semibold text-gray-900' :
-                                item.level === 2 ? 'text-gray-700 pl-4' :
-                                item.level === 3 ? 'text-gray-600 pl-8' :
-                                'text-gray-500 pl-12'
-                              }`}
-                            >
-                              {item.title}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </nav>
-                  </div>
-                </div>
-              </div>
+              <TableOfContents items={tableOfContents} />
             )}
 
             {/* Main Content */}
             <div className={tableOfContents.length > 0 ? "lg:col-span-3" : "lg:col-span-4"}>
               {/* Mobile TOC - Collapsible */}
               {tableOfContents.length > 0 && (
-                <div className="lg:hidden mb-8">
-                  <details className="bg-gray-50 rounded-xl border border-gray-200">
-                    <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                      </svg>
-                      Table of Contents
-                    </summary>
-                    <nav className="px-4 pb-4">
-                      <ul className="space-y-2">
-                        {tableOfContents.map((item) => (
-                          <li key={item.id}>
-                            <a
-                              href={`#${item.id}`}
-                              className={`block text-sm hover:text-blue-600 transition-colors py-1 ${
-                                item.level === 1 ? 'font-semibold text-gray-900' :
-                                item.level === 2 ? 'text-gray-700 pl-4' :
-                                item.level === 3 ? 'text-gray-600 pl-8' :
-                                'text-gray-500 pl-12'
-                              }`}
-                            >
-                              {item.title}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </nav>
-                  </details>
-                </div>
+                <TableOfContents items={tableOfContents} isMobile={true} />
               )}
 
               <div className="prose prose-lg max-w-none">
