@@ -9,8 +9,8 @@ import Link from 'next/link';
 import React from 'react';
 import PublicNavbar from '@/components/PublicNavbar';
 import Footer from '@/components/Footer';
-import NewsletterSignup from '@/components/NewsletterSignup';
 import TableOfContents from '@/components/TableOfContents';
+import EmailPopup from '@/components/EmailPopup';
 
 interface BlogPost {
   title: string;
@@ -473,8 +473,8 @@ export default async function BlogPostPage({ params }: Props) {
         </section>
       )}
 
-      {/* Newsletter Signup */}
-      <NewsletterSignup />
+      {/* Email Collection Popup */}
+      <EmailPopup postTitle={post.title} />
 
       <Footer />
     </div>

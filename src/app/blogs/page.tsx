@@ -6,7 +6,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import PublicNavbar from '@/components/PublicNavbar';
 import Footer from '@/components/Footer';
-import NewsletterSignup from '@/components/NewsletterSignup';
 
 export const metadata: Metadata = {
   title: "Laycal Blog - AI Voice Agent & Automated Calling System Insights | Sales Tips & Industry News",
@@ -161,9 +160,6 @@ export default async function BlogPage() {
           </div>
         )}
       </main>
-
-      {/* Newsletter Signup */}
-      <NewsletterSignup />
 
       <Footer />
     </div>

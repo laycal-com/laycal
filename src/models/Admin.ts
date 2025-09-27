@@ -46,6 +46,8 @@ const adminSchema = new Schema<IAdmin>({
       'manage_pricing',
       'view_contacts',
       'manage_contacts',
+      'view_emails',
+      'manage_emails',
       'view_support',
       'manage_support',
       'view_analytics',
@@ -78,13 +80,15 @@ adminSchema.virtual('defaultPermissions').get(function() {
       return [
         'view_users', 'manage_users', 'add_credits', 'remove_credits',
         'view_pricing', 'manage_pricing', 'view_contacts', 'manage_contacts',
-        'view_support', 'manage_support', 'view_analytics', 'manage_admins'
+        'view_emails', 'manage_emails', 'view_support', 'manage_support', 
+        'view_analytics', 'manage_admins'
       ];
     case 'admin':
       return [
         'view_users', 'manage_users', 'add_credits', 'remove_credits',
         'view_pricing', 'manage_pricing', 'view_contacts', 'manage_contacts',
-        'view_support', 'manage_support', 'view_analytics'
+        'view_emails', 'manage_emails', 'view_support', 'manage_support', 
+        'view_analytics'
       ];
     case 'support':
       return [

@@ -118,6 +118,12 @@ export default function AdminLayout({
       permission: 'view_contacts'
     },
     {
+      name: 'Email Subscribers',
+      href: '/admin/emails',
+      icon: '📧',
+      permission: null
+    },
+    {
       name: 'Support Tickets',
       href: '/admin/support',
       icon: '🎫',
