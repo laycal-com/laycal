@@ -31,15 +31,22 @@ const staticRoutes = [
 
 // Get all blog posts
 async function getBlogPosts() {
+  // First try the file system approach
   try {
     const blogsDirectory = path.join(process.cwd(), 'blogs');
     
+    // Debug: Log the directory path being used
+    console.log('Blogs directory path:', blogsDirectory);
+    console.log('Current working directory:', process.cwd());
+    
     // Check if blogs directory exists
     if (!fs.existsSync(blogsDirectory)) {
-      return [];
+      console.warn('Blogs directory not found at:', blogsDirectory);
+      throw new Error('Blogs directory not found');
     }
     
     const filenames = fs.readdirSync(blogsDirectory);
+    console.log('Found blog files:', filenames.length, filenames);
     
     const posts = filenames
       .filter((name) => name.endsWith('.md'))
@@ -74,7 +81,49 @@ async function getBlogPosts() {
     return posts;
   } catch (error) {
     console.error('Error reading blog posts for sitemap:', error);
-    return [];
+    
+    // Fallback: Return known blog posts if file reading fails in production
+    const fallbackPosts = [
+      {
+        slug: 'justcall-alternatives-2026',
+        publishedAt: '2025-09-27',
+        lastModified: new Date('2025-09-27'),
+        featured: true,
+      },
+      {
+        slug: 'nooks-alternative-2026',
+        publishedAt: '2025-01-20',
+        lastModified: new Date('2025-01-20'),
+        featured: true,
+      },
+      {
+        slug: 'aloware-alternative-2026',
+        publishedAt: '2025-01-22',
+        lastModified: new Date('2025-01-22'),
+        featured: true,
+      },
+      {
+        slug: 'kixie-alternative-2026',
+        publishedAt: '2025-01-24',
+        lastModified: new Date('2025-01-24'),
+        featured: true,
+      },
+      {
+        slug: 'dialpad-alternative-2026',
+        publishedAt: '2025-01-26',
+        lastModified: new Date('2025-01-26'),
+        featured: true,
+      },
+      {
+        slug: 'ringover-alternative-2026',
+        publishedAt: '2025-01-28',
+        lastModified: new Date('2025-01-28'),
+        featured: true,
+      },
+    ];
+    
+    console.log('Using fallback blog posts:', fallbackPosts.length);
+    return fallbackPosts;
   }
 }
 
@@ -124,8 +173,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return validEntries;
 }
 
-// Configure revalidation (cache for 1 hour) and add metadata
-export const revalidate = 3600;
+// Configure revalidation (cache for 5 minutes for debugging) and add metadata
+export const revalidate = 300;
 
 // Add explicit content type for better compatibility
 export const contentType = 'application/xml';

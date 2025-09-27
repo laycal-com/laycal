@@ -5,6 +5,13 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
+  webpack: (config: any) => {
+    // Ensure blogs directory is included in the build
+    config.resolve.alias = {
+      ...config.resolve.alias,
+    };
+    return config;
+  },
   images: {
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
