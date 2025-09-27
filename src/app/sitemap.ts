@@ -49,10 +49,23 @@ async function getBlogPosts() {
         const { data } = matter(fileContents);
         const stats = fs.statSync(filePath);
         
+        // Ensure we have a valid date for lastModified
+        let lastModified: Date;
+        try {
+          // Try to use publishedAt if available and valid
+          lastModified = data.publishedAt ? new Date(data.publishedAt) : stats.mtime;
+          // Validate the date
+          if (isNaN(lastModified.getTime())) {
+            lastModified = stats.mtime;
+          }
+        } catch {
+          lastModified = stats.mtime;
+        }
+
         return {
           slug: filename.replace(/\.md$/, ''),
           publishedAt: data.publishedAt || stats.mtime.toISOString().split('T')[0],
-          lastModified: stats.mtime,
+          lastModified,
           featured: data.featured || false,
         };
       })
@@ -67,29 +80,52 @@ async function getBlogPosts() {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const blogPosts = await getBlogPosts();
+  const currentDate = new Date();
   
-  // Static routes
+  // Static routes with proper URL encoding and date formatting
   const staticSitemapEntries: MetadataRoute.Sitemap = staticRoutes.map((route) => ({
-    url: `${baseUrl}${route.url}`,
-    lastModified: new Date(),
+    url: new URL(route.url, baseUrl).toString(),
+    lastModified: currentDate.toISOString(),
     changeFrequency: route.changeFrequency,
     priority: route.priority,
   }));
 
-  // Blog post routes
-  const blogSitemapEntries: MetadataRoute.Sitemap = blogPosts.map((post) => ({
-    url: `${baseUrl}/blogs/${post.slug}`,
-    lastModified: post.lastModified,
-    changeFrequency: 'monthly' as const,
-    priority: post.featured ? 0.8 : 0.6, // Higher priority for featured posts
-  }));
+  // Blog post routes with proper URL encoding and date formatting
+  const blogSitemapEntries: MetadataRoute.Sitemap = blogPosts.map((post) => {
+    // Ensure proper URL encoding for blog slugs
+    const encodedSlug = encodeURIComponent(post.slug);
+    const postUrl = new URL(`/blogs/${encodedSlug}`, baseUrl).toString();
+    
+    return {
+      url: postUrl,
+      lastModified: post.lastModified.toISOString(),
+      changeFrequency: 'monthly' as const,
+      priority: post.featured ? 0.8 : 0.6,
+    };
+  });
 
-  // Combine all routes
-  return [
+  // Combine all routes and validate URLs
+  const allEntries = [
     ...staticSitemapEntries,
     ...blogSitemapEntries,
   ];
+
+  // Filter out any invalid URLs
+  const validEntries = allEntries.filter(entry => {
+    try {
+      new URL(entry.url);
+      return true;
+    } catch {
+      console.warn(`Invalid URL in sitemap: ${entry.url}`);
+      return false;
+    }
+  });
+
+  return validEntries;
 }
 
-// Optional: Configure revalidation (cache for 1 hour)
+// Configure revalidation (cache for 1 hour) and add metadata
 export const revalidate = 3600;
+
+// Add explicit content type for better compatibility
+export const contentType = 'application/xml';
