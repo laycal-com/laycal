@@ -22,6 +22,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/paypal(.*)",
   "/api/user/select-plan",
   "/api/support(.*)",
+  "/api/subscription-check",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
@@ -32,20 +33,30 @@ export default clerkMiddleware(async (auth, req) => {
     await auth.protect();
     
     // If user is authenticated and trying to access protected routes,
-    // check if they need to select a plan
+    // check if they need to select a plan by making an API call instead of direct DB access
     if (userId && !isPlanSelectionRoute(req) && !isPublicRoute(req)) {
       try {
-        // Check if user has a plan selected
-        const { connectToDatabase } = await import('@/lib/mongodb');
-        const Subscription = (await import('@/models/Subscription')).default;
+        // Make internal API call to check subscription status
+        const baseUrl = process.env.NODE_ENV === 'production' 
+          ? process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin
+          : req.nextUrl.origin;
         
-        await connectToDatabase();
-        const subscription = await Subscription.findOne({ userId }).lean();
+        const response = await fetch(`${baseUrl}/api/subscription-check`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${userId}`,
+            'X-Middleware-Check': 'true'
+          }
+        });
         
-        // If no subscription or plan type is 'none', redirect to plan selection
-        if (!subscription || subscription.planType === 'none') {
-          const selectPlanUrl = new URL('/select-plan', req.url);
-          return NextResponse.redirect(selectPlanUrl);
+        if (response.ok) {
+          const data = await response.json();
+          
+          // If no subscription or plan type is 'none', redirect to plan selection
+          if (!data.hasValidPlan) {
+            const selectPlanUrl = new URL('/select-plan', req.url);
+            return NextResponse.redirect(selectPlanUrl);
+          }
         }
       } catch (error) {
         console.error('Middleware plan check error:', error);
