@@ -5,6 +5,7 @@ import UsageTracking from '@/models/UsageTracking';
 import Credit from '@/models/Credit';
 import { PricingService } from '@/lib/pricing';
 import { logger } from './logger';
+import { Types } from 'mongoose';
 
 export interface UsageSummary {
   planType: string;
@@ -68,12 +69,22 @@ export class UsageValidator {
         creditBalance: subscription?.creditBalance
       });
       
-      // No subscription = no payment = blocked
+      // No subscription = auto-create free trial (this should not happen now)
       if (!subscription) {
         return {
           canCreate: false,
           canCall: false,
-          reason: `Payment required to create assistants. Pay $${await PricingService.getInitialPaygCharge()} for Pay-as-you-go or choose a monthly plan.`,
+          reason: `Account setup error. Please refresh the page.`,
+          upgradeRequired: true
+        };
+      }
+
+      // Check if trial has expired
+      if (subscription.isTrial && subscription.trialEndsAt && new Date() > subscription.trialEndsAt) {
+        return {
+          canCreate: false,
+          canCall: false,
+          reason: `Free trial expired. Upgrade to continue creating assistants.`,
           upgradeRequired: true
         };
       }
@@ -144,9 +155,15 @@ export class UsageValidator {
       
       // Cannot afford
       const assistantLimit = subscription.getTotalAssistantLimit();
-      const reason = subscription.planType === 'payg' 
-        ? `Insufficient credits. Need $${await PricingService.getAssistantCost()} to create assistant (current balance: $${subscription.creditBalance})`
-        : `Assistant limit reached (${currentAssistants}/${assistantLimit}). Top up with $${await PricingService.getAssistantCost()} or upgrade your plan.`;
+      let reason;
+      
+      if (subscription.planType === 'trial') {
+        reason = `Trial limit reached (${currentAssistants}/${assistantLimit} assistants). Upgrade to create more assistants.`;
+      } else if (subscription.planType === 'payg') {
+        reason = `Insufficient credits. Need $${await PricingService.getAssistantCost()} to create assistant (current balance: $${subscription.creditBalance})`;
+      } else {
+        reason = `Assistant limit reached (${currentAssistants}/${assistantLimit}). Top up with $${await PricingService.getAssistantCost()} or upgrade your plan.`;
+      }
       
       return {
         canCreate: false,
@@ -181,18 +198,49 @@ export class UsageValidator {
       const subscription = await this.getOrCreateSubscription(userId);
       const estimatedCost = estimatedMinutes * await PricingService.getPaygMinuteCost();
       
-      // No subscription = no payment = blocked
+      // No subscription = auto-create free trial (this should not happen now)
       if (!subscription) {
         return {
           canCreate: false,
           canCall: false,
-          reason: `Payment required to make calls. Pay $${await PricingService.getInitialPaygCharge()} for Pay-as-you-go or choose a monthly plan.`,
+          reason: `Account setup error. Please refresh the page.`,
           upgradeRequired: true,
           overage: {
             minutes: estimatedMinutes,
             cost: estimatedCost
           }
         };
+      }
+
+      // Check if trial has expired
+      if (subscription.isTrial && subscription.trialEndsAt && new Date() > subscription.trialEndsAt) {
+        return {
+          canCreate: false,
+          canCall: false,
+          reason: `Free trial expired. Upgrade to continue making calls.`,
+          upgradeRequired: true,
+          overage: {
+            minutes: estimatedMinutes,
+            cost: estimatedCost
+          }
+        };
+      }
+
+      // Check trial call limit ONLY for trial users
+      if (subscription.planType === 'trial') {
+        const callsRemaining = subscription.getCallsRemaining();
+        if (callsRemaining <= 0) {
+          return {
+            canCreate: false,
+            canCall: false,
+            reason: `Trial call limit reached (${subscription.callsUsed || 0}/${subscription.monthlyCallLimit} calls used). Upgrade to continue making calls.`,
+            upgradeRequired: true,
+            overage: {
+              minutes: estimatedMinutes,
+              cost: estimatedCost
+            }
+          };
+        }
       }
       
       // Check if can afford call (quota or credits)
@@ -209,9 +257,15 @@ export class UsageValidator {
       
       // Cannot afford call
       const minutesRemaining = subscription.getMinutesRemaining();
-      const reason = subscription.planType === 'payg' 
-        ? `Insufficient credits. Need $${estimatedCost.toFixed(2)} for ${estimatedMinutes} minutes (current balance: $${subscription.creditBalance})`
-        : `Not enough minutes remaining (${minutesRemaining}/${subscription.getTotalMinuteLimit()}). Top up with credits or upgrade your plan.`;
+      let reason;
+      
+      if (subscription.planType === 'trial') {
+        reason = `Trial call limit reached (${subscription.callsUsed}/5 calls used). Upgrade to continue making calls.`;
+      } else if (subscription.planType === 'payg') {
+        reason = `Insufficient credits. Need $${estimatedCost.toFixed(2)} for ${estimatedMinutes} minutes (current balance: $${subscription.creditBalance})`;
+      } else {
+        reason = `Not enough minutes remaining (${minutesRemaining}/${subscription.getTotalMinuteLimit()}). Top up with credits or upgrade your plan.`;
+      }
       
       return {
         canCreate: true,
@@ -319,7 +373,12 @@ export class UsageValidator {
         
         // Credit info
         creditBalance: subscription.creditBalance,
-        needsTopup: subscription.creditBalance <= subscription.minimumBalance
+        needsTopup: subscription.creditBalance <= subscription.minimumBalance,
+        
+        // Call tracking (for trial users)
+        callsUsed: subscription.callsUsed || 0,
+        callLimit: subscription.monthlyCallLimit || -1,
+        callsRemaining: subscription.planType === 'trial' ? subscription.getCallsRemaining() : -1
       };
       
     } catch (error) {
@@ -358,6 +417,19 @@ export class UsageValidator {
       
       // Update subscription usage
       subscription.minutesUsed += minutes;
+      
+      // Track calls for trial users ONLY when call duration > 1 second (answered call)
+      if (subscription.planType === 'trial' && durationSeconds > 1) {
+        subscription.callsUsed = (subscription.callsUsed || 0) + 1;
+        
+        logger.info('TRIAL_CALL_TRACKED', 'Trial call tracked - incrementing call counter', {
+          userId,
+          assistantId,
+          durationSeconds,
+          newCallsUsed: subscription.callsUsed,
+          callLimit: subscription.monthlyCallLimit
+        });
+      }
       
       // Calculate cost based on plan type
       let cost = 0;
@@ -410,7 +482,10 @@ export class UsageValidator {
       
       // Update detailed usage tracking
       const usageTracking = await UsageTracking.findOrCreateForMonth(userId);
-      usageTracking.addCallUsage(assistantId as any, assistantName, minutes, cost);
+      
+      // Convert assistantId to ObjectId - handle both string and ObjectId inputs
+      const assistantObjectId = new Types.ObjectId(assistantId);
+      usageTracking.addCallUsage(assistantObjectId, assistantName, minutes, cost);
       
       if (cost > 0 && subscription.planType !== 'payg') {
         usageTracking.overageCost += cost;
@@ -467,8 +542,66 @@ export class UsageValidator {
   
   private async getOrCreateSubscription(userId: string): Promise<any | null> {
     let subscription = await Subscription.findOne({ userId, isActive: true });
-    // Don't create default subscriptions - users must pay first
+    
+    // Do NOT auto-create trials anymore - users must choose a plan
+    // Just return null if no subscription exists
     return subscription;
+  }
+
+  private async createFreeTrial(userId: string): Promise<any> {
+    try {
+      // Set trial period (30 days from now)
+      const trialStart = new Date();
+      const trialEnd = new Date(trialStart.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+      const freeTrialSubscription = new Subscription({
+        userId,
+        planType: 'trial',
+        planName: 'Free Trial',
+        monthlyPrice: 0,
+        
+        // Trial limits: 1 assistant + 5 calls (leads)
+        monthlyMinuteLimit: -1, // Unlimited minutes for trial (we track by calls instead)
+        monthlyCallLimit: 5, // 5 calls limit for trial users
+        assistantLimit: 1,
+        
+        // Trial period
+        currentPeriodStart: trialStart,
+        currentPeriodEnd: trialEnd,
+        isTrial: true,
+        trialEndsAt: trialEnd,
+        
+        // Usage tracking
+        minutesUsed: 0,
+        assistantsCreated: 0,
+        callsUsed: 0,
+        
+        // No credits for trial
+        creditBalance: 0,
+        autoTopupEnabled: false,
+        
+        isActive: true
+      });
+
+      await freeTrialSubscription.save();
+
+      logger.info('FREE_TRIAL_CREATED', 'Created free trial subscription for new user', {
+        userId,
+        trialEndsAt: trialEnd,
+        limits: {
+          assistants: 1,
+          calls: 5
+        }
+      });
+
+      return freeTrialSubscription;
+    } catch (error) {
+      logger.error('FREE_TRIAL_CREATION_ERROR', 'Failed to create free trial', {
+        userId,
+        error
+      });
+      return null;
+    }
   }
   
   async resetBillingPeriod(userId: string): Promise<void> {

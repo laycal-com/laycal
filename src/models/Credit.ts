@@ -135,9 +135,11 @@ CreditSchema.statics.createAssistantPurchase = async function(
   userId: string,
   assistantId: ObjectId,
   assistantName: string,
-  currentBalance: number
+  currentBalance: number,
+  assistantCost?: number
 ) {
-  const amount = 20; // Fixed cost for assistant
+  // Use provided cost or fallback to default (for backward compatibility)
+  const amount = assistantCost || 20;
   const credit = new this({
     userId,
     transactionType: 'assistant_purchase',

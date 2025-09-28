@@ -90,10 +90,7 @@ export default function LeadsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showUpload, setShowUpload] = useState(false);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [retryingLeads, setRetryingLeads] = useState<Set<string>>(new Set());
-  const [leadCallSummary, setLeadCallSummary] = useState<CallSummary | null>(null);
-  const [loadingCallSummary, setLoadingCallSummary] = useState(false);
 
   const fetchLeads = async () => {
     try {
@@ -148,34 +145,7 @@ export default function LeadsPage() {
     });
   };
 
-  const fetchCallSummary = async (leadId: string) => {
-    setLoadingCallSummary(true);
-    try {
-      const response = await fetch(`/api/call-summaries?leadId=${leadId}&limit=1`);
-      if (!response.ok) throw new Error('Failed to fetch call summary');
-      
-      const data = await response.json();
-      if (data.success && data.summaries && data.summaries.length > 0) {
-        setLeadCallSummary(data.summaries[0]);
-      } else {
-        setLeadCallSummary(null);
-      }
-    } catch (error) {
-      console.error('Error fetching call summary:', error);
-      setLeadCallSummary(null);
-    } finally {
-      setLoadingCallSummary(false);
-    }
-  };
 
-  // Fetch call summary when a lead is selected
-  useEffect(() => {
-    if (selectedLead) {
-      fetchCallSummary(selectedLead._id);
-    } else {
-      setLeadCallSummary(null);
-    }
-  }, [selectedLead]);
 
   const handleRetryCall = async (leadId: string) => {
     if (retryingLeads.has(leadId)) return;
@@ -383,12 +353,9 @@ export default function LeadsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex space-x-2">
-                          <button
-                            onClick={() => setSelectedLead(lead)}
-                            className="bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-blue-700 transition-colors"
-                          >
+                          <Link href={`/call-summary/${lead._id}`} className="bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-blue-700 transition-colors">
                             View Details
-                          </button>
+                          </Link>
                           {canRetry(lead) && (
                             <button
                               onClick={() => handleRetryCall(lead._id)}
@@ -420,210 +387,7 @@ export default function LeadsPage() {
         </div>
       </div>
 
-      {/* Lead Details Modal */}
-      {selectedLead && (
-        <div className="fixed inset-0 bg-black/75 bg-opacity-50 flex items-center justify-center p-4 z-50 text-gray-800">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold text-gray-800">Lead Details</h3>
-                <div className="flex items-center space-x-2">
-                  {canRetry(selectedLead) && (
-                    <button
-                      onClick={() => {
-                        handleRetryCall(selectedLead._id);
-                        setSelectedLead(null);
-                      }}
-                      disabled={retryingLeads.has(selectedLead._id) || selectedLead.status === 'calling'}
-                      className={`px-3 py-1 text-sm font-medium rounded ${
-                        retryingLeads.has(selectedLead._id) || selectedLead.status === 'calling'
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-green-600 text-white hover:bg-green-700'
-                      }`}
-                    >
-                      {retryingLeads.has(selectedLead._id) ? 'Retrying...' : 'Retry Call'}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setSelectedLead(null)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
 
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-gray-700">Contact Information</h4>
-                  <div className="mt-2 space-y-2">
-                    <p><strong>Name:</strong> {selectedLead.name}</p>
-                    <p><strong>Phone:</strong> {selectedLead.phoneNumber}</p>
-                    {selectedLead.email && <p><strong>Email:</strong> {selectedLead.email}</p>}
-                    {selectedLead.company && <p><strong>Company:</strong> {selectedLead.company}</p>}
-                    {selectedLead.notes && <p><strong>Notes:</strong> {selectedLead.notes}</p>}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-medium text-gray-700">Call Status</h4>
-                  <div className="mt-2">
-                    <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(selectedLead.status)}`}>
-                      {selectedLead.status}
-                    </span>
-                  </div>
-                </div>
-
-                {selectedLead.callResults && (
-                  <div>
-                    <h4 className="font-medium text-gray-700">Call Results</h4>
-                    <div className="mt-2 space-y-2">
-                      <p><strong>Answered:</strong> {selectedLead.callResults.answered ? 'Yes' : 'No'}</p>
-                      {selectedLead.callResults.duration && (
-                        <p><strong>Duration:</strong> {formatDuration(selectedLead.callResults.duration)}</p>
-                      )}
-                      {selectedLead.callResults.endReason && (
-                        <p><strong>End Reason:</strong> {selectedLead.callResults.endReason}</p>
-                      )}
-                      {selectedLead.callResults.cost && (
-                        <p><strong>Cost:</strong> ${selectedLead.callResults.cost.toFixed(2)}</p>
-                      )}
-                      {selectedLead.callResults.evaluation && (
-                        <p><strong>Evaluation:</strong> 
-                          <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-                            selectedLead.callResults.evaluation === 'positive' 
-                              ? 'bg-green-100 text-green-800' 
-                              : selectedLead.callResults.evaluation === 'negative'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {selectedLead.callResults.evaluation}
-                          </span>
-                        </p>
-                      )}
-                      {selectedLead.callResults.summary && (
-                        <div>
-                          <strong>Summary:</strong>
-                          <p className="mt-1 p-3 bg-gray-50 rounded text-sm">{selectedLead.callResults.summary}</p>
-                        </div>
-                      )}
-                      {selectedLead.callResults.transcript && (
-                        <div>
-                          <strong>Transcript:</strong>
-                          <p className="mt-1 p-3 bg-gray-50 rounded text-sm max-h-40 overflow-y-auto">{selectedLead.callResults.transcript}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Call Summary Section */}
-                <div>
-                  <h4 className="font-medium text-gray-700">Call Data Analysis</h4>
-                  {loadingCallSummary ? (
-                    <div className="mt-2 flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      <span className="text-sm text-gray-600">Loading call analysis...</span>
-                    </div>
-                  ) : leadCallSummary ? (
-                    <div className="mt-2 space-y-3">
-                      {/* Extracted Information */}
-                      {Object.keys(leadCallSummary.extractedInfo).length > 0 && (
-                        <div>
-                          <strong className="text-sm">Extracted Information:</strong>
-                          <div className="mt-1 p-3 bg-blue-50 rounded text-sm space-y-1">
-                            {Object.entries(leadCallSummary.extractedInfo).map(([key, value]) => (
-                              value && (
-                                <div key={key} className="flex justify-between">
-                                  <span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span>
-                                  <span>{typeof value === 'string' ? value : JSON.stringify(value)}</span>
-                                </div>
-                              )
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Appointment Information */}
-                      {leadCallSummary.appointmentCreated && leadCallSummary.appointmentData && (
-                        <div>
-                          <strong className="text-sm">Appointment:</strong>
-                          <div className="mt-1 p-3 bg-green-50 rounded text-sm space-y-1">
-                            {leadCallSummary.appointmentData.title && (
-                              <p><strong>Title:</strong> {leadCallSummary.appointmentData.title}</p>
-                            )}
-                            {leadCallSummary.appointmentData.startTime && (
-                              <p><strong>Start:</strong> {formatDate(leadCallSummary.appointmentData.startTime)}</p>
-                            )}
-                            {leadCallSummary.appointmentData.endTime && (
-                              <p><strong>End:</strong> {formatDate(leadCallSummary.appointmentData.endTime)}</p>
-                            )}
-                            <p><strong>Status:</strong> 
-                              <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-                                leadCallSummary.appointmentData.confirmed 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {leadCallSummary.appointmentData.confirmed ? 'Confirmed' : 'Pending'}
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Structured Data */}
-                      {leadCallSummary.structuredData && Object.keys(leadCallSummary.structuredData).length > 0 && (
-                        <div>
-                          <strong className="text-sm">Additional Data:</strong>
-                          <div className="mt-1 p-3 bg-gray-50 rounded text-sm space-y-1">
-                            {Object.entries(leadCallSummary.structuredData).map(([key, value]) => (
-                              value && !['name', 'email', 'phoneNumber', 'slot_booked'].includes(key) && (
-                                <div key={key} className="flex justify-between">
-                                  <span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span>
-                                  <span>{typeof value === 'string' ? value : JSON.stringify(value)}</span>
-                                </div>
-                              )
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Call Summary Technical Details */}
-                      <div>
-                        <strong className="text-sm">Technical Details:</strong>
-                        <div className="mt-1 p-3 bg-gray-50 rounded text-sm space-y-1">
-                          <p><strong>Call ID:</strong> {leadCallSummary.vapiCallId}</p>
-                          <p><strong>Phone Number ID:</strong> {leadCallSummary.phoneNumberId}</p>
-                          {leadCallSummary.callData.startTime && (
-                            <p><strong>Call Start:</strong> {formatDate(leadCallSummary.callData.startTime)}</p>
-                          )}
-                          {leadCallSummary.callData.endTime && (
-                            <p><strong>Call End:</strong> {formatDate(leadCallSummary.callData.endTime)}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-sm text-gray-500">No call analysis data available</p>
-                  )}
-                </div>
-
-                <div>
-                  <h4 className="font-medium text-gray-700">Timestamps</h4>
-                  <div className="mt-2 space-y-2">
-                    <p><strong>Created:</strong> {formatDate(selectedLead.createdAt)}</p>
-                    {selectedLead.calledAt && (
-                      <p><strong>Called:</strong> {formatDate(selectedLead.calledAt)}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       </div>
     </PaymentGateWrapper>
   );

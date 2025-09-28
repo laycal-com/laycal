@@ -43,10 +43,15 @@ export default function AssistantsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingAssistant, setEditingAssistant] = useState<Assistant | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [selectedAssistantForTest, setSelectedAssistantForTest] = useState<Assistant | null>(null);
+  const [testPhoneNumber, setTestPhoneNumber] = useState('');
+  const [subscription, setSubscription] = useState<any>(null);
 
   useEffect(() => {
     if (isLoaded && user) {
       fetchAssistants();
+      fetchSubscription();
     }
   }, [isLoaded, user]);
 
@@ -62,6 +67,18 @@ export default function AssistantsPage() {
       toast.error('Failed to load assistants');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSubscription = async () => {
+    try {
+      const response = await fetch('/api/subscription');
+      if (response.ok) {
+        const data = await response.json();
+        setSubscription(data.subscription);
+      }
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
     }
   };
 
@@ -88,13 +105,23 @@ export default function AssistantsPage() {
     }
   };
 
-  const handleTest = async (assistant: Assistant) => {
-    const phoneNumber = prompt('Enter phone number to test (with country code, e.g., +1234567890):');
-    if (!phoneNumber) return;
+  const handleTest = (assistant: Assistant) => {
+    setSelectedAssistantForTest(assistant);
+    setTestPhoneNumber('');
+    setShowTestModal(true);
+  };
 
-    setTestingId(assistant._id);
+  const handleTestSubmit = async () => {
+    if (!selectedAssistantForTest || !testPhoneNumber.trim()) {
+      toast.error('Please enter a phone number');
+      return;
+    }
+
+    const phoneNumber = testPhoneNumber.trim();
+    setTestingId(selectedAssistantForTest._id);
+    
     try {
-      const response = await fetch(`/api/assistants/${assistant._id}/test`, {
+      const response = await fetch(`/api/assistants/${selectedAssistantForTest._id}/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phoneNumber })
@@ -102,17 +129,76 @@ export default function AssistantsPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.details || 'Failed to test assistant');
+        
+        // Handle the case where Vapi assistant doesn't exist
+        if (error.needsRecreation) {
+          const recreateConfirm = confirm(
+            `${error.details}\n\nWould you like to recreate this assistant in Vapi now? This will create a new assistant with the same settings.`
+          );
+          
+          if (recreateConfirm) {
+            await handleRecreateVapiAssistant(selectedAssistantForTest._id);
+            return;
+          }
+        }
+        
+        throw new Error(error.details || error.error || 'Failed to test assistant');
       }
 
       const data = await response.json();
       toast.success(`Test call initiated! Call ID: ${data.call.id}`);
+      setShowTestModal(false);
+      setTestPhoneNumber('');
+      setSelectedAssistantForTest(null);
     } catch (error) {
       console.error('Error testing assistant:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to test assistant');
     } finally {
       setTestingId(null);
     }
+  };
+
+  const handleRecreateVapiAssistant = async (assistantId: string) => {
+    try {
+      toast.info('Recreating assistant in Vapi...', {
+        description: 'This may take a few seconds'
+      });
+
+      const response = await fetch(`/api/assistants/${assistantId}/recreate-vapi`, {
+        method: 'POST'
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.details || 'Failed to recreate assistant');
+      }
+
+      const data = await response.json();
+      if (data.wasExisting) {
+        toast.success('Assistant reconnected!', {
+          description: `Found existing assistant in Vapi and reconnected it`
+        });
+      } else {
+        toast.success('Assistant recreated successfully!', {
+          description: `New Vapi ID: ${data.newVapiAssistantId.slice(-8)}`
+        });
+      }
+
+      // Refresh the assistants list to get updated info
+      fetchAssistants();
+      
+      // Close modal and reset state
+      setShowTestModal(false);
+      setTestPhoneNumber('');
+      setSelectedAssistantForTest(null);
+    } catch (error) {
+      console.error('Error recreating assistant:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to recreate assistant');
+    }
+  };
+
+  const isUSPhoneNumber = (phoneNumber: string) => {
+    return /^\+1\d{10}$/.test(phoneNumber);
   };
 
   const handleFormSuccess = () => {
@@ -215,7 +301,10 @@ export default function AssistantsPage() {
 
                   <div className="flex items-center space-x-2 text-sm">
                     <Phone className="w-4 h-4 text-gray-500" />
-                    <span>Uses your phone providers</span>
+                    <span>US numbers: Default provider</span>
+                  </div>
+                  <div className="text-xs text-gray-500 pl-6">
+                    International: Custom providers required
                   </div>
                 </div>
 
@@ -247,16 +336,19 @@ export default function AssistantsPage() {
                     Edit
                   </Button>
                   
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTest(assistant)}
-                    disabled={testingId === assistant._id || !assistant.isActive}
-                    className="flex-1 bg-white border-gray-300 text-gray-700 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400"
-                  >
-                    <TestTube className="w-4 h-4 mr-1" />
-                    {testingId === assistant._id ? 'Testing...' : 'Test'}
-                  </Button>
+                  {/* Hide test button for trial users */}
+                  {subscription?.planType !== 'trial' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTest(assistant)}
+                      disabled={testingId === assistant._id || !assistant.isActive}
+                      className="flex-1 bg-white border-gray-300 text-gray-700 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400"
+                    >
+                      <TestTube className="w-4 h-4 mr-1" />
+                      {testingId === assistant._id ? 'Testing...' : 'Test'}
+                    </Button>
+                  )}
                   
                   <Button
                     variant="destructive"
@@ -284,6 +376,120 @@ export default function AssistantsPage() {
             setEditingAssistant(null);
           }}
         />
+      )}
+
+      {/* Test Assistant Modal */}
+      {showTestModal && selectedAssistantForTest && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Test Assistant: {selectedAssistantForTest.name}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowTestModal(false);
+                    setSelectedAssistantForTest(null);
+                    setTestPhoneNumber('');
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Phone Provider Info */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <h4 className="text-sm font-medium text-blue-900 mb-2">Phone Provider Information</h4>
+                  <div className="space-y-2 text-xs text-blue-800">
+                    <div className="flex items-center space-x-2">
+                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                        US Numbers (+1)
+                      </span>
+                      <span>Default provider (no setup required)</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium">
+                        International
+                      </span>
+                      <span>Requires custom phone provider in Settings</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Phone Number Input */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Test Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={testPhoneNumber}
+                    onChange={(e) => setTestPhoneNumber(e.target.value)}
+                    placeholder="+1234567890"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter phone number in E.164 format (e.g., +1234567890)
+                  </p>
+                  
+                  {/* Real-time validation feedback */}
+                  {testPhoneNumber && (
+                    <div className="mt-2">
+                      {isUSPhoneNumber(testPhoneNumber) ? (
+                        <div className="flex items-center space-x-2 text-green-700">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          <span className="text-sm">US number - will use default provider</span>
+                        </div>
+                      ) : testPhoneNumber.startsWith('+') ? (
+                        <div className="flex items-center space-x-2 text-yellow-700">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                          </svg>
+                          <span className="text-sm">International number - requires custom provider</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2 text-red-700">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          <span className="text-sm">Invalid format - must start with + and country code</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={handleTestSubmit}
+                    disabled={!testPhoneNumber.trim() || testingId === selectedAssistantForTest._id}
+                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {testingId === selectedAssistantForTest._id ? 'Testing...' : 'Start Test Call'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowTestModal(false);
+                      setSelectedAssistantForTest(null);
+                      setTestPhoneNumber('');
+                    }}
+                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
       </div>
     </PaymentGateWrapper>

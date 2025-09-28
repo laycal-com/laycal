@@ -19,6 +19,15 @@ export async function GET(request: NextRequest) {
     const phoneNumberId = searchParams.get('phoneNumberId');
     const leadId = searchParams.get('leadId');
     const status = searchParams.get('status');
+    const summaryId = searchParams.get('id');
+
+    if (summaryId) {
+      const summary = await CallSummary.findOne({ _id: summaryId, userId });
+      if (!summary) {
+        return NextResponse.json({ error: 'Call summary not found' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, summaries: [summary] });
+    }
 
     // Build filter
     const filter: any = { userId };

@@ -41,19 +41,19 @@ This is a **SaaS template** built as a **lead calling platform** using AI voice 
 
 ## Key Technologies & Architecture
 
-- **Framework**: Next.js 15 with TypeScript, App Router
+- **Framework**: Next.js 15 with TypeScript, App Router, React 19
 - **Authentication**: Clerk (not NextAuth)
 - **Database**: MongoDB with Mongoose ODM
 - **Payments**: PayPal integration (not Stripe)
 - **AI Voice**: Vapi.ai for outbound calling
 - **Phone Providers**: Multi-tenant support for Twilio, Plivo, Nexmo/Vonage
 - **Calendar**: Google Calendar integration
-- **UI**: Tailwind CSS + shadcn/ui components
+- **UI**: Tailwind CSS 4 + shadcn/ui components, Framer Motion
 - **Animations**: GSAP + Three.js for 3D effects
 - **Logging**: Custom file-based logger with structured logs
 - **Monitoring**: Sentry integration for error tracking
 - **Analytics**: Vercel Analytics
-- **Build Configuration**: Custom Next.js config with security headers and optimizations
+- **Build Configuration**: Custom Next.js config with security headers, Turbopack, console removal
 
 ## Critical File Locations
 
@@ -63,21 +63,29 @@ This is a **SaaS template** built as a **lead calling platform** using AI voice 
 - `/src/models/CalendarConnection.ts` - Calendar integrations
 - `/src/models/PendingAppointment.ts` - Appointment booking workflow
 - `/src/models/Assistant.ts` - AI assistant configurations and VAPI integration
+- `/src/models/CallSummary.ts` - Call data extraction with structured data and stereo recording URLs
+- `/src/models/Credit.ts` - Usage-based billing system with transaction tracking
+- `/src/models/Admin.ts` - Separate admin authentication system
 
 ### Core Services
 - `/src/lib/tenantVapi.ts` - **Primary Vapi service** (tenant-specific with phone provider integration, conversation flow optimization)
 - `/src/lib/vapi.ts` - Basic Vapi service (simpler, global)
 - `/src/lib/mongodb.ts` - Database connection with caching
 - `/src/lib/logger.ts` - Structured logging system
+- `/src/lib/usageValidator.ts` - Credit-based usage tracking and billing validation
+- `/src/lib/csvProcessor.ts` - Lead file processing and validation
 - `/src/lib/calendar/` - Calendar provider abstractions
 
 ### API Routes Structure
 - `/src/app/api/leads/` - Lead CRUD and CSV upload
 - `/src/app/api/phone-providers/` - Phone provider management
 - `/src/app/api/assistants/` - **AI assistant creation and management**
-- `/src/app/api/webhooks/vapi/` - Vapi webhook handler (call status updates, data extraction)
+- `/src/app/api/webhooks/vapi/` - **Core webhook handler** (call status updates, data extraction, stereo recording processing)
 - `/src/app/api/calendar/` - Calendar authentication and management
 - `/src/app/api/appointments/` - Appointment confirmation/rejection
+- `/src/app/api/call-summaries/` - Call data extraction and structured information display
+- `/src/app/api/admin/` - Separate admin system with user management and credit adjustments
+- `/src/app/api/paypal/` - PayPal payment processing and subscription management
 
 ### Key Components
 - `/src/components/PromptWizard.tsx` - **10-step AI prompt generation wizard**
@@ -89,6 +97,8 @@ This is a **SaaS template** built as a **lead calling platform** using AI voice 
 - `/src/app/dashboard/page.tsx` - Enhanced dashboard with assistant management
 - `/src/app/settings/page.tsx` - Phone provider and calendar setup
 - `/src/app/pricing/page.tsx` - PayPal subscription plans
+- `/src/app/blogs/page.tsx` - Blog system with markdown file processing
+- `/src/app/admin/` - Admin dashboard for user and system management
 
 ## Important Patterns & Conventions
 
@@ -172,6 +182,9 @@ npx tsc --noEmit      # Type check without output
 6. **Database Connection**: Use `connectToDatabase()` in API routes - handles connection caching
 7. **TypeScript Configuration**: Build ignores TypeScript errors (`ignoreBuildErrors: true`) and ESLint errors during builds
 8. **Admin System**: Separate admin authentication system - don't confuse with user Clerk auth
+9. **Call Data Extraction**: Use `generateStructuredDataPrompt` in PromptWizard.tsx to include context for better extraction
+10. **Stereo Recording URLs**: Available in call summaries via webhook artifact data (`stereoRecordingUrl` field)
+11. **Blog Directory**: Requires `/blogs/` directory at project root with markdown files for build to succeed
 
 ## File Upload Patterns
 
@@ -199,11 +212,28 @@ npx tsc --noEmit      # Type check without output
 
 ## When Adding New Features
 
-1. **Lead-related**: Extend Lead model, update webhook handlers
+1. **Lead-related**: Extend Lead model, update webhook handlers in `/src/app/api/webhooks/vapi/route.ts`
 2. **Phone providers**: Follow encryption pattern in PhoneProvider model
 3. **Calendar**: Implement CalendarProvider interface
 4. **API routes**: Include proper auth checks, logging, and error handling
-5. **UI**: Use existing Tailwind + shadcn/ui pattern
+5. **UI**: Use existing Tailwind + shadcn/ui pattern with Framer Motion
 6. **Logging**: Add structured logging with operation codes
+7. **Call data processing**: Update CallSummary model and webhook extraction logic
+8. **Credit system**: Extend usage tracking in `usageValidator.ts` for new billable features
+9. **Prompt generation**: Enhance PromptWizard.tsx for new data extraction requirements
+
+## Architecture Notes
+
+### Build Configuration
+- **Turbopack** enabled for fast development builds
+- **Console statements removed** in production via Next.js config
+- **Security headers** configured (X-Frame-Options, X-Content-Type-Options)
+- **TypeScript/ESLint errors ignored** during builds for deployment flexibility
+
+### Data Flow Patterns
+- **Webhook-driven architecture**: Call status managed entirely through Vapi webhooks
+- **Structured data extraction**: AI prompts enhanced with business context for better results
+- **Multi-tenant isolation**: All data segregated by userId with proper indexing
+- **Credit-based billing**: Usage tracked in real-time with overage protection
 
 This is a mature platform with established patterns - follow existing conventions rather than introducing new ones.

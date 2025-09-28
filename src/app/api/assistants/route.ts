@@ -7,6 +7,7 @@ import { tenantVapiService } from '@/lib/tenantVapi';
 import { usageValidator } from '@/lib/usageValidator';
 import { logger } from '@/lib/logger';
 import { ensureUserExists } from '@/lib/userRegistration';
+import { PricingService } from '@/lib/pricing';
 
 export async function GET() {
   try {
@@ -114,31 +115,44 @@ export async function POST(request: NextRequest) {
     const Subscription = require('@/models/Subscription').default;
     const subscription = await Subscription.findOne({ userId, isActive: true });
     if (subscription) {
+      // Get dynamic assistant cost from system settings
+      const assistantCost = await PricingService.getAssistantCost();
       const affordability = subscription.canAffordAssistant();
-      if (affordability.useCredits && subscription.creditBalance >= 20) {
-        // Deduct credits
-        const oldBalance = subscription.creditBalance;
-        subscription.creditBalance -= 20;
-        
-        // Create credit transaction record for Recent Activity
-        try {
-          const Credit = require('@/models/Credit').default;
-          await Credit.createAssistantPurchase(
+      
+      if (affordability.useCredits) {
+        if (subscription.creditBalance >= assistantCost) {
+          // Deduct credits
+          const oldBalance = subscription.creditBalance;
+          subscription.creditBalance -= assistantCost;
+          
+          // Create credit transaction record for Recent Activity
+          try {
+            const Credit = require('@/models/Credit').default;
+            await Credit.createAssistantPurchase(
+              userId,
+              assistant._id,
+              name,
+              oldBalance,
+              assistantCost
+            );
+          } catch (creditError) {
+            logger.error('CREDIT_LOG_ERROR', 'Failed to log assistant purchase transaction', { creditError });
+          }
+          
+          logger.info('ASSISTANT_PAYMENT_DEDUCTED', 'Credits deducted for assistant creation', {
             userId,
-            assistant._id,
-            name,
-            oldBalance
-          );
-        } catch (creditError) {
-          logger.error('CREDIT_LOG_ERROR', 'Failed to log assistant purchase transaction', { creditError });
+            assistantId: assistant._id.toString(),
+            amountDeducted: assistantCost,
+            remainingBalance: subscription.creditBalance
+          });
+        } else {
+          logger.warn('ASSISTANT_INSUFFICIENT_CREDITS', 'Insufficient credits for assistant purchase', {
+            userId,
+            assistantId: assistant._id.toString(),
+            required: assistantCost,
+            available: subscription.creditBalance
+          });
         }
-        
-        logger.info('ASSISTANT_PAYMENT_DEDUCTED', 'Credits deducted for assistant creation', {
-          userId,
-          assistantId: assistant._id.toString(),
-          amountDeducted: 20,
-          remainingBalance: subscription.creditBalance
-        });
       }
       // Always increment assistant count
       subscription.assistantsCreated = (subscription.assistantsCreated || 0) + 1;

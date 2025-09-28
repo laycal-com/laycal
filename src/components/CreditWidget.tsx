@@ -287,7 +287,9 @@ export function CreditWidget({ onTopup }: CreditWidgetProps) {
 
           {/* Plan Info */}
           <div className="text-xs text-[#64748b] pt-2 border-t border-[#e2e8f0]">
-            {planType === 'payg' ? (
+            {planType === 'trial' ? (
+              <p className="font-medium">🎉 Free Trial: 1 assistant • 5 calls total</p>
+            ) : planType === 'payg' ? (
               <p className="font-medium">💡 Pay-as-you-go: ${pricing?.cost_per_minute_payg || 0.07}/minute • ${pricing?.assistant_base_cost || 20}/assistant</p>
             ) : (
               <p className="font-medium">💡 Credits used when plan quota exceeded</p>

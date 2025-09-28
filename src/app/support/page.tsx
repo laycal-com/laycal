@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +38,7 @@ interface CreateTicketForm {
 
 export default function SupportPage() {
   const { user } = useUser();
+  const searchParams = useSearchParams();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -55,7 +57,19 @@ export default function SupportPage() {
     
     // Mark support as visited when page loads
     localStorage.setItem('support-last-checked', new Date().toISOString());
-  }, []);
+    
+    // Check for URL parameters
+    const category = searchParams.get('category');
+    if (category && category === 'custom_plan_request') {
+      setFormData(prev => ({ 
+        ...prev, 
+        category: 'custom_plan_request',
+        subject: 'Custom Plan Request',
+        description: 'I am interested in setting up a custom enterprise plan. Please contact me to discuss pricing and requirements.\n\nBusiness requirements:\n- \n\nExpected volume:\n- \n\nSpecial features needed:\n- \n\nContact preference:\n- '
+      }));
+      setShowCreateForm(true);
+    }
+  }, [searchParams]);
 
   const fetchTicketDetails = async (ticketId: string) => {
     try {
@@ -322,6 +336,7 @@ export default function SupportPage() {
                       <option value="feature_request">Feature Request</option>
                       <option value="bug_report">Bug Report</option>
                       <option value="account">Account Management</option>
+                      <option value="custom_plan_request">Custom Plan Request</option>
                     </select>
                   </div>
                   <div className="flex items-center gap-2 pt-6">

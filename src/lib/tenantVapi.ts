@@ -1,6 +1,7 @@
 import { connectToDatabase } from '@/lib/mongodb';
 import PhoneProvider from '@/models/PhoneProvider';
 import { logger } from './logger';
+import { getPhoneProviderOrDefault, getNoPhoneProviderErrorMessage } from './defaultPhoneProvider';
 
 const VAPI_API_KEY = process.env.VAPI_API_KEY;
 const VAPI_ASSISTANT_ID = process.env.VAPI_ASSISTANT_ID;
@@ -81,37 +82,47 @@ export class TenantVapiService {
 
     await connectToDatabase();
     
-    let phoneProvider;
-    let assistantId;
+    let vapiPhoneNumberId: string;
+    let assistantId: string;
+    let isUsingDefaultProvider = false;
 
     // If specific phoneProviderId and assistantId are provided, use them
     if (callData.phoneProviderId && callData.assistantId) {
-      phoneProvider = await PhoneProvider.findById(callData.phoneProviderId);
+      const phoneProvider = await PhoneProvider.findById(callData.phoneProviderId);
       assistantId = callData.assistantId;
       
       if (!phoneProvider) {
         throw new Error('Specified phone provider not found');
       }
-    } else {
-      // Fallback to default behavior for backward compatibility
-      phoneProvider = await PhoneProvider.findOne({
-        userId: callData.userId,
-        isActive: true,
-        isDefault: true
-      });
-      assistantId = VAPI_ASSISTANT_ID;
 
-      if (!phoneProvider) {
-        throw new Error('No active phone provider configured. Please add a phone provider in your settings.');
+      // Create or get the Vapi phone number for this specific provider
+      try {
+        vapiPhoneNumberId = await this.ensureVapiPhoneNumber(phoneProvider);
+      } catch (error) {
+        throw new Error(`Failed to configure phone number in Vapi: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-    }
+    } else {
+      // Use new default provider logic with US phone number support
+      // Use the provided assistantId if available, otherwise fall back to environment variable
+      assistantId = callData.assistantId || VAPI_ASSISTANT_ID || '';
+      
+      const providerResult = await getPhoneProviderOrDefault(callData.userId, callData.phoneNumber);
+      
+      if (!providerResult) {
+        throw new Error(getNoPhoneProviderErrorMessage(callData.phoneNumber));
+      }
 
-    // Create or get the Vapi phone number for this provider
-    let vapiPhoneNumberId;
-    try {
-      vapiPhoneNumberId = await this.ensureVapiPhoneNumber(phoneProvider);
-    } catch (error) {
-      throw new Error(`Failed to configure phone number in Vapi: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      vapiPhoneNumberId = providerResult.vapiPhoneNumberId;
+      isUsingDefaultProvider = providerResult.isDefault;
+
+      // Log when using default provider for US numbers
+      if (isUsingDefaultProvider) {
+        logger.info('USING_DEFAULT_US_PROVIDER', 'Using default phone provider for US number', {
+          userId: callData.userId,
+          targetPhoneNumber: callData.phoneNumber,
+          vapiPhoneNumberId
+        });
+      }
     }
 
     // Make the call using the specified or default assistant
@@ -585,6 +596,40 @@ export class TenantVapiService {
     }
 
     return response.json();
+  }
+
+  async getAllAssistants(): Promise<VapiAssistantResponse[]> {
+    if (!this.apiKey) {
+      throw new Error('Vapi API key is required');
+    }
+
+    const response = await fetch(`${this.baseUrl}/assistant`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to get assistants: ${response.status} - ${error}`);
+    }
+
+    return response.json();
+  }
+
+  async findAssistantByName(name: string): Promise<VapiAssistantResponse | null> {
+    try {
+      const assistants = await this.getAllAssistants();
+      return assistants.find(assistant => assistant.name === name) || null;
+    } catch (error) {
+      logger.error('VAPI_FIND_ASSISTANT_ERROR', 'Failed to find assistant by name', {
+        error,
+        data: { name }
+      });
+      return null;
+    }
   }
 
   async testAssistant(assistantId: string, phoneNumber: string, phoneProviderId: string): Promise<TenantVapiCallResponse> {

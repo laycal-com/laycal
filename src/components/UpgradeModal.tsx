@@ -3,17 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { X, Check, Clock, Bot, TrendingUp } from 'lucide-react';
-
-interface UpgradeOption {
-  planType: string;
-  planName: string;
-  monthlyPrice: number;
-  minuteLimit: number;
-  assistantLimit: number;
-  savings?: number;
-}
+import { X, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PricingData {
   assistant_base_cost: number;
@@ -29,16 +20,21 @@ interface UpgradeModalProps {
 }
 
 export function UpgradeModal({ onClose }: UpgradeModalProps) {
-  const [upgradeOptions, setUpgradeOptions] = useState<UpgradeOption[]>([]);
-  const [currentUsage, setCurrentUsage] = useState<any>(null);
   const [pricing, setPricing] = useState<PricingData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [upgrading, setUpgrading] = useState<string | null>(null);
+  const [toppingUp, setToppingUp] = useState(false);
+  const [customAmount, setCustomAmount] = useState(25); // Default to initial PAYG amount
 
   useEffect(() => {
-    fetchUpgradeOptions();
     fetchPricing();
   }, []);
+
+  useEffect(() => {
+    // Set default amount to initial PAYG charge when pricing loads
+    if (pricing && customAmount === 25) {
+      setCustomAmount(pricing.initial_payg_charge);
+    }
+  }, [pricing]);
 
   const fetchPricing = async () => {
     try {
@@ -49,62 +45,65 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
       }
     } catch (error) {
       console.error('Failed to fetch pricing:', error);
-    }
-  };
-
-  const fetchUpgradeOptions = async () => {
-    try {
-      const response = await fetch('/api/subscription');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch upgrade options');
-      }
-      
-      const data = await response.json();
-      setUpgradeOptions(data.upgradeOptions || []);
-      setCurrentUsage(data.subscription);
-    } catch (error) {
-      console.error('Error fetching upgrade options:', error);
+      // Use default values if fetch fails
+      setPricing({
+        assistant_base_cost: 20,
+        cost_per_minute_payg: 0.07,
+        cost_per_minute_overage: 0.05,
+        minimum_topup_amount: 5,
+        initial_payg_charge: 25,
+        payg_initial_credits: 5
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpgrade = async (planType: string) => {
-    setUpgrading(planType);
-    
-    // In a real implementation, this would redirect to PayPal
-    // For now, just show a message
-    alert(`Redirecting to PayPal to upgrade to ${planType} plan...`);
-    
-    setUpgrading(null);
+  const handleTopup = async (amount: number) => {
+    setToppingUp(true);
+    try {
+      const response = await fetch('/api/paypal/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          description: `Upgrade to Pay-as-you-go: $${amount}`,
+          planType: 'payg'
+        })
+      });
+
+      if (response.ok) {
+        const orderData = await response.json();
+        if (orderData.approvalUrl) {
+          window.location.href = orderData.approvalUrl;
+        }
+      } else {
+        throw new Error('Failed to create payment order');
+      }
+    } catch (error) {
+      toast.error('Payment failed', {
+        description: 'Please try again or contact support.'
+      });
+    } finally {
+      setToppingUp(false);
+    }
   };
 
-  const formatLimit = (limit: number) => {
-    return limit === -1 ? 'Unlimited' : limit.toLocaleString();
+  const handleCustomAmountChange = (amount: number) => {
+    // Use dynamic minimum amount from pricing
+    const minAmount = pricing?.minimum_topup_amount || 5;
+    const adjustedAmount = Math.max(minAmount, Math.round(amount / minAmount) * minAmount);
+    setCustomAmount(adjustedAmount);
   };
 
-  const getPlanColor = (planType: string) => {
-    const colors = {
-      starter: 'border-gray-200',
-      growth: 'border-blue-200 bg-blue-50',
-      pro: 'border-purple-200 bg-purple-50',
-      enterprise: 'border-yellow-200 bg-yellow-50',
-      payg: 'border-green-200 bg-green-50'
-    };
-    return colors[planType as keyof typeof colors] || 'border-gray-200';
+  const incrementAmount = () => {
+    const minAmount = pricing?.minimum_topup_amount || 5;
+    setCustomAmount(prev => prev + minAmount);
   };
 
-  const isRecommended = (planType: string) => {
-    if (!currentUsage) return false;
-    
-    // Recommend Growth if user is hitting assistant limits
-    if (currentUsage.assistantsRemaining <= 0 && planType === 'growth') return true;
-    
-    // Recommend Pro if user needs more minutes
-    if (currentUsage.minutesRemaining < 500 && planType === 'pro') return true;
-    
-    return false;
+  const decrementAmount = () => {
+    const minAmount = pricing?.minimum_topup_amount || 5;
+    setCustomAmount(prev => Math.max(minAmount, prev - minAmount));
   };
 
   if (loading) {
@@ -113,7 +112,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
         <Card className="max-w-md w-full">
           <CardContent className="p-6 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p>Loading upgrade options...</p>
+            <p>Loading...</p>
           </CardContent>
         </Card>
       </div>
@@ -122,12 +121,12 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+      <Card className="max-w-md w-full">
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle className="text-2xl">Upgrade Your Plan</CardTitle>
-              <p className="text-gray-600 mt-2">Choose a plan that fits your calling needs</p>
+              <CardTitle className="text-xl">Add Credits</CardTitle>
+              <p className="text-gray-600 mt-1">Top up your account to continue making calls</p>
             </div>
             <Button variant="outline" size="sm" onClick={onClose}>
               <X className="w-4 h-4" />
@@ -135,129 +134,74 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
-          {/* Current Usage Summary */}
-          {currentUsage && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-2">Current Usage</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Plan:</span>
-                  <div className="font-medium">{currentUsage.planName}</div>
-                </div>
-                <div>
-                  <span className="text-gray-600">Minutes Used:</span>
-                  <div className="font-medium">{currentUsage.minutesUsed} / {formatLimit(currentUsage.minuteLimit)}</div>
-                </div>
-                <div>
-                  <span className="text-gray-600">Assistants:</span>
-                  <div className="font-medium">{currentUsage.assistantsCreated} / {formatLimit(currentUsage.assistantLimit)}</div>
-                </div>
-                <div>
-                  <span className="text-gray-600">This Month:</span>
-                  <div className="font-medium">${currentUsage.currentPeriodCost.toFixed(2)}</div>
-                </div>
-              </div>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Amount</span>
+              <span className="text-xs text-gray-500">
+                Min: ${pricing?.minimum_topup_amount || 5}
+              </span>
             </div>
-          )}
-
-          {/* Upgrade Options */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {upgradeOptions.map((option) => (
-              <div
-                key={option.planType}
-                className={`relative border-2 rounded-lg p-6 ${getPlanColor(option.planType)}`}
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={decrementAmount}
+                disabled={customAmount <= (pricing?.minimum_topup_amount || 5)}
+                className="w-8 h-8 p-0"
               >
-                {isRecommended(option.planType) && (
-                  <Badge className="absolute -top-2 left-4 bg-blue-600 text-white">
-                    Recommended
-                  </Badge>
-                )}
-
-                <div className="text-center mb-4">
-                  <h3 className="text-xl font-bold">{option.planName}</h3>
-                  <div className="text-3xl font-bold text-blue-600 mt-2">
-                    ${option.monthlyPrice}
-                    <span className="text-sm text-gray-600 font-normal">
-                      {option.planType === 'payg' ? '/month + usage' : '/month'}
-                    </span>
-                  </div>
-                  {option.savings && option.savings > 0 && (
-                    <div className="text-sm text-green-600 font-medium">
-                      Save ${option.savings}/month
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm">
-                      {option.planType === 'payg' 
-                        ? `Pay per minute ($${pricing?.cost_per_minute_payg || 0.07}/min)` 
-                        : `${formatLimit(option.minuteLimit)} minutes/month`
-                      }
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Bot className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm">
-                      {formatLimit(option.assistantLimit)} AI assistants
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">All voice providers included</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Calendar integration</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Call analytics & transcripts</span>
-                  </div>
-                  {(option.planType === 'pro' || option.planType === 'enterprise') && (
-                    <div className="flex items-center space-x-2">
-                      <Check className="w-4 h-4 text-green-500" />
-                      <span className="text-sm">Priority support</span>
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  onClick={() => handleUpgrade(option.planType)}
-                  disabled={upgrading === option.planType}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  {upgrading === option.planType ? 'Processing...' : 'Upgrade Now'}
-                </Button>
+                -
+              </Button>
+              
+              <div className="flex-1">
+                <input
+                  type="number"
+                  value={customAmount}
+                  onChange={(e) => handleCustomAmountChange(Number(e.target.value))}
+                  min={pricing?.minimum_topup_amount || 5}
+                  step={pricing?.minimum_topup_amount || 5}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-center font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
-            ))}
-          </div>
-
-          {/* Add-ons Section */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold mb-4">Need More? Add Individual Items</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="border rounded-lg p-4">
-                <h4 className="font-medium mb-2">Extra Minutes</h4>
-                <p className="text-sm text-gray-600 mb-3">Add calling minutes to your current plan</p>
-                <div className="text-lg font-semibold mb-2">$0.05 per minute</div>
-                <Button variant="outline" className="w-full">
-                  Buy Minutes
-                </Button>
-              </div>
-              <div className="border rounded-lg p-4">
-                <h4 className="font-medium mb-2">Extra Assistants</h4>
-                <p className="text-sm text-gray-600 mb-3">Create more AI assistants</p>
-                <div className="text-lg font-semibold mb-2">${pricing?.assistant_base_cost || 20} per assistant/month</div>
-                <Button variant="outline" className="w-full">
-                  Add Assistants
-                </Button>
-              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={incrementAmount}
+                className="w-8 h-8 p-0"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
             </div>
           </div>
+
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <div className="text-sm text-blue-800">
+              <strong>What you'll get:</strong>
+            </div>
+            <div className="text-sm text-blue-700 mt-1">
+              • Unlimited AI assistants
+            </div>
+            <div className="text-sm text-blue-700">
+              • Pay-per-minute calling (${pricing?.cost_per_minute_payg || 0.07}/min)
+            </div>
+            <div className="text-sm text-blue-700">
+              • All premium features included
+            </div>
+          </div>
+
+          <Button
+            onClick={() => handleTopup(customAmount)}
+            disabled={toppingUp}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11"
+          >
+            {toppingUp ? 'Processing...' : `Add $${customAmount} Credits`}
+          </Button>
+
+          <p className="text-xs text-gray-500 text-center">
+            Secure payment processed by PayPal
+          </p>
         </CardContent>
       </Card>
     </div>

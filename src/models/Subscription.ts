@@ -5,12 +5,13 @@ export interface ISubscription extends Document {
   userId: string;
   
   // Plan details
-  planType: 'starter' | 'growth' | 'pro' | 'enterprise' | 'payg' | 'none';
+  planType: 'starter' | 'growth' | 'pro' | 'enterprise' | 'payg' | 'trial' | 'none';
   planName: string;
   monthlyPrice: number;
   
   // Usage limits
   monthlyMinuteLimit: number;        // -1 for unlimited
+  monthlyCallLimit: number;          // For trial users: limit number of calls per period
   assistantLimit: number;            // -1 for unlimited
   
   // Current usage tracking
@@ -18,6 +19,7 @@ export interface ISubscription extends Document {
   currentPeriodEnd: Date;
   minutesUsed: number;
   assistantsCreated: number;
+  callsUsed: number;                     // For trial users: track number of calls made
   
   // Add-ons
   extraMinutes: number;              // Purchased extra minutes
@@ -62,7 +64,7 @@ const SubscriptionSchema = new Schema<ISubscription>({
   // Plan details
   planType: {
     type: String,
-    enum: ['starter', 'growth', 'pro', 'enterprise', 'payg', 'none'],
+    enum: ['starter', 'growth', 'pro', 'enterprise', 'payg', 'trial', 'none'],
     required: true
   },
   planName: {
@@ -80,6 +82,11 @@ const SubscriptionSchema = new Schema<ISubscription>({
     type: Number,
     required: true,
     min: -1 // -1 means unlimited
+  },
+  monthlyCallLimit: {
+    type: Number,
+    default: -1, // -1 means unlimited (for PAYG), trial users get explicit limits
+    min: -1
   },
   assistantLimit: {
     type: Number,
@@ -108,6 +115,11 @@ const SubscriptionSchema = new Schema<ISubscription>({
     min: 0
   },
   assistantsCreated: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  callsUsed: {
     type: Number,
     default: 0,
     min: 0
@@ -214,6 +226,11 @@ SubscriptionSchema.methods.getAssistantsRemaining = function(): number {
   return Math.max(0, totalLimit - this.assistantsCreated);
 };
 
+SubscriptionSchema.methods.getCallsRemaining = function(): number {
+  if (this.monthlyCallLimit === -1) return -1; // Unlimited
+  return Math.max(0, this.monthlyCallLimit - (this.callsUsed || 0));
+};
+
 // Credit-based methods
 SubscriptionSchema.methods.deductCredits = function(amount: number): boolean {
   if (this.creditBalance >= amount) {
@@ -232,15 +249,21 @@ SubscriptionSchema.methods.needsTopup = function(): boolean {
 };
 
 SubscriptionSchema.methods.canAffordCall = function(estimatedCost: number): boolean {
-  // For subscription plans, check if they have quota or credits
-  if (this.planType !== 'payg') {
-    const minutesRemaining = this.getMinutesRemaining();
-    if (minutesRemaining > 0) return true; // Has quota
-    return this.creditBalance >= estimatedCost; // Fallback to credits
+  // For trial users ONLY, check call limit instead of minutes
+  if (this.planType === 'trial') {
+    const callsRemaining = this.getCallsRemaining();
+    return callsRemaining > 0 || callsRemaining === -1; // Has call quota or unlimited
   }
   
-  // For PAYG, only check credits
-  return this.creditBalance >= estimatedCost;
+  // For PAYG plans, only check credits (no call or minute limits)
+  if (this.planType === 'payg') {
+    return this.creditBalance >= estimatedCost;
+  }
+  
+  // For other subscription plans (starter, growth, pro, etc.), check minute quota or credits
+  const minutesRemaining = this.getMinutesRemaining();
+  if (minutesRemaining > 0) return true; // Has minute quota
+  return this.creditBalance >= estimatedCost; // Fallback to credits
 };
 
 SubscriptionSchema.methods.canAffordAssistant = function(): { canAfford: boolean; cost: number; useCredits: boolean } {
@@ -250,10 +273,12 @@ SubscriptionSchema.methods.canAffordAssistant = function(): { canAfford: boolean
     if (assistantsRemaining > 0) {
       return { canAfford: true, cost: 0, useCredits: false }; // Has quota
     }
+    // Note: Using fallback cost here - actual cost should be checked in API route
     return { canAfford: this.creditBalance >= 20, cost: 20, useCredits: true }; // Use credits
   }
   
   // For PAYG, always use credits
+  // Note: Using fallback cost here - actual cost should be checked in API route
   return { canAfford: this.creditBalance >= 20, cost: 20, useCredits: true };
 };
 

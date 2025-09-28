@@ -5,6 +5,7 @@ import Assistant from '@/models/Assistant';
 import PhoneProvider from '@/models/PhoneProvider';
 import { tenantVapiService } from '@/lib/tenantVapi';
 import { logger } from '@/lib/logger';
+import { getPhoneProviderOrDefault, isUSPhoneNumber, getNoPhoneProviderErrorMessage } from '@/lib/defaultPhoneProvider';
 
 export async function POST(
   request: NextRequest,
@@ -40,35 +41,80 @@ export async function POST(
       );
     }
 
-    // Find available phone providers for this user (assistants are independent of phone numbers)
-    const availableProviders = await PhoneProvider.find({ userId, isActive: true });
-    if (availableProviders.length === 0) {
+
+    // Get phone provider (custom or default for US numbers)
+    const providerResult = await getPhoneProviderOrDefault(userId, phoneNumber);
+    
+    if (!providerResult) {
       return NextResponse.json(
-        { error: 'No phone providers available for testing' },
+        { error: getNoPhoneProviderErrorMessage(phoneNumber) },
         { status: 400 }
       );
     }
 
-    // Use the first available phone provider for testing
-    const selectedProvider = availableProviders[0];
+    let logData = {
+      assistantId: id,
+      vapiAssistantId: assistant.vapiAssistantId,
+      phoneNumber,
+      isUsingDefaultProvider: providerResult.isDefault,
+      vapiPhoneNumberId: providerResult.vapiPhoneNumberId
+    };
+
+    // Add custom provider info if not using default
+    if (!providerResult.isDefault) {
+      const customProvider = await PhoneProvider.findOne({ 
+        userId, 
+        vapiPhoneNumberId: providerResult.vapiPhoneNumberId 
+      });
+      if (customProvider) {
+        logData = { 
+          ...logData, 
+          phoneProviderId: customProvider._id,
+          phoneProviderName: customProvider.displayName 
+        };
+      }
+    }
 
     logger.info('ASSISTANT_TEST_START', `Testing assistant: ${assistant.name}`, {
       userId,
-      data: { 
-        assistantId: id,
-        vapiAssistantId: assistant.vapiAssistantId,
-        phoneNumber,
-        phoneProviderId: selectedProvider._id,
-        phoneProviderName: selectedProvider.displayName
-      }
+      data: logData
     });
 
-    // Test the assistant with a call
-    const callResult = await tenantVapiService.testAssistant(
-      assistant.vapiAssistantId,
+    // Validate that the Vapi assistant exists before making the call
+    try {
+      await tenantVapiService.getAssistant(assistant.vapiAssistantId);
+    } catch (vapiError) {
+      logger.error('ASSISTANT_TEST_VAPI_NOT_FOUND', `Vapi assistant not found: ${assistant.vapiAssistantId}`, {
+        userId,
+        data: { 
+          assistantId: id,
+          vapiAssistantId: assistant.vapiAssistantId,
+          error: vapiError instanceof Error ? vapiError.message : 'Unknown error'
+        }
+      });
+      
+      return NextResponse.json(
+        { 
+          error: 'Assistant not found in Vapi',
+          details: `The assistant "${assistant.name}" exists in your account but was not found in Vapi. This may happen if the assistant was deleted from Vapi or there was an error during creation. Please try recreating the assistant.`,
+          vapiAssistantId: assistant.vapiAssistantId,
+          needsRecreation: true
+        },
+        { status: 400 }
+      );
+    }
+
+    // Make the test call using the new initiateCall method with better default provider support
+    const callResult = await tenantVapiService.initiateCall({
+      userId,
       phoneNumber,
-      selectedProvider._id.toString()
-    );
+      assistantId: assistant.vapiAssistantId,
+      metadata: {
+        isTest: true,
+        assistantName: assistant.name,
+        timestamp: new Date().toISOString()
+      }
+    });
 
     // Update lastUsed timestamp
     assistant.lastUsed = new Date();

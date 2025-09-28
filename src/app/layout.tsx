@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import ClientLayoutWrapper from "@/components/ClientLayoutWrapper";
 import type { Metadata } from "next";
 import "./globals.css";
@@ -62,12 +63,43 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <ClientLayoutWrapper 
-        geistSans={geistSans.variable}
-        geistMono={geistMono.variable}
-      >
-        {children}
-      </ClientLayoutWrapper>
+      <head>
+        {/* Google Tag Manager - Optimized Setup */}
+        <Script id="google-tag-manager" strategy="afterInteractive">
+          {`
+            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','${process.env.NEXT_PUBLIC_GTM_ID || 'GTM-TXJ2387M'}');
+            
+            // Initialize dataLayer for custom events
+            window.dataLayer = window.dataLayer || [];
+            
+            // SaaS-specific tracking helper
+            window.trackSaaSEvent = function(eventName, properties = {}) {
+              window.dataLayer.push({
+                event: eventName,
+                ...properties,
+                timestamp: new Date().toISOString(),
+                page_url: window.location.href,
+                user_agent: navigator.userAgent
+              });
+            };
+          `}
+        </Script>
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <noscript>
+          <iframe 
+            src={`https://www.googletagmanager.com/ns.html?id=${process.env.NEXT_PUBLIC_GTM_ID || 'GTM-TXJ2387M'}`}
+            height="0" 
+            width="0" 
+            style={{display:'none',visibility:'hidden'}}
+          />
+        </noscript>
+        <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
+      </body>
     </html>
   );
 }

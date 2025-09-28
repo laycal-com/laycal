@@ -99,17 +99,33 @@ export async function POST(req: NextRequest) {
         
         const name = `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || userData.username || null;
         
-        // Create an inactive PAYG subscription record for the new user
+        // Create placeholder subscription - user needs to choose a plan
         const subscription = new Subscription({
           userId,
-          planType: 'payg',
-          planName: 'Pay-as-you-go (Inactive)',
+          planType: 'none',
+          planName: 'Plan Selection Required',
           monthlyPrice: 0,
+          
+          // No limits until plan is chosen
           monthlyMinuteLimit: 0,
+          monthlyCallLimit: 0,
           assistantLimit: 0,
+          
+          // Current period placeholder
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(),
+          isTrial: false,
+          
+          // Usage tracking
+          minutesUsed: 0,
+          assistantsCreated: 0,
+          callsUsed: 0,
+          
+          // No credits initially
           creditBalance: 0,
-          isActive: false,
-          isTrial: false
+          autoTopupEnabled: false,
+          
+          isActive: false // Inactive until plan is chosen
         });
 
         // Set metadata explicitly after creation
@@ -127,7 +143,7 @@ export async function POST(req: NextRequest) {
         subscription.markModified('metadata');
         await subscription.save();
 
-        logger.info('CLERK_USER_REGISTERED', 'New user registered via Clerk webhook', {
+        logger.info('USER_CREATED_WEBHOOK', 'User account created, plan selection required', {
           userId,
           email: actualEmail || 'No email found',
           name: name || 'No name found',

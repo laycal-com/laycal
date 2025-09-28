@@ -54,6 +54,12 @@ export async function POST(request: NextRequest) {
     // Check if this order was already processed
     const existingCredit = await Credit.findOne({ relatedOrderId: orderId });
     if (existingCredit) {
+      logger.info('PAYPAL_DUPLICATE_PREVENTED', 'Duplicate payment capture prevented', {
+        userId,
+        orderId,
+        existingCreditId: existingCredit._id
+      });
+      
       return NextResponse.json({
         success: true,
         message: 'Credits already added to your account',
@@ -92,6 +98,11 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    // Use pending transaction details (this is the source of truth)
+    const actualAmount = pendingTransaction.amount;
+    const actualPlanType = pendingTransaction.planType;
+    const actualDescription = pendingTransaction.description;
+
     if (!subscription) {
       // Create new subscription for PAYG
       subscription = new Subscription({
@@ -105,14 +116,35 @@ export async function POST(request: NextRequest) {
         isActive: true,
         isTrial: false
       });
+    } else if (subscription.planType === 'trial') {
+      // Upgrade trial users to PAYG when they make their first payment
+      subscription.planType = 'payg';
+      subscription.planName = 'Pay-as-you-go';
+      subscription.monthlyPrice = 0;
+      subscription.monthlyMinuteLimit = -1; // Unlimited with credits
+      subscription.monthlyCallLimit = -1; // Remove call limit for PAYG
+      subscription.assistantLimit = -1; // Unlimited with credits
+      subscription.isTrial = false;
+      subscription.trialEndsAt = undefined;
+      subscription.isActive = true; // Activate the subscription
+      
+      logger.info('TRIAL_UPGRADED_TO_PAYG', 'Trial user upgraded to PAYG after payment', {
+        userId,
+        orderId,
+        amount: actualAmount
+      });
+    } else if (subscription.planType === 'payg' && !subscription.isActive) {
+      // Activate PAYG plan after first payment
+      subscription.isActive = true;
+      
+      logger.info('PAYG_ACTIVATED', 'PAYG plan activated after payment', {
+        userId,
+        orderId,
+        amount: actualAmount
+      });
     }
 
     const balanceBefore = subscription.creditBalance || 0;
-
-    // Use pending transaction details (this is the source of truth)
-    const actualAmount = pendingTransaction.amount;
-    const actualPlanType = pendingTransaction.planType;
-    const actualDescription = pendingTransaction.description;
     
     console.log('Using pending transaction details:', {
       amount: actualAmount,
@@ -149,22 +181,45 @@ export async function POST(request: NextRequest) {
       orderId
     });
 
-    // Record credit transaction for auditing (optional - simplified system)
+    // Record credit transaction for auditing - with stronger duplicate protection
     try {
-      await Credit.createTopup(
-        userId,
-        actualAmount,
-        actualDescription,
-        orderId,
-        balanceBefore
-      );
-    } catch (creditError) {
-      // If it's a duplicate key error (E11000), that's expected and fine
-      if (creditError.code === 11000) {
-        logger.info('CREDIT_DUPLICATE_PREVENTED', 'Duplicate credit transaction prevented', { orderId });
+      // Double-check for duplicates right before creating the credit record
+      const duplicateCheck = await Credit.findOne({ relatedOrderId: orderId });
+      if (duplicateCheck) {
+        logger.warn('CREDIT_DUPLICATE_DETECTED', 'Duplicate credit detected during creation', {
+          userId,
+          orderId,
+          duplicateId: duplicateCheck._id
+        });
       } else {
-        // Other errors are unexpected
-        logger.error('CREDIT_LOG_ERROR', 'Failed to log credit transaction', { creditError });
+        await Credit.createTopup(
+          userId,
+          actualAmount,
+          actualDescription,
+          orderId,
+          balanceBefore
+        );
+        
+        logger.info('CREDIT_TRANSACTION_LOGGED', 'Credit transaction recorded successfully', {
+          userId,
+          orderId,
+          amount: actualAmount
+        });
+      }
+    } catch (creditError) {
+      // If it's a duplicate key error (E11000), that's expected due to race condition
+      if (creditError.code === 11000) {
+        logger.info('CREDIT_DUPLICATE_PREVENTED', 'Duplicate credit transaction prevented by unique constraint', { 
+          userId,
+          orderId 
+        });
+      } else {
+        // Other errors are unexpected but shouldn't fail the payment
+        logger.error('CREDIT_LOG_ERROR', 'Failed to log credit transaction', { 
+          userId,
+          orderId,
+          creditError: creditError instanceof Error ? creditError.message : 'Unknown error'
+        });
       }
     }
 
@@ -172,18 +227,18 @@ export async function POST(request: NextRequest) {
       userId,
       data: {
         orderId,
-        amount: parseFloat(amount),
+        amount: actualAmount,
         balanceBefore,
         balanceAfter: subscription.creditBalance,
-        planType
+        planType: actualPlanType
       }
     });
 
     return NextResponse.json({
       success: true,
       message: actualPlanType === 'payg' 
-        ? `Pay-as-you-go activated! $${subscription.creditBalance} available for assistants and calls.`
-        : `$${actualAmount} credits added to your account`,
+        ? `Pay-as-you-go activated! $${subscription.creditBalance.toFixed(2)} available for assistants and calls.`
+        : `$${actualAmount.toFixed(2)} credits added to your account`,
       creditBalance: subscription.creditBalance,
       captureId: captureResult.purchase_units[0]?.payments?.captures?.[0]?.id
     });

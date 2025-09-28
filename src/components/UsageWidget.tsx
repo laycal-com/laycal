@@ -25,6 +25,9 @@ interface UsageSummary {
   overageCost: number;
   creditBalance?: number;
   needsTopup?: boolean;
+  callsUsed?: number;
+  callLimit?: number;
+  callsRemaining?: number;
 }
 
 interface PricingData {
@@ -129,30 +132,58 @@ export function UsageWidget({ onUpgrade }: UsageWidgetProps) {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg text-[#1f2937]">Current Plan</CardTitle>
-            <Badge variant={usage.isPayAsYouGo ? "secondary" : "default"}>
+            <Badge variant={usage.planType === 'trial' ? "outline" : usage.isPayAsYouGo ? "secondary" : "default"} 
+                   className={usage.planType === 'trial' ? "border-green-500 text-green-700 bg-green-50" : ""}>
               {usage.planName}
+              {usage.planType === 'trial' && ' 🎉'}
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Billing Period */}
+          {/* Billing Period / Trial Info */}
           <div className="text-sm text-[#64748b]">
-            Billing period: {formatDate(usage.currentPeriodStart)} - {formatDate(usage.currentPeriodEnd)}
+            {usage.planType === 'trial' ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <div className="text-green-800 font-medium">Free Trial Active</div>
+                <div className="text-green-700">Trial ends: {formatDate(usage.currentPeriodEnd)}</div>
+              </div>
+            ) : (
+              <div>Billing period: {formatDate(usage.currentPeriodStart)} - {formatDate(usage.currentPeriodEnd)}</div>
+            )}
           </div>
 
-          {/* Minutes Usage */}
+          {/* Calls/Minutes Usage */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Clock className="w-4 h-4 text-[#3b82f6]" />
-                <span className="font-medium text-[#1f2937]">Calling Minutes</span>
+                <span className="font-medium text-[#1f2937]">
+                  {usage.planType === 'trial' ? 'Calls Made' : 'Calling Minutes'}
+                </span>
               </div>
               {usage.isOverLimit && usage.minutesOverage > 0 && (
                 <AlertTriangle className="w-4 h-4 text-[#ef4444]" />
               )}
             </div>
             
-            {usage.isPayAsYouGo ? (
+            {usage.planType === 'trial' ? (
+              <>
+                <Progress value={Math.min(((usage.callsUsed || 0) / (usage.callLimit || 5)) * 100, 100)} className="h-2" />
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#1f2937]">
+                    {usage.callsUsed || 0} / {usage.callLimit || 5} calls
+                  </span>
+                  <span className={((usage.callsUsed || 0) >= (usage.callLimit || 5)) ? 'text-[#ef4444]' : 'text-[#64748b]'}>
+                    {usage.callsRemaining || Math.max(0, (usage.callLimit || 5) - (usage.callsUsed || 0))} remaining
+                  </span>
+                </div>
+                {(usage.callsUsed || 0) >= (usage.callLimit || 5) && (
+                  <div className="text-sm text-[#ef4444] bg-[#fef2f2] p-2 rounded border border-[#fecaca]">
+                    ⚠️ Call limit reached - upgrade to make more calls
+                  </div>
+                )}
+              </>
+            ) : usage.isPayAsYouGo ? (
               <div className="text-sm">
                 <span className="font-semibold text-[#1f2937]">{usage.minutesUsed}</span> minutes used
                 <span className="text-[#64748b] ml-2">(Pay-as-you-go: ${pricing?.cost_per_minute_payg || 0.07}/minute)</span>
@@ -226,7 +257,12 @@ export function UsageWidget({ onUpgrade }: UsageWidgetProps) {
           )}
 
           {/* Upgrade Button */}
-          {!usage.isPayAsYouGo && (usage.isOverLimit || usage.minutesRemaining < 100 || usage.assistantsRemaining === 0) && (
+          {usage.planType === 'trial' && (usage.isOverLimit || (usage.callsUsed || 0) >= (usage.callLimit || 5) || usage.assistantsRemaining === 0) && (
+            <Button onClick={onUpgrade} className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white">
+              Upgrade to Continue
+            </Button>
+          )}
+          {!usage.isPayAsYouGo && usage.planType !== 'trial' && (usage.isOverLimit || usage.minutesRemaining < 100 || usage.assistantsRemaining === 0) && (
             <Button onClick={onUpgrade} className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white">
               Upgrade Plan
             </Button>

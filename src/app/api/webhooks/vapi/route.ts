@@ -7,6 +7,18 @@ import CallSummary from '@/models/CallSummary';
 import { usageValidator } from '@/lib/usageValidator';
 import { logger } from '@/lib/logger';
 
+// Official Vapi endedReason values that indicate the call was not answered
+// Based on https://docs.vapi.ai/calls/call-ended-reason
+const NOT_ANSWERED_REASONS = [
+  'customer-busy',
+  'customer-did-not-answer', 
+  'voicemail',
+  'twilio-failed-to-connect-call',
+  'vonage-failed-to-connect-call',
+  'manually-canceled',
+  'customer-did-not-give-microphone-permission'
+] as const;
+
 export async function POST(request: NextRequest) {
   let payload: any = null;
   try {
@@ -104,8 +116,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Update lead with end-of-call report data
+        // Call is answered only if it actually connected and had a conversation
         const reportResults = {
-          answered: message.endedReason !== 'no-answer' && message.endedReason !== 'busy',
+          answered: !NOT_ANSWERED_REASONS.includes(message.endedReason),
           duration: Math.round(message.durationSeconds || 0),
           summary: message.summary || message.analysis?.summary || null,
           transcript: message.transcript || null,
@@ -116,7 +129,7 @@ export async function POST(request: NextRequest) {
 
         // Determine final status based on the report
         let reportStatus = 'completed';
-        if (message.endedReason === 'no-answer' || message.endedReason === 'busy' || message.endedReason === 'failed') {
+        if (NOT_ANSWERED_REASONS.includes(message.endedReason)) {
           reportStatus = 'failed';
         }
 
@@ -206,7 +219,7 @@ export async function POST(request: NextRequest) {
         
         // Extract call results
         const callResults = {
-          answered: call.status === 'completed' || call.endedReason !== 'no-answer',
+          answered: !NOT_ANSWERED_REASONS.includes(call.endedReason),
           duration: call.duration || 0,
           summary: call.summary || message?.summary || null,
           transcript: call.transcript || message?.transcript || null,
@@ -216,7 +229,7 @@ export async function POST(request: NextRequest) {
 
         // Determine final status
         let finalStatus = 'completed';
-        if (call.endedReason === 'no-answer' || call.endedReason === 'busy' || call.endedReason === 'failed') {
+        if (NOT_ANSWERED_REASONS.includes(call.endedReason)) {
           finalStatus = 'failed';
         }
 
@@ -721,11 +734,11 @@ async function createCallSummary(call: any, message: any, lead?: any, payload?: 
       }
     });
 
-    // Determine call status
+    // Determine call status based on official Vapi endedReason values
     let callStatus: 'completed' | 'failed' | 'no-answer' | 'busy' = 'completed';
-    if (message?.endedReason === 'no-answer') callStatus = 'no-answer';
-    else if (message?.endedReason === 'busy') callStatus = 'busy';
-    else if (message?.endedReason === 'failed') callStatus = 'failed';
+    if (message?.endedReason === 'customer-did-not-answer') callStatus = 'no-answer';
+    else if (message?.endedReason === 'customer-busy') callStatus = 'busy';
+    else if (NOT_ANSWERED_REASONS.includes(message?.endedReason)) callStatus = 'failed';
 
     // Convert evaluation
     let evaluation = null;

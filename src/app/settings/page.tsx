@@ -457,13 +457,57 @@ export default function SettingsPage() {
           {/* Provider List */}
           <div className="p-6">
             {providers.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-gray-400 text-lg mb-2">📞</div>
-                <p className="text-gray-500">No phone providers configured</p>
-                <p className="text-gray-400 text-sm">Add a provider to start making calls</p>
+              <div className="space-y-6">
+                {/* Default Provider Notice */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-blue-900 mb-1">
+                        Default Phone Provider Available
+                      </h3>
+                      <p className="text-blue-700 text-sm">
+                        You can make calls to <strong>US phone numbers (+1)</strong> using our default provider without setting up your own provider. 
+                        For international calls, you'll need to add your own phone provider below.
+                      </p>
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                          US Numbers Only (+1)
+                        </span>
+                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                          No Setup Required
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-center py-4">
+                  <div className="text-gray-400 text-lg mb-2">📞</div>
+                  <p className="text-gray-500">No custom phone providers configured</p>
+                  <p className="text-gray-400 text-sm">Add a provider for international calls or custom phone numbers</p>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
+                {/* Default Provider Notice for users with providers */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-gray-700 text-sm">
+                      <strong>Note:</strong> US phone numbers (+1) can also use our default provider if your custom providers are unavailable.
+                    </p>
+                  </div>
+                </div>
+                
                 {providers.map((provider) => (
                   <div key={provider.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex justify-between items-start">

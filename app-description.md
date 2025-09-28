@@ -2,7 +2,7 @@
 
 ## Overview
 
-This application is a comprehensive AI-powered voice calling platform designed to automate outbound phone calls to sales leads using artificial intelligence voice agents. The platform enables users to upload lists of leads and have AI agents automatically call each lead, conduct conversations, and book appointments if requested ofc and gather data.
+This application is a comprehensive AI-powered voice calling platform designed to automate outbound phone calls to sales leads using artificial intelligence voice agents powered by Vapi.ai. The platform enables users to upload lists of leads and have AI agents automatically call each lead, conduct conversations, book appointments, extract structured data, and process call recordings with advanced analytics.
 
 ## Core Functionality
 
@@ -16,11 +16,18 @@ The lead management interface allows users to organize their prospects by campai
 
 ### AI Assistant Creation and Management
 
-The platform features a sophisticated AI assistant creation system that guides users through building customized voice agents for their specific needs. The assistant creation process begins with a comprehensive 10-step wizard that generates professional AI prompts without requiring users to have any experience in prompt engineering or AI conversation design.
+The platform features a sophisticated AI assistant creation system that guides users through building customized voice agents for their specific needs. The assistant creation process begins with a comprehensive 10-step prompt wizard that generates professional AI prompts without requiring users to have any experience in prompt engineering or AI conversation design.
 
 The wizard walks users through defining their business type, identifying their target audience, specifying conversation objectives, and selecting their preferred communication style. Users can choose from multiple objectives including appointment booking, lead generation, information sharing, callback scheduling, and custom objectives tailored to their specific business needs.
 
-During the assistant creation process, users can configure advanced email collection protocols that instruct the AI to spell out email addresses letter-by-letter and confirm them with prospects during appointment booking calls. The system also includes conversation flow optimization with natural pacing instructions and explicit wait commands to ensure conversations feel natural and professional.
+During the assistant creation process, users can configure advanced email collection protocols that instruct the AI to spell out email addresses letter-by-letter and confirm them with prospects during appointment booking calls. The system also includes conversation flow optimization with natural pacing instructions, explicit WAIT commands, and response acknowledgment to ensure conversations feel natural and professional.
+
+Each AI assistant integrates directly with Vapi.ai infrastructure and includes:
+- **Multi-language voice support** (English US, Spanish, French, German)
+- **Custom voice selection** from available Vapi voice options
+- **Conversation flow control** with optimized endpointing (300ms) and interruption handling
+- **Anti-hangup protection** to prevent premature call termination
+- **Dynamic prompt generation** that incorporates business context for better call outcomes
 
 Users can create multiple AI assistants for different purposes, campaigns, or client accounts. Each assistant can be customized with unique conversation styles ranging from natural (including conversational fillers like "um" and "uh") to sharp and direct communication. The platform also allows users to set call duration preferences, from brief interactions to detailed conversations.
 
@@ -36,11 +43,18 @@ The assistant creation system incorporates detailed business context to ensure c
 
 This business context integration ensures that every conversation the AI has with prospects is tailored to the specific industry, service offering, and target demographic, resulting in more relevant and effective interactions.
 
-### Phone Number Management
+### Multi-Tenant Phone Provider Management
 
-The platform provides comprehensive phone number management capabilities through multiple provider integrations. Users can configure their own phone service provider accounts (such as Twilio, Plivo, or Nexmo/Vonage) to use their existing business phone numbers for outbound calls.
+The platform provides comprehensive phone number management capabilities through multiple provider integrations with a sophisticated multi-tenant architecture. Users can configure their own phone service provider accounts (Twilio, Plivo, or Nexmo/Vonage) to use their existing business phone numbers for outbound calls.
 
-The system includes phone number validation, testing capabilities, and automatic integration with the calling infrastructure. Users can add multiple phone numbers, set default numbers for campaigns, and monitor the status and performance of each number.
+**Key Features:**
+- **Encrypted credential storage** for secure phone provider API keys and secrets
+- **Automatic Vapi phone number creation** directly from provider accounts
+- **Multi-provider support** allowing users to switch between different carriers
+- **Phone number validation and testing** with real-time verification
+- **Provider account balance checking** and number availability validation
+
+The system automatically creates Vapi phone numbers using the user's provider credentials, eliminating manual setup. Each phone provider configuration is isolated per user account, ensuring complete privacy and preventing cross-account access to phone services.
 
 Additionally, the platform offers a phone number request system where users can submit requests for new phone numbers. Users can specify their preferred region, country, or area code, along with any additional requirements. These requests are processed through a support ticket system where the platform team can assist with acquiring appropriate phone numbers.
 
@@ -52,21 +66,48 @@ The calling system includes intelligent retry mechanisms for failed calls, busy 
 
 During active calling campaigns, users can monitor real-time progress through the dashboard, seeing which calls are in progress, which have been completed, and which are scheduled for future attempts. The system provides detailed call logs and outcomes for every contact attempt.
 
-### Appointment Booking and Scheduling
+### Advanced Appointment Booking and Scheduling
 
-The platform includes sophisticated appointment booking capabilities that integrate with calendar systems. When AI agents successfully engage prospects who are interested in scheduling meetings, the system can book appointments directly into the user's calendar.
+The platform includes sophisticated appointment booking capabilities that integrate with calendar systems through advanced timezone-aware scheduling and structured data extraction. When AI agents successfully engage prospects who are interested in scheduling meetings, the system can book appointments directly into the user's calendar.
 
-The appointment booking process includes timezone-aware scheduling, where the AI can handle prospects in different time zones and schedule appointments at mutually convenient times. The system extracts structured data from conversations, including prospect names, email addresses, phone numbers, and preferred appointment times.
+**Advanced Features:**
+- **Timezone-aware scheduling** with dynamic timezone handling using Vapi template variables
+- **Structured data extraction** automatically capturing prospect information (name, email, phone, appointment time)
+- **Letter-by-letter email confirmation** during calls to ensure accuracy
+- **Multiple appointment detection methods** from call transcripts and structured data
+- **Pending appointment workflow** requiring user confirmation before calendar integration
+- **Google Calendar integration** with OAuth authentication and automated sync
 
-All appointment information is validated and confirmed before being added to calendars. The platform can send confirmation emails to prospects and reminders to users about upcoming meetings scheduled through the AI calling system.
+The system extracts appointment information through multiple methods:
+1. **Direct structured data** from Vapi webhook payloads
+2. **Call transcript analysis** using AI-powered text extraction
+3. **Slot_booked field processing** from conversation analysis
+4. **Fallback text pattern matching** for appointment-related keywords
 
-### Call Results and Analytics
+All appointment information is validated and stored as pending appointments requiring user confirmation before being added to calendars. The platform maintains detailed appointment records including call context, customer information, and conversation summaries.
 
-The platform provides comprehensive call results tracking and analytics. Every call generates detailed information including call duration, conversation outcome, appointment bookings, callback requests, and any issues encountered during the call.
+### Advanced Call Results and Analytics
+
+The platform provides comprehensive call results tracking and analytics with sophisticated data extraction capabilities. Every call generates detailed information including call duration, conversation outcome, appointment bookings, callback requests, structured data extraction, and stereo recording URLs.
+
+**Enhanced Analytics Features:**
+- **Structured data extraction** from call conversations using AI-enhanced prompts with business context
+- **Call evaluation scoring** (positive, negative, neutral) based on conversation analysis
+- **Stereo recording URLs** for high-quality call playback and review
+- **Real-time webhook processing** for immediate call result updates
+- **Custom data field extraction** based on user-defined requirements
+- **Conversation success evaluation** using Vapi's analysis capabilities
 
 Users can view call results at both individual lead and campaign levels. The analytics show conversion rates, successful contact rates, appointment booking percentages, and other key performance metrics. This data helps users optimize their calling strategies and improve their AI assistant configurations.
 
-The system tracks conversation summaries automatically, providing users with insights into what topics were discussed, how prospects responded, and what follow-up actions might be needed. All conversation data is structured and searchable, making it easy to find specific interactions or analyze patterns across multiple calls.
+The system automatically generates call summaries with structured data including:
+- **Extracted customer information** (name, email, phone number)
+- **Appointment details** (slot_booked, preferred times, confirmed bookings)
+- **Call outcome analysis** with success evaluation scoring
+- **Custom business data** extracted based on prompt wizard configuration
+- **Call recordings** with stereo audio quality for detailed review
+
+All conversation data is structured, searchable, and exportable, making it easy to find specific interactions or analyze patterns across multiple calls. The platform maintains detailed call summaries linked to leads for comprehensive prospect tracking.
 
 ### Calendar Integration
 
@@ -74,13 +115,24 @@ The platform integrates with calendar systems to streamline appointment manageme
 
 The calendar integration handles timezone conversions, sends meeting invitations to prospects, and maintains accurate scheduling information. Users can view all appointments booked through the platform directly in their existing calendar applications.
 
-### Credit-Based Usage System
+### Advanced Credit-Based Usage System
 
-The platform operates on a credit-based system where users purchase credits to fund their calling activities. Different actions consume different amounts of credits, such as making calls, creating AI assistants, or accessing premium features.
+The platform operates on a sophisticated credit-based system where users purchase credits to fund their calling activities. Different actions consume different amounts of credits, with real-time usage tracking and overage protection to prevent unexpected charges.
 
-Users can monitor their credit balance, view usage history, and purchase additional credits as needed. The system provides clear visibility into credit consumption, helping users manage their calling budgets effectively.
+**Credit System Features:**
+- **Real-time usage tracking** for calls, assistant creation, and premium features
+- **Automatic billing integration** with PayPal subscription management
+- **Usage validation** before expensive operations to prevent overages
+- **Detailed transaction logging** with before/after credit balance snapshots
+- **Assistant purchase tracking** with per-assistant credit costs
+- **Call duration-based billing** with precise usage calculation
+- **Refund and adjustment capabilities** through admin system
 
-Credit transactions are tracked in detail, showing exactly how credits were used, when they were consumed, and for which specific activities. This transparency helps users understand their usage patterns and optimize their calling strategies.
+Users can monitor their credit balance, view detailed usage history, and purchase additional credits through integrated PayPal processing. The system provides real-time visibility into credit consumption, helping users manage their calling budgets effectively.
+
+Credit transactions are tracked in comprehensive detail, showing exactly how credits were used, when they were consumed, for which specific activities, and by which assistants. This transparency includes transaction IDs, operation codes, and full audit trails for billing compliance.
+
+The platform includes automatic subscription management with different tiers providing varying credit allocations and feature access levels. Users can upgrade or downgrade subscriptions based on their usage needs and business requirements.
 
 ### Support and Ticket System
 
@@ -126,8 +178,19 @@ Users can monitor their calling campaigns in real-time, seeing active calls, que
 
 This real-time visibility allows users to make immediate adjustments to their campaigns, respond quickly to successful outcomes, and address any problems that arise during calling sessions.
 
-### Multi-Tenant Architecture
+### Multi-Tenant Architecture with Admin System
 
-The platform supports multiple users with completely isolated data and configurations. Each user account maintains separate lead databases, AI assistant configurations, call results, and settings, ensuring complete privacy and data separation between different users or organizations.
+The platform supports multiple users with completely isolated data and configurations through a sophisticated multi-tenant architecture. Each user account maintains separate lead databases, AI assistant configurations, call results, and settings, ensuring complete privacy and data separation between different users or organizations.
 
-This architecture allows the platform to serve multiple businesses simultaneously while maintaining complete data security and operational independence for each account.
+**Advanced Multi-Tenant Features:**
+- **Separate admin authentication system** with JWT-based sessions and bcrypt password hashing
+- **Complete data isolation** per user account with encrypted credential storage
+- **Admin user management** with credit adjustments and account activation controls
+- **Support ticket system** with priority levels and categorization
+- **System settings management** for platform-wide configuration
+- **Usage analytics and monitoring** across all user accounts
+- **Billing and subscription management** with automated credit allocation
+
+The platform includes a comprehensive admin system that operates separately from user-facing authentication. Admin users can manage user accounts, adjust credit balances, handle support tickets, and configure system-wide settings while maintaining complete separation from user data.
+
+This architecture allows the platform to serve multiple businesses simultaneously while maintaining complete data security, operational independence, and centralized administration capabilities for each account. All user data, phone provider configurations, and calling activities are completely isolated between accounts.

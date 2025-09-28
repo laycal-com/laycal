@@ -91,16 +91,81 @@ export default function PricingPage() {
             Pay only for what you use. No seat limits, no hidden fees, no long-term contracts.
           </p>
           <div className="inline-flex items-center bg-white/10 backdrop-blur-sm rounded-full px-6 py-3">
-            <span className="text-lg font-medium">💡 Start free with $10 in call credits</span>
+            <span className="text-lg font-medium">🎉 Start with free trial - 1 assistant + 5 calls included!</span>
           </div>
         </div>
       </section>
 
       {/* Pricing Cards */}
       <section className="py-20">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-8">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="grid md:grid-cols-3 gap-8">
             
+            {/* Free Trial Plan */}
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-green-500 p-8 relative">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-medium">Start Here</span>
+              </div>
+              
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Free Trial</h2>
+                <p className="text-gray-600 mb-6">Test our platform risk-free</p>
+                <div className="mb-6">
+                  <span className="text-4xl font-bold text-green-600">Free</span>
+                  <span className="text-gray-600 ml-2">for 30 days</span>
+                </div>
+                <div className="text-sm text-gray-600 mb-6">
+                  1 AI assistant + 5 calling minutes<br/>
+                  <strong>No credit card required</strong>
+                </div>
+                <Link 
+                  href="/sign-up"
+                  className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors block text-center"
+                >
+                  Start Free Trial
+                </Link>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">1 AI assistant included</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">5 calling minutes</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">Call transcripts & analytics</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">Calendar integration</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">Email support</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-700">30-day trial period</span>
+                </div>
+              </div>
+            </div>
+
             {/* Pay-as-you-go Plan */}
             <div className="bg-white rounded-2xl shadow-xl border-2 border-purple-500 p-8 relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -122,7 +187,7 @@ export default function PricingPage() {
                   href="/sign-up"
                   className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-purple-700 transition-colors block text-center"
                 >
-                  Start Now
+                  Upgrade Now
                 </Link>
               </div>
               
@@ -374,7 +439,7 @@ export default function PricingPage() {
           </div>
           
           <p className="text-sm opacity-75">
-            ✅ $10 free credits ✅ No credit card required ✅ Cancel anytime
+            ✅ Free trial included ✅ No credit card required ✅ Cancel anytime
           </p>
         </div>
       </section>

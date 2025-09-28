@@ -345,7 +345,7 @@ export default function Home() {
                 <SignedOut>
                   <SignInButton>
                     <button className="bg-[#1e40af] text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#1d4ed8] transition-all transform hover:scale-105 shadow-lg">
-                      Start Calling in 10 Minutes
+                      Start Free Trial - No Card Required
                     </button>
                   </SignInButton>
                 </SignedOut>
@@ -1114,7 +1114,7 @@ export default function Home() {
                   whileTap={{ scale: 0.95 }}
                   className="bg-yellow-400 text-[#1e40af] px-12 py-4 rounded-2xl text-xl font-bold hover:bg-yellow-300 transition-all duration-300 shadow-xl"
                 >
-                  Choose the Winner - Start Free 🏆
+                  Start Free Trial - No Card Required 🎉
                 </motion.button>
               </SignInButton>
             </SignedOut>
@@ -1519,7 +1519,7 @@ export default function Home() {
             <SignedOut>
               <SignInButton>
                 <button className="bg-[#3b82f6] text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#2563eb] transition-all transform hover:scale-105 shadow-lg">
-                  Launch Your First Campaign
+                  Start Free Trial
                 </button>
               </SignInButton>
             </SignedOut>

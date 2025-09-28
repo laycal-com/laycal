@@ -7,6 +7,7 @@ import { processCsvBuffer } from '@/lib/csvProcessor';
 import { vapiService } from '@/lib/vapi';
 import { tenantVapiService } from '@/lib/tenantVapi';
 import PhoneProvider from '@/models/PhoneProvider';
+import { getPhoneProviderOrDefault, getNoPhoneProviderErrorMessage, isUSPhoneNumber } from '@/lib/defaultPhoneProvider';
 import { usageValidator } from '@/lib/usageValidator';
 import { logger } from '@/lib/logger';
 
@@ -114,24 +115,53 @@ export async function POST(request: NextRequest) {
     const savedLeads = [];
     const vapiErrors = [];
 
-    // Use user's available phone providers (assistants are independent of phone numbers)
+    // Get user's available phone providers or use default for US numbers
     const availableProviders = await PhoneProvider.find({ userId, isActive: true });
-    if (availableProviders.length === 0) {
+    
+    // Check if we can process any calls (either user has providers or using default for US numbers)
+    const hasUserProviders = availableProviders.length > 0;
+    const canUseDefault = csvResult.leads.some(lead => isUSPhoneNumber(lead.phoneNumber));
+    
+    if (!hasUserProviders && !canUseDefault) {
       logger.error('CSV_UPLOAD_ERROR', 'No phone providers available for calls', { userId, assistantId });
       return NextResponse.json({
         error: 'No phone providers available',
-        details: 'Please configure at least one phone provider in Settings'
+        details: 'Please configure at least one phone provider in Settings, or use US phone numbers (+1) which can use the default provider'
       }, { status: 400 });
     }
     
-    // Round-robin through available phone providers
+    // Round-robin through available providers if user has them
     let phoneIndex = 0;
 
     for (const leadData of csvResult.leads) {
       try {
-        // Select phone provider for this lead (round-robin)
-        const selectedProvider = availableProviders[phoneIndex % availableProviders.length];
-        phoneIndex++;
+        // Determine phone provider for this lead
+        let selectedProvider = null;
+        let phoneProviderId = null;
+        let assignedPhoneNumber = 'Default US Provider';
+        
+        if (hasUserProviders) {
+          // Use user's providers in round-robin fashion
+          selectedProvider = availableProviders[phoneIndex % availableProviders.length];
+          phoneProviderId = selectedProvider._id.toString();
+          assignedPhoneNumber = selectedProvider.phoneNumber;
+          phoneIndex++;
+        } else if (isUSPhoneNumber(leadData.phoneNumber)) {
+          // Use default provider for US numbers
+          const defaultProvider = await getPhoneProviderOrDefault(userId, leadData.phoneNumber);
+          if (!defaultProvider) {
+            throw new Error('Default provider not available for US number');
+          }
+          phoneProviderId = null; // Special case for default provider
+          assignedPhoneNumber = 'Default US Provider';
+        } else {
+          // Skip non-US numbers when no user providers available
+          vapiErrors.push({
+            leadName: leadData.name,
+            error: `International number ${leadData.phoneNumber} requires custom phone provider setup`
+          });
+          continue;
+        }
 
         // Create lead in database
         logger.leadCreation.start(userId, leadData);
@@ -145,7 +175,7 @@ export async function POST(request: NextRequest) {
           notes: leadData.notes,
           status: 'pending',
           assignedAssistantId: assistant._id,
-          assignedPhoneNumber: selectedProvider.phoneNumber
+          assignedPhoneNumber: assignedPhoneNumber
         });
 
         await lead.save();
@@ -162,7 +192,7 @@ export async function POST(request: NextRequest) {
             userId,
             phoneNumber: leadData.phoneNumber,
             assistantId: assistant.vapiAssistantId,
-            phoneProviderId: selectedProvider._id.toString(),
+            phoneProviderId: phoneProviderId,
             customer: {
               name: leadData.name,
               email: leadData.email,

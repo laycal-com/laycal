@@ -19,17 +19,33 @@ export async function ensureUserExists(userId: string): Promise<void> {
       const user = await currentUser();
       
       if (user) {
-        // Create inactive PAYG subscription record
+        // Create placeholder subscription - user needs to choose a plan
         const subscription = new Subscription({
           userId,
-          planType: 'payg',
-          planName: 'Pay-as-you-go (Inactive)',
+          planType: 'none',
+          planName: 'Plan Selection Required',
           monthlyPrice: 0,
+          
+          // No limits until plan is chosen
           monthlyMinuteLimit: 0,
+          monthlyCallLimit: 0,
           assistantLimit: 0,
-          creditBalance: 0,
-          isActive: false,
+          
+          // Current period placeholder
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(),
           isTrial: false,
+          
+          // Usage tracking
+          minutesUsed: 0,
+          assistantsCreated: 0,
+          callsUsed: 0,
+          
+          // No credits initially
+          creditBalance: 0,
+          autoTopupEnabled: false,
+          
+          isActive: false, // Inactive until plan is chosen
           metadata: {
             email: user.emailAddresses?.[0]?.emailAddress,
             name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || null,
@@ -39,7 +55,7 @@ export async function ensureUserExists(userId: string): Promise<void> {
 
         await subscription.save();
 
-        logger.info('USER_ENSURED', 'User subscription record created via fallback mechanism', {
+        logger.info('USER_CREATED_FALLBACK', 'User account created, plan selection required', {
           userId,
           email: user.emailAddresses?.[0]?.emailAddress,
           name: subscription.metadata?.name,
