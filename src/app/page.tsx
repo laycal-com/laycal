@@ -345,7 +345,7 @@ export default function Home() {
                 <SignedOut>
                   <SignInButton>
                     <button className="bg-[#1e40af] text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#1d4ed8] transition-all transform hover:scale-105 shadow-lg">
-                      Start Free Trial - No Card Required
+                      Start Free Trial - 1 Assistant + 5 Calls Free
                     </button>
                   </SignInButton>
                 </SignedOut>
@@ -357,12 +357,14 @@ export default function Home() {
                   </Link>
                 </SignedIn>
                 
-                <button 
-                  onClick={() => scrollToSection(howItWorksRef)}
-                  className="border-2 border-[#3b82f6] text-[#3b82f6] px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#3b82f6] hover:text-white transition-all"
+                <a 
+                  href="https://calendly.com/ceo-laycal/demo-laycal"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border-2 border-[#3b82f6] text-[#3b82f6] px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#3b82f6] hover:text-white transition-all inline-block text-center"
                 >
-                  Watch Live Demo
-                </button>
+                  Schedule a Demo Call
+                </a>
               </motion.div>
             </div>
 
@@ -1215,8 +1217,28 @@ export default function Home() {
             Choose the plan that fits your calling volume. All plans include our core AI calling features.
           </motion.p>
           
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
             {[
+              {
+                title: "Free Trial",
+                price: "Free",
+                period: "30 days",
+                description: "Perfect for getting started",
+                features: [
+                  "1 AI assistant included",
+                  "5 calls to test the platform", 
+                  "All voice providers (OpenAI)",
+                  "Call transcripts & analytics",
+                  "Email support",
+                  "No credit card required",
+                  "Upgrade anytime to continue",
+                  "Full feature access during trial"
+                ],
+                popular: false,
+                color: "#3b82f6",
+                buttonText: "🎯 Start Free Trial",
+                buttonAction: "trial"
+              },
               {
                 title: "Pay-as-you-go",
                 price: `$${pricing?.initial_payg_charge || 25}`,
@@ -1303,10 +1325,12 @@ export default function Home() {
                       className={`w-full py-3 rounded-lg font-semibold transition-all ${
                         plan.popular
                           ? 'bg-[#10b981] text-white hover:bg-[#059669]'
-                          : 'bg-[#1e40af] text-white hover:bg-[#1d4ed8]'
+                          : plan.buttonAction === 'trial' 
+                            ? 'bg-[#3b82f6] text-white hover:bg-[#2563eb]'
+                            : 'bg-[#1e40af] text-white hover:bg-[#1d4ed8]'
                       }`}
                     >
-                      {plan.buttonAction === 'enterprise' ? plan.buttonText : '🚀 Start Calling Now'}
+                      {plan.buttonText}
                     </button>
                   </SignInButton>
                 </SignedOut>
@@ -1319,8 +1343,14 @@ export default function Home() {
                       </button>
                     </Link>
                   ) : (
-                    <Link href="/dashboard">
-                      <button className="w-full bg-[#10b981] text-white py-3 rounded-lg font-semibold hover:bg-[#059669] transition-colors">
+                    <Link href="/select-plan">
+                      <button className={`w-full py-3 rounded-lg font-semibold transition-colors ${
+                        plan.popular
+                          ? 'bg-[#10b981] text-white hover:bg-[#059669]'
+                          : plan.buttonAction === 'trial' 
+                            ? 'bg-[#3b82f6] text-white hover:bg-[#2563eb]'
+                            : 'bg-[#1e40af] text-white hover:bg-[#1d4ed8]'
+                      }`}>
                         {plan.buttonText}
                       </button>
                     </Link>
@@ -1343,22 +1373,22 @@ export default function Home() {
                 <div className="bg-[#dbeafe] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl font-bold text-[#3b82f6]">1</span>
                 </div>
-                <h4 className="text-lg font-semibold text-[#1f2937] mb-2">Start with ${pricing?.initial_payg_charge || 25}</h4>
-                <p className="text-[#64748b] text-sm">${pricing?.assistant_base_cost || 20} for your first assistant + ${pricing?.payg_initial_credits || 5} in calling credits</p>
+                <h4 className="text-lg font-semibold text-[#1f2937] mb-2">Start Free Trial</h4>
+                <p className="text-[#64748b] text-sm">Sign up for free - get 1 assistant + 5 calls to test the platform (no card required)</p>
               </div>
               <div>
                 <div className="bg-[#dcfce7] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl font-bold text-[#10b981]">2</span>
                 </div>
-                <h4 className="text-lg font-semibold text-[#1f2937] mb-2">Make Calls</h4>
-                <p className="text-[#64748b] text-sm">Pay ${pricing?.cost_per_minute_payg || 0.07} per minute as you call your leads</p>
+                <h4 className="text-lg font-semibold text-[#1f2937] mb-2">Upgrade to PAYG</h4>
+                <p className="text-[#64748b] text-sm">Pay ${pricing?.initial_payg_charge || 25} to continue - then ${pricing?.cost_per_minute_payg || 0.07}/minute as you scale</p>
               </div>
               <div>
                 <div className="bg-[#f3e8ff] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl font-bold text-[#8b5cf6]">3</span>
                 </div>
-                <h4 className="text-lg font-semibold text-[#1f2937] mb-2">Scale Up</h4>
-                <p className="text-[#64748b] text-sm">Add more assistants (${pricing?.assistant_base_cost || 20} each) and top-up credits as needed</p>
+                <h4 className="text-lg font-semibold text-[#1f2937] mb-2">Scale Unlimited</h4>
+                <p className="text-[#64748b] text-sm">Add more assistants (${pricing?.assistant_base_cost || 20} each) and scale to thousands of calls</p>
               </div>
             </div>
             
@@ -1451,7 +1481,7 @@ export default function Home() {
               },
               {
                 question: "How much does it cost per call?",
-                answer: `Calls start at just $${pricing?.cost_per_minute_payg || 0.07}/minute, making it 80-90% cheaper than hiring human callers while delivering consistent results 24/7.`
+                answer: `Calls start at just $${pricing?.cost_per_minute_payg || 0.07}/minute, making it 80-90% cheaper than hiring human callers while delivering consistent results 24/7. You can also start with our free trial that includes 1 assistant and 5 calls.`
               },
               {
                 question: "What integrations do you support?",
@@ -1519,7 +1549,7 @@ export default function Home() {
             <SignedOut>
               <SignInButton>
                 <button className="bg-[#3b82f6] text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#2563eb] transition-all transform hover:scale-105 shadow-lg">
-                  Start Free Trial
+                  Start Free Trial - 1 Assistant + 5 Calls
                 </button>
               </SignInButton>
             </SignedOut>
@@ -1531,12 +1561,14 @@ export default function Home() {
               </Link>
             </SignedIn>
             
-            <button 
-              onClick={() => scrollToSection(howItWorksRef)}
-              className="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-[#1e40af] transition-all"
+            <a 
+              href="https://calendly.com/ceo-laycal/demo-laycal"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-[#1e40af] transition-all inline-block text-center"
             >
-              Watch Demo First
-            </button>
+              Schedule a Demo Call
+            </a>
           </motion.div>
         </div>
       </motion.section>

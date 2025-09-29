@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Subscription from '@/models/Subscription';
+import { PricingService } from '@/lib/pricing';
 import { logger } from '@/lib/logger';
 
 // POST - Purchase additional minutes or assistants
@@ -41,11 +42,13 @@ export async function POST(request: NextRequest) {
     let description: string;
 
     if (type === 'minutes') {
-      cost = quantity * 0.05; // $0.05 per minute
+      const overageRate = await PricingService.getOverageMinuteCost();
+      cost = quantity * overageRate;
       description = `${quantity} extra calling minutes`;
       subscription.extraMinutes += quantity;
     } else { // assistants
-      cost = quantity * 20; // $20 per assistant per month
+      const assistantCost = await PricingService.getAssistantCost();
+      cost = quantity * assistantCost;
       description = `${quantity} extra AI assistant${quantity > 1 ? 's' : ''}`;
       subscription.extraAssistants += quantity;
     }
@@ -107,31 +110,35 @@ export async function GET() {
       return NextResponse.json({ error: 'No active subscription found' }, { status: 404 });
     }
 
+    // Get dynamic pricing
+    const overageRate = await PricingService.getOverageMinuteCost();
+    const assistantCost = await PricingService.getAssistantCost();
+
     const addOnOptions = [
       {
         type: 'minutes',
         name: 'Extra Calling Minutes',
-        price: 0.05,
+        price: overageRate,
         unit: 'per minute',
         description: 'Add more calling minutes to your plan',
         packages: [
-          { quantity: 500, price: 25, savings: 0 },
-          { quantity: 1000, price: 45, savings: 5 },
-          { quantity: 2500, price: 100, savings: 25 },
-          { quantity: 5000, price: 180, savings: 70 }
+          { quantity: 500, price: 500 * overageRate, savings: 0 },
+          { quantity: 1000, price: Math.round(1000 * overageRate * 0.9), savings: Math.round(1000 * overageRate * 0.1) },
+          { quantity: 2500, price: Math.round(2500 * overageRate * 0.8), savings: Math.round(2500 * overageRate * 0.2) },
+          { quantity: 5000, price: Math.round(5000 * overageRate * 0.7), savings: Math.round(5000 * overageRate * 0.3) }
         ]
       },
       {
         type: 'assistants',
         name: 'Extra AI Assistants',
-        price: 20,
+        price: assistantCost,
         unit: 'per assistant per month',
         description: 'Create more AI assistants for different campaigns',
         packages: [
-          { quantity: 1, price: 20, savings: 0 },
-          { quantity: 3, price: 55, savings: 5 },
-          { quantity: 5, price: 85, savings: 15 },
-          { quantity: 10, price: 160, savings: 40 }
+          { quantity: 1, price: assistantCost, savings: 0 },
+          { quantity: 3, price: Math.round(3 * assistantCost * 0.9), savings: Math.round(3 * assistantCost * 0.1) },
+          { quantity: 5, price: Math.round(5 * assistantCost * 0.85), savings: Math.round(5 * assistantCost * 0.15) },
+          { quantity: 10, price: Math.round(10 * assistantCost * 0.8), savings: Math.round(10 * assistantCost * 0.2) }
         ]
       }
     ];

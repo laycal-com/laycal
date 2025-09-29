@@ -1,23 +1,59 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import PublicNavbar from '@/components/PublicNavbar';
 import Footer from '@/components/Footer';
 
-export const metadata: Metadata = {
-  title: "AI Voice Agent Pricing | Automated Calling System Plans - Increase Sales Efficiency",
-  description: "Affordable AI voice agent and automated calling system pricing. Pay-as-you-go for AI powered phone calls, AI appointment setter, and AI sales assistant. Increase sales efficiency with transparent pricing.",
-  keywords: "ai voice agent pricing, automated calling system pricing, ai powered phone calls pricing, ai appointment setter cost, ai sales assistant plans, automated sales calls pricing, increase sales efficiency, ai outbound calls pricing",
-  alternates: {
-    canonical: "/pricing",
-  },
-  openGraph: {
-    title: "AI Voice Agent Pricing | Automated Calling System Plans - Increase Sales Efficiency",
-    description: "Affordable AI voice agent and automated calling system pricing. Pay-as-you-go for AI powered phone calls, AI appointment setter, and AI sales assistant.",
-    url: "https://laycal.com/pricing",
-  },
-};
+interface PricingData {
+  assistant_base_cost: number;
+  cost_per_minute_payg: number;
+  cost_per_minute_overage: number;
+  minimum_topup_amount: number;
+  initial_payg_charge: number;
+  payg_initial_credits: number;
+}
+
 
 export default function PricingPage() {
+  const [pricing, setPricing] = useState<PricingData | null>(null);
+
+  useEffect(() => {
+    fetchPricing();
+  }, []);
+
+  const fetchPricing = async () => {
+    try {
+      const response = await fetch('/api/pricing');
+      if (response.ok) {
+        const data = await response.json();
+        setPricing(data);
+      } else {
+        // Use default values if API fails
+        setPricing({
+          assistant_base_cost: 20,
+          cost_per_minute_payg: 0.07,
+          cost_per_minute_overage: 0.05,
+          minimum_topup_amount: 5,
+          initial_payg_charge: 25,
+          payg_initial_credits: 5
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch pricing:', error);
+      // Use default values if fetch fails
+      setPricing({
+        assistant_base_cost: 20,
+        cost_per_minute_payg: 0.07,
+        cost_per_minute_overage: 0.05,
+        minimum_topup_amount: 5,
+        initial_payg_charge: 25,
+        payg_initial_credits: 5
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* FAQ Schema Markup for Pricing Questions */}
@@ -115,11 +151,11 @@ export default function PricingPage() {
                   <span className="text-gray-600 ml-2">for 30 days</span>
                 </div>
                 <div className="text-sm text-gray-600 mb-6">
-                  1 AI assistant + 5 calling minutes<br/>
+                  1 AI assistant + 5 calls<br/>
                   <strong>No credit card required</strong>
                 </div>
                 <Link 
-                  href="/sign-up"
+                  href="/select-plan"
                   className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors block text-center"
                 >
                   Start Free Trial
@@ -137,7 +173,7 @@ export default function PricingPage() {
                   <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-gray-700">5 calling minutes</span>
+                  <span className="text-gray-700">5 calls to test platform</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
@@ -176,18 +212,18 @@ export default function PricingPage() {
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Pay-as-you-go</h2>
                 <p className="text-gray-600 mb-6">Start small and scale as you grow</p>
                 <div className="mb-6">
-                  <span className="text-4xl font-bold text-gray-900">$25</span>
+                  <span className="text-4xl font-bold text-gray-900">${pricing?.initial_payg_charge || 25}</span>
                   <span className="text-gray-600 ml-2">initial charge</span>
                 </div>
                 <div className="text-sm text-gray-600 mb-6">
-                  $20 for your first assistant + $5 in credits<br/>
-                  Then <strong>$0.07/minute</strong> for calls
+                  ${pricing?.assistant_base_cost || 20} for your first assistant + ${pricing?.payg_initial_credits || 5} in credits<br/>
+                  Then <strong>${pricing?.cost_per_minute_payg || 0.07}/minute</strong> for calls
                 </div>
                 <Link 
-                  href="/sign-up"
+                  href="/select-plan"
                   className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-purple-700 transition-colors block text-center"
                 >
-                  Upgrade Now
+                  Get Started
                 </Link>
               </div>
               
@@ -196,7 +232,7 @@ export default function PricingPage() {
                   <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-gray-700">$5 in calling credits included</span>
+                  <span className="text-gray-700">${pricing?.payg_initial_credits || 5} in calling credits included</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
@@ -334,15 +370,15 @@ export default function PricingPage() {
               </div>
 
               <div className="bg-green-50 rounded-xl p-6">
-                <h3 className="text-2xl font-bold text-green-700 mb-4">Laycal AI Professional</h3>
+                <h3 className="text-2xl font-bold text-green-700 mb-4">Laycal AI Pay-as-you-go</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <span>Monthly subscription</span>
-                    <span className="font-medium">$1,188/year</span>
+                    <span>Initial setup</span>
+                    <span className="font-medium">${pricing?.initial_payg_charge || 25}/year</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Call costs (est. 1000 min/month)</span>
-                    <span className="font-medium">$1,200/year</span>
+                    <span className="font-medium">${((pricing?.cost_per_minute_payg || 0.07) * 1000 * 12).toFixed(0)}/year</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Setup &amp; training</span>
@@ -355,18 +391,22 @@ export default function PricingPage() {
                   <hr className="border-green-200" />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total Annual Cost</span>
-                    <span className="text-green-600">$2,388</span>
+                    <span className="text-green-600">${((pricing?.cost_per_minute_payg || 0.07) * 1000 * 12 + (pricing?.initial_payg_charge || 25)).toFixed(0)}</span>
                   </div>
                   <div className="text-sm text-green-600">
-                    Up to 200 simultaneous calls, 24/7 availability
+                    Up to 500 simultaneous calls, 24/7 availability
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="text-center mt-8 p-6 bg-purple-50 rounded-xl">
-              <div className="text-3xl font-bold text-purple-600 mb-2">Save $180,612 per year</div>
-              <div className="text-lg text-purple-700">That's a 98.7% cost reduction with 10x the capacity</div>
+              <div className="text-3xl font-bold text-purple-600 mb-2">
+                Save ${(183000 - ((pricing?.cost_per_minute_payg || 0.07) * 1000 * 12 + (pricing?.initial_payg_charge || 25))).toLocaleString()} per year
+              </div>
+              <div className="text-lg text-purple-700">
+                That's a {(((183000 - ((pricing?.cost_per_minute_payg || 0.07) * 1000 * 12 + (pricing?.initial_payg_charge || 25))) / 183000) * 100).toFixed(1)}% cost reduction with 25x the capacity
+              </div>
             </div>
           </div>
         </div>
@@ -425,7 +465,7 @@ export default function PricingPage() {
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <Link 
-              href="/sign-up"
+              href="/select-plan"
               className="bg-yellow-400 text-purple-900 px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-300 transition-colors"
             >
               Start Free Trial
