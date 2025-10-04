@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Subscription from '@/models/Subscription';
 import { logger } from '@/lib/logger';
+import { PricingService } from '@/lib/pricing';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,13 +23,36 @@ export async function POST(request: NextRequest) {
 
     await connectToDatabase();
 
-    // Find existing subscription (should be placeholder)
-    const subscription = await Subscription.findOne({ userId });
+    // Find or create subscription
+    let subscription = await Subscription.findOne({ userId });
     
     if (!subscription) {
-      return NextResponse.json({ 
-        error: 'User subscription not found' 
-      }, { status: 404 });
+      // Get dynamic values from system settings
+      const minimumTopup = await PricingService.getMinimumTopupAmount();
+      
+      // Create placeholder subscription for new users
+      subscription = await Subscription.create({
+        userId,
+        planType: 'none',
+        planName: 'No Plan',
+        monthlyPrice: 0,
+        monthlyMinuteLimit: 0,
+        monthlyCallLimit: 0,
+        assistantLimit: 0,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(),
+        minutesUsed: 0,
+        assistantsCreated: 0,
+        callsUsed: 0,
+        extraMinutes: 0,
+        extraAssistants: 0,
+        creditBalance: 0,
+        autoTopupEnabled: false,
+        autoTopupAmount: minimumTopup,
+        minimumBalance: minimumTopup,
+        isActive: false,
+        isTrial: false
+      });
     }
 
     if (subscription.planType !== 'none') {

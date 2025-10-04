@@ -71,7 +71,8 @@ export async function POST(
         endTime: appointment.appointmentData.endTime,
         customer: {
           name: appointment.appointmentData.customer.name,
-          phone: appointment.appointmentData.customer.phone
+          phone: appointment.appointmentData.customer.phone,
+          email: appointment.appointmentData.customer.email
         },
         notes: appointment.appointmentData.notes || ''
       }

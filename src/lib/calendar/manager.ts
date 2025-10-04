@@ -80,13 +80,26 @@ export class CalendarManager {
       }
 
       // Convert appointment data to calendar event format
+      const attendees = appointmentData.appointment.customer.email 
+        ? [appointmentData.appointment.customer.email]
+        : [];
+
+      logger.info('CALENDAR_EVENT_PREPARATION', 'Preparing calendar event with attendees', {
+        userId,
+        data: {
+          customerEmail: appointmentData.appointment.customer.email,
+          attendeesCount: attendees.length,
+          attendees: attendees
+        }
+      });
+
       const calendarEvent: CalendarEvent = {
         title: appointmentData.appointment.title,
         startTime: appointmentData.appointment.startTime,
         endTime: appointmentData.appointment.endTime,
         description: this.formatEventDescription(appointmentData),
-        location: '', // Empty for now as requested
-        attendees: [] // Could add customer email if available
+        location: '',
+        attendees
       };
 
       // Create event in all active calendar providers
@@ -187,6 +200,10 @@ export class CalendarManager {
     
     let description = `Customer: ${customer.name}\n`;
     description += `Phone: ${customer.phone}\n`;
+    
+    if (customer.email) {
+      description += `Email: ${customer.email}\n`;
+    }
     
     if (notes) {
       description += `\nNotes: ${notes}`;

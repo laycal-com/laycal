@@ -160,7 +160,7 @@ export function PromptWizard({ onComplete, onCancel }: PromptWizardProps) {
       : "Be direct and concise without fillers or hesitations";
 
     const objectiveInstructions = {
-      appointment: "Primary goal is to schedule a consultation/meeting. YOU MUST collect the prospect's email address before ending the call. When collecting email addresses, ask the prospect to spell it out letter by letter for accuracy. Do not hang up or end the call until you have successfully collected: prospect's name, email address (spelled letter-by-letter), phone number, and preferred appointment time.",
+      appointment: "Primary goal is to schedule a consultation/meeting. YOU MUST collect the prospect's email address before ending the call. When collecting email addresses, ask the prospect to spell it out letter by letter for accuracy. Do not hang up or end the call until you have successfully collected: prospect's name, email address (spelled letter-by-letter), and preferred appointment time.",
       lead: "Focus on qualifying the prospect and gathering contact information",
       info: "Provide valuable information about our services and benefits", 
       callback: "Determine best time for a follow-up conversation",
@@ -221,7 +221,6 @@ ${data.objectionHandling === 'natural' ? 'Handle objections naturally with empat
 ${data.objective === 'appointment' ? `- CRITICAL: Do NOT end the call until you have collected ALL required information:
   * Prospect's full name
   * Email address (spelled letter-by-letter and confirmed)
-  * Phone number 
   * Preferred appointment date/time
 - If the prospect tries to hang up before providing email, politely insist: "Before we finish, I just need your email address to send you the appointment confirmation"
 - Email collection is MANDATORY - ask: "Could you spell that email address for me letter by letter? I want to make sure I get it exactly right"
@@ -232,7 +231,7 @@ ${data.objective === 'appointment' ? `\n[Email Collection Protocol - CRITICAL]
 - Email collection is the TOP PRIORITY before ending any call
 - Use this conversational flow for email collection:
   1. "I'll need your email address to send you the appointment confirmation" - WAIT for response
-  2. "Could you spell that email address for me letter by letter? I want to make sure I get it exactly right" - WAIT for each character
+  2. "Could you spell that email address for me letter by letter? I want to make sure I get it exactly right"
   3. As they spell, repeat EACH character back slowly: "J... (pause) ...O... (pause) ...H... (pause) ...N... (pause) at G... (pause) ...M... (pause) ...A... (pause) ...I... (pause) ...L... (pause) dot com"
   4. Wait for them to confirm each character before moving to the next
   5. Confirm the complete email: "Perfect, so that's john@gmail.com, is that correct?" - WAIT for confirmation

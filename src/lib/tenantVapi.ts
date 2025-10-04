@@ -369,7 +369,7 @@ export class TenantVapiService {
 
     const defaultModel = {
       provider: 'openai',
-      model: 'gpt-3.5-turbo'
+      model: 'gpt-4o-mini'
     };
 
     // Analysis plan will be added to the request body below
@@ -390,7 +390,7 @@ export class TenantVapiService {
           }
         ]
       },
-      firstMessage: config.firstMessage || "",
+      firstMessage: config.firstMessage || "Hi!",
       voicemailMessage: "Please call back when you're available.",
       endCallFunctionEnabled: false,
       endCallMessage: "Goodbye.",
@@ -405,7 +405,6 @@ export class TenantVapiService {
         "status-update"
       ],
       backgroundSound: "off",
-      firstMessageMode: "assistant-speaks-first-with-model-generated-message",
       interruptionsEnabled: true,
       ...(VAPI_WEBHOOK_URL && { 
         server: {
@@ -495,7 +494,7 @@ export class TenantVapiService {
         voiceId: config.voice.voiceId
       },
       model: {
-        ...(config.model || { provider: 'openai', model: 'gpt-3.5-turbo' }),
+        ...(config.model || { provider: 'openai', model: 'gpt-4o-mini' }),
         messages: [
           {
             role: 'system',
@@ -503,7 +502,7 @@ export class TenantVapiService {
           }
         ]
       },
-      firstMessage: config.firstMessage || "Hello! How can I help you today?",
+      firstMessage: config.firstMessage || "Hi!",
       transcriber: {
         provider: 'deepgram',
         model: 'nova-2',

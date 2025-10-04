@@ -202,6 +202,14 @@ export class GoogleCalendarProvider implements CalendarProvider {
           timeZone: 'UTC',
         },
         attendees: event.attendees?.map(email => ({ email })),
+        conferenceData: {
+          createRequest: {
+            requestId: `meet-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            conferenceSolutionKey: {
+              type: 'hangoutsMeet'
+            }
+          }
+        },
         reminders: {
           useDefault: false,
           overrides: [
@@ -223,6 +231,8 @@ export class GoogleCalendarProvider implements CalendarProvider {
 
       const response = await calendar.events.insert({
         calendarId: connection.calendarId || 'primary',
+        conferenceDataVersion: 1,
+        sendUpdates: 'all',
         requestBody: googleEvent,
       });
 
@@ -231,7 +241,10 @@ export class GoogleCalendarProvider implements CalendarProvider {
         data: { 
           eventId: response.data.id,
           title: event.title,
-          link: response.data.htmlLink
+          link: response.data.htmlLink,
+          meetLink: response.data.conferenceData?.entryPoints?.[0]?.uri,
+          attendees: event.attendees,
+          attendeesCount: event.attendees?.length || 0
         }
       });
 
@@ -306,11 +319,21 @@ export class GoogleCalendarProvider implements CalendarProvider {
           timeZone: 'UTC',
         },
         attendees: event.attendees?.map(email => ({ email })),
+        conferenceData: {
+          createRequest: {
+            requestId: `meet-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            conferenceSolutionKey: {
+              type: 'hangoutsMeet'
+            }
+          }
+        },
       };
 
       const response = await calendar.events.update({
         calendarId: connection.calendarId || 'primary',
         eventId: eventId,
+        conferenceDataVersion: 1,
+        sendUpdates: 'all',
         requestBody: googleEvent,
       });
 

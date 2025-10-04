@@ -363,7 +363,7 @@ async function processAppointmentFromCall(lead: any, call: any, message: any, pa
       });
 
       // Check if structured data contains appointment time using slot_booked
-      if (structuredData.slot_booked && structuredData.email) {
+      if (structuredData.slot_booked) {
         try {
           const appointmentTime = new Date(structuredData.slot_booked);
           if (!isNaN(appointmentTime.getTime())) {
@@ -375,7 +375,7 @@ async function processAppointmentFromCall(lead: any, call: any, message: any, pa
               customer: {
                 name: structuredData.name || lead.name,
                 phone: structuredData.phoneNumber || lead.phoneNumber,
-                email: structuredData.email
+                email: structuredData.email || lead.email
               },
               notes: message.summary || 'Appointment scheduled during call'
             };
@@ -554,16 +554,21 @@ async function storePendingAppointment(call: any, message: any, appointmentData:
     let customerPhone = call.phoneNumber;
     let customerEmail = null;
 
-    // If we have a lead, use lead information
+    // PRIORITY 1: Extract email from call structured data (actual conversation)
+    if (message?.analysis?.structuredData?.email) {
+      customerEmail = message.analysis.structuredData.email;
+    }
+
+    // PRIORITY 2: Extract name from call structured data (actual conversation)
+    if (message?.analysis?.structuredData?.name) {
+      customerName = customerName || message.analysis.structuredData.name;
+    }
+
+    // Fallback to lead information from CSV if not captured during call
     if (lead) {
       customerName = customerName || lead.name;
       customerPhone = customerPhone || lead.phoneNumber;
-      customerEmail = lead.email;
-    }
-
-    // Try to extract email from call data if not from lead
-    if (!customerEmail && message?.analysis?.structuredData?.email) {
-      customerEmail = message.analysis.structuredData.email;
+      customerEmail = customerEmail || lead.email; // Only use CSV email as fallback
     }
 
     // Create pending appointment record
@@ -597,6 +602,8 @@ async function storePendingAppointment(call: any, message: any, appointmentData:
       data: {
         title: pendingAppointment.appointmentData.title,
         customerName: customerName,
+        customerEmail: customerEmail,
+        customerPhone: customerPhone,
         startTime: appointmentData.startTime
       }
     });
@@ -620,12 +627,54 @@ async function processStandaloneAppointment(payload: any, call: any, message: an
       data: { 
         hasPayloadAppointment: !!payload.appointment,
         hasMessageAppointment: !!message?.appointment,
+        hasStructuredData: !!message?.analysis?.structuredData,
         phoneNumberId: call.phoneNumberId
       }
     });
 
-    // Extract appointment data
-    const appointmentData = payload.appointment || message?.appointment;
+    let appointmentData = null;
+
+    // PRIORITY 1: Extract from structured data (slot_booked field)
+    const structuredData = message?.analysis?.structuredData;
+    if (structuredData?.slot_booked) {
+      try {
+        const appointmentTime = new Date(structuredData.slot_booked);
+        if (!isNaN(appointmentTime.getTime())) {
+          appointmentData = {
+            title: `Appointment`,
+            startTime: appointmentTime.toISOString(),
+            endTime: new Date(appointmentTime.getTime() + 30 * 60 * 1000).toISOString(), // 30 minutes
+            customer: {
+              name: structuredData.name || 'Customer',
+              phone: call.phoneNumber,
+              email: structuredData.email
+            },
+            notes: message.summary || 'Appointment scheduled during call'
+          };
+
+          logger.info('STANDALONE_APPOINTMENT_FROM_STRUCTURED_DATA', 'Created standalone appointment from structured data', {
+            callId: call.id,
+            data: {
+              slot_booked: structuredData.slot_booked,
+              email: structuredData.email,
+              name: structuredData.name
+            }
+          });
+        }
+      } catch (error) {
+        logger.error('STANDALONE_STRUCTURED_DATA_ERROR', 'Failed to parse structured data', {
+          callId: call.id,
+          error,
+          data: { slot_booked: structuredData.slot_booked }
+        });
+      }
+    }
+
+    // PRIORITY 2: Fallback to payload.appointment or message.appointment
+    if (!appointmentData) {
+      appointmentData = payload.appointment || message?.appointment;
+    }
+
     if (!appointmentData || !appointmentData.startTime || !appointmentData.endTime) {
       logger.error('STANDALONE_APPOINTMENT_ERROR', 'Invalid appointment data', {
         callId: call.id,
