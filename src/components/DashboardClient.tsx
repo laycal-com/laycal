@@ -6,6 +6,7 @@ import { UsageWidget } from './UsageWidget';
 import { UpgradeModal } from './UpgradeModal';
 import { CreditWidget } from './CreditWidget';
 import { PhoneProviderStatus } from './PhoneProviderStatus';
+import PhoneProviderPrompt from './PhoneProviderPrompt';
 import { toast } from 'sonner';
 
 export function DashboardClient() {
@@ -131,6 +132,8 @@ export function DashboardClient() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50" style={{ paddingTop: '80px' }}>
+      <PhoneProviderPrompt />
+      
       <main className="container mx-auto px-6 py-8 max-w-7xl">
         {/* Header Section */}
         <div className="mb-10">
