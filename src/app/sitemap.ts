@@ -4,7 +4,7 @@ import path from 'path';
 import matter from 'gray-matter';
 
 // Base URL for the site
-const baseUrl = 'https://laycal.com';
+const baseUrl = 'https://www.laycal.com';
 
 // Static routes with their priorities and change frequencies
 const staticRoutes = [
