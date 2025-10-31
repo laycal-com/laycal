@@ -9,20 +9,22 @@ import { validatePhoneNumber, normalizePhoneNumber } from '@/lib/csvProcessor';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    
-    const { 
-      email, 
-      phone, 
-      firstname, 
-      lastname, 
+
+    // Extract required and common fields
+    const {
+      firstname,
+      lastname,
+      phone,
+      email,
       company,
       about,
-      assistantId, 
-      userId 
+      assistantId,
+      userId,
+      ...customFields // All other fields are custom
     } = body;
 
     logger.info('GOOGLEFORM_WEBHOOK_RECEIVED', 'Google Form webhook data received', {
-      data: { userId, assistantId, phone, firstname, lastname }
+      data: { userId, assistantId, phone, firstname, lastname, customFieldCount: Object.keys(customFields).length }
     });
 
     if (!userId || !assistantId) {
@@ -35,12 +37,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!firstname || !lastname || !phone) {
+    if (!firstname || !lastname || !phone || !company) {
       logger.error('GOOGLEFORM_WEBHOOK_ERROR', 'Missing required fields', {
-        data: { firstname, lastname, phone }
+        data: { firstname, lastname, phone, company }
       });
       return NextResponse.json(
-        { error: 'firstname, lastname, and phone are required' },
+        { error: 'firstname, lastname, phone, and company are required' },
         { status: 400 }
       );
     }
@@ -77,7 +79,12 @@ export async function POST(req: NextRequest) {
     const fullName = `${firstname} ${lastname}`.trim();
 
     const lead = new Lead({
-      ...{...body, userId: null, assistantId: null},
+      userId,
+      name: fullName,
+      phoneNumber: normalizedPhone,
+      email: email || null,
+      company: company || null,
+      notes: about || null,
       status: 'calling',
       assignedAssistantId: assistantId
     });
@@ -102,19 +109,23 @@ export async function POST(req: NextRequest) {
     while (retryCount < maxRetries) {
       try {
         const vapiService = new TenantVapiService();
-        
+
+        // Prepare customer data with all custom fields
+        const customerData: Record<string, any> = {
+          name: fullName,
+          number: normalizedPhone,
+          ...customFields
+        };
+
         vapiCallResponse = await vapiService.initiateCall({
           userId,
           phoneNumber: normalizedPhone,
           assistantId: assistant.vapiAssistantId,
-          customer: {
-            ...{...body, userId: null, assistantId: null}
-          },
+          customer: customerData,
           metadata: {
             leadId: lead._id.toString(),
             source: 'googleform',
-            company: company || undefined,
-            about: about || undefined,
+            ...customFields,
             timestamp: new Date().toISOString()
           }
         });
