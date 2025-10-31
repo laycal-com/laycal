@@ -51,7 +51,7 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
     },
     mainPrompt: '',
     language: 'en-US',
-    firstMessage: '',
+    firstMessage: 'Hello? is this {{costumer.name}}',
     summary: '',
     structuredData: ''
   });
@@ -69,7 +69,7 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
         voice: assistant.voice,
         mainPrompt: assistant.mainPrompt,
         language: assistant.language,
-        firstMessage: assistant.firstMessage || '',
+        firstMessage: assistant.firstMessage || 'Hello? is this {{costumer.name}}',
         summary: assistant.summary || '',
         structuredData: assistant.structuredData || ''
       });

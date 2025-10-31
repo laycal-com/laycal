@@ -373,12 +373,14 @@ async function processAppointmentFromCall(lead: any, call: any, message: any, pa
               startTime: appointmentTime.toISOString(),
               endTime: new Date(appointmentTime.getTime() + 30 * 60 * 1000).toISOString(), // 30 minutes
               customer: {
-                name: structuredData.name || lead.name,
-                phone: structuredData.phoneNumber || lead.phoneNumber,
-                email: structuredData.email || lead.email
+                name: message.customer.name || structuredData.name || lead.name,
+                phone: message.customer.number || structuredData.phoneNumber || lead.phoneNumber,
+                email: message.customer.email || structuredData.email || lead.email
               },
               notes: message.summary || 'Appointment scheduled during call'
             };
+
+            console.log({appointmentData})
 
             logger.info('APPOINTMENT_FROM_STRUCTURED_DATA', 'Created appointment from structured data', {
               leadId: lead._id.toString(),
@@ -552,17 +554,17 @@ async function storePendingAppointment(call: any, message: any, appointmentData:
     // Extract customer information
     let customerName = appointmentData.customer?.name;
     let customerPhone = call.phoneNumber;
-    let customerEmail = null;
+    let customerEmail = appointmentData.customer?.email;
 
-    // PRIORITY 1: Extract email from call structured data (actual conversation)
-    if (message?.analysis?.structuredData?.email) {
-      customerEmail = message.analysis.structuredData.email;
-    }
+    // // PRIORITY 1: Extract email from call structured data (actual conversation)
+    // if (message?.analysis?.structuredData?.email) {
+    //   customerEmail = message.analysis.structuredData.email;
+    // }
 
     // PRIORITY 2: Extract name from call structured data (actual conversation)
-    if (message?.analysis?.structuredData?.name) {
-      customerName = customerName || message.analysis.structuredData.name;
-    }
+    // if (message?.analysis?.structuredData?.name) {
+    //   customerName = customerName || message.analysis.structuredData.name;
+    // }
 
     // Fallback to lead information from CSV if not captured during call
     if (lead) {

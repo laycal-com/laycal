@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       voice,
       mainPrompt,
       language,
-      firstMessage: firstMessage || "Hello! How can I help you today?",
+      firstMessage: firstMessage || "Hello",
       summaryPrompt: summary || "You are an expert note-taker. You will be given a transcript of a call. Summarize the call in 2-3 sentences, highlighting key points and outcomes.",
       ...(structuredData && { structuredDataPrompt: structuredData })
     };

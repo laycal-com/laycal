@@ -137,9 +137,8 @@ export default function CalendarSettings() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div>
         <div className="animate-pulse">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Calendar Integration</h2>
           <div className="space-y-3">
             <div className="h-4 bg-gray-200 rounded w-3/4"></div>
             <div className="h-4 bg-gray-200 rounded w-1/2"></div>
@@ -150,10 +149,9 @@ export default function CalendarSettings() {
   }
 
   return (
-    <div className="p-6 border-b border-gray-200">
+    <div>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">Calendar Integration</h2>
-        <p className="text-gray-600 mt-1">
+        <p className="text-gray-600">
           Connect your calendar to automatically create appointments when calls confirm bookings
         </p>
       </div>

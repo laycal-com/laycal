@@ -53,6 +53,7 @@ export default function Navbar() {
     { name: "Leads", href: "/leads" },
     { name: "Assistants", href: "/assistants" },
     { name: "Appointments", href: "/appointments" },
+    { name: "Integrations", href: "/integrations" },
     { name: "Settings", href: "/settings" },
     { name: "Support", href: "/support" },
   ];

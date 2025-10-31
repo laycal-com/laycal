@@ -15,6 +15,7 @@ export interface TenantVapiCallRequest {
   customer?: {
     name?: string;
     email?: string;
+    company?: string;
   };
   metadata?: Record<string, any>;
 }
@@ -27,6 +28,7 @@ export interface TenantVapiCallResponse {
   customer?: {
     name?: string;
     email?: string;
+    company?: string;
   };
   metadata?: Record<string, any>;
   createdAt: string;
@@ -139,6 +141,7 @@ export class TenantVapiService {
           number: callData.phoneNumber,
           name: callData.customer?.name,
           email: callData.customer?.email,
+          ...(callData.customer?.company && { company: callData.customer.company }),
         },
         ...(callData.metadata && { metadata: callData.metadata }),
       }),

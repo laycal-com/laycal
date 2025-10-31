@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { toast } from 'sonner';
-import CalendarSettings from '@/components/CalendarSettings';
 import { PaymentGateWrapper } from '@/components/PaymentGateWrapper';
 
 interface PhoneProvider {
@@ -817,10 +816,6 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Calendar Integration Section */}
-        <div className="bg-white rounded-lg shadow-sm mt-8">
-          <CalendarSettings />
-        </div>
       </div>
       </div>
     </PaymentGateWrapper>

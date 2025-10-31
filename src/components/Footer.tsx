@@ -51,6 +51,16 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/speed-to-lead" className="text-gray-400 hover:text-white transition-colors">
+                  Speed to Lead
+                </Link>
+              </li>
+              <li>
+                <Link href="/instant-lead-follow-up" className="text-gray-400 hover:text-white transition-colors">
+                  Instant Lead Follow-Up
+                </Link>
+              </li>
+              <li>
                 <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
                   Request Demo
                 </Link>

@@ -7,6 +7,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Instagram, Twitter } from 'lucide-react';
 import Footer from '@/components/Footer';
+import { AnimatedCounter } from '@/components/ui/animated-counter';
+import { ROICalculator } from '@/components/ui/roi-calculator';
 
 interface PricingData {
   assistant_base_cost: number;
@@ -281,9 +283,9 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <motion.section 
+      <motion.section
         ref={heroRef}
-        className={`${isScrolled ? 'pt-24' : 'pt-10'} pb-10 bg-white transition-all duration-300`}
+        className={`${isScrolled ? 'pt-24' : 'pt-10'} pb-10 bg-gradient-to-br from-white via-blue-50/30 to-white transition-all duration-300`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -313,7 +315,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={heroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="text-xl text-[#64748b] leading-relaxed max-w-2xl"
+                className="text-xl text-[#64748b] leading-relaxed max-w-2xl" style={{ lineHeight: '1.8' }}
               >
                 Transform your lead list into a 24/7 AI-powered calling machine. 
                 Enterprise-grade features at startup prices - no more overpriced alternatives.
@@ -324,13 +326,16 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={heroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
-                className="bg-[#f8fafc] p-4 rounded-lg border border-[#e2e8f0]"
+                className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border-2 border-green-200 shadow-lg"
               >
                 <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-[#10b981] rounded-full animate-pulse"></div>
-                  <span className="text-[#10b981] font-semibold">LIVE:</span>
-                  <span className="text-[#64748b]">
-                    Currently making {isClient ? liveStats.activeCalls.toLocaleString() : liveStats.activeCalls} calls across {liveStats.countriesActive} countries
+                  <div className="relative">
+                    <div className="w-3 h-3 bg-[#10b981] rounded-full"></div>
+                    <div className="absolute top-0 left-0 w-3 h-3 bg-[#10b981] rounded-full animate-ping"></div>
+                  </div>
+                  <span className="text-[#10b981] font-semibold text-lg">LIVE:</span>
+                  <span className="text-[#064e3b] font-medium">
+                    Currently making <AnimatedCounter end={liveStats.activeCalls} separator className="font-bold text-[#10b981]" /> calls across <AnimatedCounter end={liveStats.countriesActive} className="font-bold text-[#10b981]" /> countries
                   </span>
                 </div>
               </motion.div>
@@ -344,27 +349,39 @@ export default function Home() {
               >
                 <SignedOut>
                   <SignInButton>
-                    <button className="bg-[#1e40af] text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#1d4ed8] transition-all transform hover:scale-105 shadow-lg">
-                      Start Free Trial - 1 Assistant + 5 Calls Free
-                    </button>
+                    <motion.button
+                      whileHover={{ scale: 1.05, boxShadow: "0 20px 60px rgba(30, 64, 175, 0.4)" }}
+                      whileTap={{ scale: 0.98 }}
+                      className="bg-gradient-to-r from-[#1e40af] to-[#3b82f6] text-white px-8 py-4 rounded-xl text-lg font-bold hover:from-[#1d4ed8] hover:to-[#2563eb] transition-all shadow-xl relative overflow-hidden group"
+                    >
+                      <span className="relative z-10">Start Free Trial - 1 Assistant + 5 Calls Free</span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                    </motion.button>
                   </SignInButton>
                 </SignedOut>
                 <SignedIn>
                   <Link href="/dashboard">
-                    <button className="bg-[#1e40af] text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#1d4ed8] transition-all transform hover:scale-105 shadow-lg">
-                      Go to Dashboard
-                    </button>
+                    <motion.button
+                      whileHover={{ scale: 1.05, boxShadow: "0 20px 60px rgba(30, 64, 175, 0.4)" }}
+                      whileTap={{ scale: 0.98 }}
+                      className="bg-gradient-to-r from-[#1e40af] to-[#3b82f6] text-white px-8 py-4 rounded-xl text-lg font-bold hover:from-[#1d4ed8] hover:to-[#2563eb] transition-all shadow-xl relative overflow-hidden group"
+                    >
+                      <span className="relative z-10">Go to Dashboard</span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                    </motion.button>
                   </Link>
                 </SignedIn>
                 
-                <a 
+                <motion.a
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
                   href="https://calendly.com/ceo-laycal/demo-laycal"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="border-2 border-[#3b82f6] text-[#3b82f6] px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#3b82f6] hover:text-white transition-all inline-block text-center"
+                  className="border-2 border-[#3b82f6] text-[#3b82f6] px-8 py-4 rounded-xl text-lg font-semibold hover:bg-[#3b82f6] hover:text-white transition-all inline-block text-center shadow-lg hover:shadow-xl"
                 >
                   Schedule a Demo Call
-                </a>
+                </motion.a>
               </motion.div>
             </div>
 
@@ -375,14 +392,23 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="relative"
             >
-              <div className="bg-white rounded-xl shadow-2xl border border-[#e2e8f0] p-6">
+              <div className="bg-white rounded-2xl shadow-2xl border border-[#e2e8f0] p-6 hover:shadow-3xl transition-shadow duration-300">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold text-[#1f2937]">Live Call Dashboard</h3>
                     <div className="flex space-x-2">
-                      <div className="w-3 h-3 bg-[#10b981] rounded-full"></div>
-                      <div className="w-3 h-3 bg-[#f97316] rounded-full"></div>
-                      <div className="w-3 h-3 bg-[#ef4444] rounded-full"></div>
+                      <div className="relative">
+                        <div className="w-3 h-3 bg-[#10b981] rounded-full"></div>
+                        <div className="absolute top-0 left-0 w-3 h-3 bg-[#10b981] rounded-full animate-ping"></div>
+                      </div>
+                      <div className="relative">
+                        <div className="w-3 h-3 bg-[#f97316] rounded-full"></div>
+                        <div className="absolute top-0 left-0 w-3 h-3 bg-[#f97316] rounded-full animate-pulse"></div>
+                      </div>
+                      <div className="relative">
+                        <div className="w-3 h-3 bg-[#ef4444] rounded-full"></div>
+                        <div className="absolute top-0 left-0 w-3 h-3 bg-[#ef4444] rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                      </div>
                     </div>
                   </div>
                   
@@ -405,18 +431,24 @@ export default function Home() {
                   </div>
                   
                   {/* Mock metrics */}
-                  <div className="bg-[#f8fafc] p-4 rounded">
+                  <div className="bg-gradient-to-br from-[#f8fafc] to-blue-50 p-4 rounded-lg">
                     <div className="grid grid-cols-3 gap-4 text-center">
                       <div>
-                        <div className="text-2xl font-bold text-[#10b981]">247</div>
+                        <div className="text-2xl font-bold text-[#10b981]">
+                          <AnimatedCounter end={247} duration={3000} />
+                        </div>
                         <div className="text-xs text-[#64748b]">Connected</div>
                       </div>
                       <div>
-                        <div className="text-2xl font-bold text-[#f97316]">89</div>
+                        <div className="text-2xl font-bold text-[#f97316]">
+                          <AnimatedCounter end={89} duration={3000} />
+                        </div>
                         <div className="text-xs text-[#64748b]">In Progress</div>
                       </div>
                       <div>
-                        <div className="text-2xl font-bold text-[#8b5cf6]">156</div>
+                        <div className="text-2xl font-bold text-[#8b5cf6]">
+                          <AnimatedCounter end={156} duration={3000} />
+                        </div>
                         <div className="text-xs text-[#64748b]">Queued</div>
                       </div>
                     </div>
@@ -459,11 +491,15 @@ export default function Home() {
             {/* Live Metrics */}
             <div className="flex items-center space-x-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#10b981]">{isClient ? liveStats.todaysCalls.toLocaleString() : liveStats.todaysCalls}</div>
+                <div className="text-2xl font-bold text-[#10b981]">
+                  <AnimatedCounter end={liveStats.todaysCalls} separator duration={2500} />
+                </div>
                 <div className="text-sm text-[#64748b]">calls completed today</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#8b5cf6]">99.9%</div>
+                <div className="text-2xl font-bold text-[#8b5cf6]">
+                  <AnimatedCounter end={99.9} decimals={1} suffix="%" duration={2000} />
+                </div>
                 <div className="text-sm text-[#64748b]">uptime guaranteed</div>
               </div>
             </div>
@@ -472,9 +508,9 @@ export default function Home() {
       </motion.section>
 
       {/* Problem/Solution Section */}
-      <motion.section 
+      <motion.section
         ref={problemSolutionRef}
-        className="py-20 bg-white"
+        className="py-24 bg-gradient-to-b from-white to-gray-50"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.h2
@@ -540,10 +576,41 @@ export default function Home() {
         </div>
       </motion.section>
 
+      {/* ROI Calculator Section */}
+      <motion.section
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true, threshold: 0.2 }}
+        className="py-24 bg-gradient-to-br from-blue-50 via-white to-blue-50"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-4xl font-bold text-center text-[#1e40af] mb-6"
+          >
+            Calculate Your Savings
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="text-xl text-[#64748b] text-center mb-12 max-w-3xl mx-auto"
+          >
+            See how much you could save by switching to AI-powered calling
+          </motion.p>
+          <ROICalculator />
+        </div>
+      </motion.section>
+
       {/* How It Works Section */}
-      <motion.section 
+      <motion.section
         ref={howItWorksRef}
-        className="py-20 bg-[#f8fafc]"
+        className="py-24 bg-gradient-to-b from-white via-[#f8fafc] to-white"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.h2
@@ -584,10 +651,11 @@ export default function Home() {
                 initial={{ opacity: 0, y: 50 }}
                 animate={howItWorksInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="bg-white rounded-xl p-8 shadow-lg border border-[#e2e8f0] text-center hover:shadow-xl transition-shadow"
+                whileHover={{ y: -10, scale: 1.02 }}
+                className="bg-white rounded-2xl p-8 shadow-lg border-2 border-[#e2e8f0] text-center hover:shadow-2xl hover:border-blue-200 transition-all cursor-pointer group"
               >
-                <div 
-                  className="w-16 h-16 mx-auto rounded-full flex items-center justify-center text-2xl mb-6"
+                <div
+                  className="w-16 h-16 mx-auto rounded-full flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300"
                   style={{ backgroundColor: item.color + '20', color: item.color }}
                 >
                   {item.icon}
@@ -686,9 +754,9 @@ export default function Home() {
       </motion.section>
 
       {/* Call Performance Metrics */}
-      <motion.section 
+      <motion.section
         ref={metricsRef}
-        className="py-20 bg-white"
+        className="py-24 bg-white"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.h2
@@ -732,9 +800,10 @@ export default function Home() {
                 initial={{ opacity: 0, y: 50 }}
                 animate={metricsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="bg-white rounded-xl p-6 shadow-lg border border-[#e2e8f0] text-center hover:shadow-xl transition-all hover:-translate-y-1 flex flex-col justify-center h-full min-h-[200px]"
+                whileHover={{ y: -12, scale: 1.05, boxShadow: "0 25px 50px rgba(0,0,0,0.15)" }}
+                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 shadow-lg border-2 border-[#e2e8f0] text-center hover:border-blue-300 transition-all flex flex-col justify-center h-full min-h-[200px] cursor-pointer group"
               >
-                <div className="text-4xl mb-4">{metric.icon}</div>
+                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">{metric.icon}</div>
                 <h3 className="text-xl font-bold text-[#1f2937] mb-2">{metric.title}</h3>
                 <div 
                   className="text-sm font-semibold uppercase tracking-wide"
@@ -749,9 +818,9 @@ export default function Home() {
       </motion.section>
 
       {/* Features Showcase */}
-      <motion.section 
+      <motion.section
         ref={featuresRef}
-        className="py-20 bg-[#f8fafc]"
+        className="py-24 bg-gradient-to-br from-[#f8fafc] via-blue-50/30 to-[#f8fafc]"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.h2
@@ -807,10 +876,11 @@ export default function Home() {
                 initial={{ opacity: 0, y: 50 }}
                 animate={featuresInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="bg-white rounded-xl p-6 shadow-lg border border-[#e2e8f0] hover:shadow-xl transition-all hover:-translate-y-1"
+                whileHover={{ y: -10, scale: 1.02 }}
+                className="bg-white rounded-2xl p-6 shadow-lg border-2 border-[#e2e8f0] hover:shadow-2xl hover:border-blue-200 transition-all cursor-pointer group"
               >
-                <div 
-                  className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl mb-4"
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300"
                   style={{ backgroundColor: feature.color + '20', color: feature.color }}
                 >
                   {feature.icon}
@@ -824,9 +894,9 @@ export default function Home() {
       </motion.section>
 
       {/* Results Section */}
-      <motion.section 
+      <motion.section
         ref={resultsRef}
-        className="py-20 bg-white"
+        className="py-24 bg-gradient-to-b from-gray-50 to-white"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.h2
@@ -1007,20 +1077,25 @@ export default function Home() {
                       nooks: "Enterprise-only pricing — great if you're Salesforce, not if you're scrappy."
                     }
                   ].map((row, index) => (
-                    <motion.tr 
+                    <motion.tr
                       key={index}
                       initial={{ opacity: 0, x: -50 }}
                       animate={comparisonInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
                       transition={{ duration: 0.6, delay: index * 0.1 }}
-                      className="hover:bg-blue-50/50 transition-colors"
+                      className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100/50 transition-all duration-300 cursor-pointer"
                     >
                       <td className="px-6 py-6 font-semibold text-gray-900 border-r border-gray-100">
                         {row.feature}
                       </td>
                       <td className="px-6 py-6 text-center bg-gradient-to-r from-blue-50/50 to-blue-100/50 border-r border-blue-200">
-                        <div className="text-sm font-medium text-[#1e40af]">
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={comparisonInView ? { scale: 1 } : { scale: 0 }}
+                          transition={{ duration: 0.4, delay: index * 0.1 + 0.3 }}
+                          className="inline-block text-sm font-medium text-[#1e40af]"
+                        >
                           {row.laycal}
-                        </div>
+                        </motion.div>
                       </td>
                       <td className="px-6 py-6 text-center border-r border-gray-100">
                         <div className="text-sm text-gray-600">
@@ -1111,23 +1186,28 @@ export default function Home() {
           >
             <SignedOut>
               <SignInButton>
-                <motion.button 
-                  whileHover={{ scale: 1.05 }}
+                <motion.button
+                  whileHover={{ scale: 1.05, boxShadow: "0 25px 60px rgba(251, 191, 36, 0.5)" }}
                   whileTap={{ scale: 0.95 }}
-                  className="bg-yellow-400 text-[#1e40af] px-12 py-4 rounded-2xl text-xl font-bold hover:bg-yellow-300 transition-all duration-300 shadow-xl"
+                  className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-[#1e40af] px-12 py-4 rounded-2xl text-xl font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all duration-300 shadow-xl relative group"
                 >
-                  Start Free Trial - No Card Required 🎉
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    Start Free Trial - No Card Required 🎉
+                    <span className="text-sm bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse">1,247 users online</span>
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 </motion.button>
               </SignInButton>
             </SignedOut>
             <SignedIn>
               <Link href="/dashboard">
-                <motion.button 
-                  whileHover={{ scale: 1.05 }}
+                <motion.button
+                  whileHover={{ scale: 1.05, boxShadow: "0 25px 60px rgba(251, 191, 36, 0.5)" }}
                   whileTap={{ scale: 0.95 }}
-                  className="bg-yellow-400 text-[#1e40af] px-12 py-4 rounded-2xl text-xl font-bold hover:bg-yellow-300 transition-all duration-300 shadow-xl"
+                  className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-[#1e40af] px-12 py-4 rounded-2xl text-xl font-bold hover:from-yellow-300 hover:to-yellow-400 transition-all duration-300 shadow-xl relative group"
                 >
-                  Go to Dashboard 🚀
+                  <span className="relative z-10">Go to Dashboard 🚀</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 </motion.button>
               </Link>
             </SignedIn>
@@ -1194,9 +1274,9 @@ export default function Home() {
       </section>
 
       {/* Pricing Section */}
-      <motion.section 
+      <motion.section
         ref={pricingRef}
-        className="py-20 bg-[#f8fafc]"
+        className="py-24 bg-gradient-to-b from-white via-[#f8fafc] to-white"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.h2
@@ -1285,9 +1365,10 @@ export default function Home() {
                 initial={{ opacity: 0, y: 50 }}
                 animate={pricingInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className={`bg-white rounded-xl p-8 shadow-lg border-2 ${
-                  plan.popular ? 'border-[#10b981]' : 'border-[#e2e8f0]'
-                } relative hover:shadow-xl transition-shadow`}
+                whileHover={{ y: -10, scale: 1.02 }}
+                className={`bg-white rounded-2xl p-8 shadow-lg border-2 ${
+                  plan.popular ? 'border-[#10b981] shadow-green-200' : 'border-[#e2e8f0]'
+                } relative hover:shadow-2xl transition-all cursor-pointer`}
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -1402,9 +1483,9 @@ export default function Home() {
       </motion.section>
 
       {/* Trust & Security */}
-      <motion.section 
+      <motion.section
         ref={trustRef}
-        className="py-20 bg-white"
+        className="py-24 bg-gradient-to-br from-white via-gray-50 to-white"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.h2
@@ -1439,9 +1520,16 @@ export default function Home() {
                 initial={{ opacity: 0, y: 50 }}
                 animate={trustInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="space-y-4"
+                whileHover={{ y: -10, scale: 1.05 }}
+                className="space-y-4 cursor-pointer"
               >
-                <div className="text-5xl">{item.icon}</div>
+                <motion.div
+                  whileHover={{ scale: 1.2, rotate: 10 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="text-5xl inline-block"
+                >
+                  {item.icon}
+                </motion.div>
                 <h3 className="text-xl font-bold text-[#1f2937]">{item.title}</h3>
                 <p className="text-[#64748b]">{item.description}</p>
               </motion.div>
@@ -1451,9 +1539,9 @@ export default function Home() {
       </motion.section>
 
       {/* FAQ Section */}
-      <motion.section 
+      <motion.section
         ref={faqRef}
-        className="py-20 bg-[#f8fafc]"
+        className="py-24 bg-gradient-to-b from-white to-[#f8fafc]"
       >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.h2
@@ -1497,7 +1585,8 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={faqInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="bg-white rounded-lg border border-[#e2e8f0] overflow-hidden"
+                whileHover={{ scale: 1.01 }}
+                className="bg-white rounded-xl border-2 border-[#e2e8f0] overflow-hidden hover:border-blue-300 hover:shadow-lg transition-all"
               >
                 <button
                   onClick={() => setFaqOpen(faqOpen === index ? null : index)}
@@ -1520,8 +1609,12 @@ export default function Home() {
       </motion.section>
 
       {/* Final CTA Section */}
-      <motion.section className="py-20 bg-[#1e40af] text-white text-center">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <motion.section className="py-24 bg-gradient-to-br from-[#1e40af] via-[#3b82f6] to-[#1e40af] text-white text-center relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-10 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.h2
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}

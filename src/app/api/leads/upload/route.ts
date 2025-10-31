@@ -196,6 +196,7 @@ export async function POST(request: NextRequest) {
             customer: {
               name: leadData.name,
               email: leadData.email,
+              company: leadData.company,
             },
             metadata: {
               leadId: lead._id.toString(),

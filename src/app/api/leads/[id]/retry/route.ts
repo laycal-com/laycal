@@ -60,6 +60,7 @@ export async function POST(
           customer: {
             name: lead.name,
             email: lead.email,
+            company: lead.company,
           },
           metadata: {
             leadId: lead._id.toString(),
