@@ -77,12 +77,7 @@ export async function POST(req: NextRequest) {
     const fullName = `${firstname} ${lastname}`.trim();
 
     const lead = new Lead({
-      userId,
-      name: fullName,
-      phoneNumber: normalizedPhone,
-      email: email || null,
-      company: company || null,
-      notes: about || null,
+      ...{...body, userId: null, assistantId: null},
       status: 'calling',
       assignedAssistantId: assistantId
     });
@@ -113,8 +108,7 @@ export async function POST(req: NextRequest) {
           phoneNumber: normalizedPhone,
           assistantId: assistant.vapiAssistantId,
           customer: {
-            name: fullName,
-            email: email || undefined
+            ...{...body, userId: null, assistantId: null}
           },
           metadata: {
             leadId: lead._id.toString(),
