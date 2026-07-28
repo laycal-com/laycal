@@ -15,8 +15,16 @@ export interface TenantVapiCallRequest {
   customer?: {
     name?: string;
     email?: string;
-    company?: string;
   };
+  /**
+   * Anything the prompt references as {{key}} beyond Vapi's fixed customer
+   * schema — service_type, address, client_company and so on.
+   *
+   * Vapi rejects unknown properties on `customer`, so custom values MUST travel
+   * here (assistantOverrides.variableValues) or they silently render as empty
+   * strings in the system prompt.
+   */
+  variableValues?: Record<string, string>;
   metadata?: Record<string, any>;
 }
 
@@ -40,6 +48,8 @@ export interface VapiAssistantConfig {
     gender: 'male' | 'female';
     provider: string;
     voiceId: string;
+    /** Vapi's own voice provider is versioned; ignored by other providers. */
+    version?: string;
   };
   mainPrompt: string;
   language: string;
@@ -50,6 +60,34 @@ export interface VapiAssistantConfig {
     provider: string;
     model: string;
   };
+  /**
+   * Calendar tools the agent can call mid-conversation. Defined inline on the
+   * assistant rather than as standalone Vapi tool objects because the endpoint
+   * URLs embed this assistant's id — the tool has no life of its own and should
+   * be created, updated and deleted with its assistant.
+   */
+  tools?: VapiTool[];
+  /**
+   * Schema for analysisPlan.structuredDataSchema. Speed-to-lead extracts a
+   * different shape than the legacy cold-calling assistants.
+   */
+  structuredDataSchema?: Record<string, any>;
+  /**
+   * Overrides VAPI_WEBHOOK_URL for this push. Needed when the public hostname
+   * is a tunnel discovered at request time rather than a value baked into env.
+   */
+  serverUrl?: string;
+}
+
+export interface VapiTool {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, any>;
+  };
+  server: { url: string; timeoutSeconds?: number };
+  messages?: Array<{ type: string; content: string }>;
 }
 
 export interface VapiAssistantResponse {
@@ -67,6 +105,107 @@ export interface VapiAssistantResponse {
   systemPrompt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Vapi answers a deleted/unknown phone number with a 400 whose message names
+ * the id, e.g. "`phoneNumber` `<uuid>` does not exist."
+ */
+function isStalePhoneNumberError(status: number, body: string): boolean {
+  return status === 400 && /phoneNumber.*does not exist/i.test(body);
+}
+
+/**
+ * Vapi's `voice` block. The `vapi` provider takes `version` and a bare language
+ * code ("en"), unlike OpenAI/11Labs voices which take neither — so the extra
+ * keys are only emitted for that provider.
+ */
+function buildVoice(voice: VapiAssistantConfig['voice'], language: string) {
+  const base = { provider: voice.provider, voiceId: voice.voiceId };
+  if (voice.provider !== 'vapi') return base;
+
+  return {
+    ...base,
+    version: voice.version || '2',
+    // "en-US" -> "en"
+    language: (language || 'en-US').split('-')[0],
+  };
+}
+
+/**
+ * nova-2-phonecall is Deepgram's telephony-tuned model — noticeably better on
+ * 8kHz phone audio than plain nova-2, which matters when the whole product is
+ * understanding a homeowner on a mobile in a noisy house.
+ */
+function buildTranscriber(language: string) {
+  return {
+    provider: 'deepgram',
+    model: 'nova-2-phonecall',
+    language: language || 'en-US',
+    endpointing: 300,
+  };
+}
+
+/**
+ * Vapi's own default user message for analysis passes — it feeds the transcript
+ * and the ended reason. Matching it verbatim means our plans behave the same as
+ * ones Vapi generates itself.
+ */
+const ANALYSIS_USER_MESSAGE =
+  'Here is the transcript:\n\n{{transcript}}\n\n. Here is the ended reason of the call:\n\n{{endedReason}}\n\n';
+
+/**
+ * Vapi's post-call `analysisPlan`.
+ *
+ * Three things here were learned against the live API, each the hard way:
+ *
+ * 1. The flat `summaryPrompt` field is accepted and stored, but whether Vapi
+ *    turns `summaryPlan.enabled` on is **inconsistent** — of two assistants
+ *    created a day apart by the same code, one came out enabled and the other
+ *    did not, and the disabled one produced no `analysis.summary` at all. Being
+ *    explicit is the only way to get a predictable result.
+ *
+ * 2. `analysisPlan` is **replaced wholesale** on PATCH, not merged. Sending
+ *    only `summaryPlan` silently drops the structured-data config, so this
+ *    always returns the complete plan.
+ *
+ * 3. The structured-data system message must carry `{{schema}}`. Vapi injects
+ *    it when it builds the plan from the legacy fields; hand-written messages
+ *    that omit it leave the model without the schema it is meant to fill.
+ */
+function buildAnalysisPlan(config: VapiAssistantConfig): Record<string, any> | undefined {
+  const plan: Record<string, any> = {};
+
+  if (config.summaryPrompt) {
+    plan.summaryPlan = {
+      enabled: true,
+      messages: [
+        { role: 'system', content: config.summaryPrompt },
+        { role: 'user', content: ANALYSIS_USER_MESSAGE },
+      ],
+    };
+  }
+
+  if (config.structuredDataPrompt || config.structuredDataSchema) {
+    const instruction =
+      config.structuredDataPrompt || 'Extract the structured fields from this conversation.';
+
+    plan.structuredDataPlan = {
+      enabled: true,
+      ...(config.structuredDataSchema && { schema: config.structuredDataSchema }),
+      messages: [
+        {
+          role: 'system',
+          content:
+            `${instruction} Use only what was actually said; leave a field empty rather than ` +
+            'guessing.\n\nJson Schema:\n{{schema}}\n\nOnly respond with the JSON.',
+        },
+        { role: 'user', content: ANALYSIS_USER_MESSAGE },
+      ],
+    };
+  }
+
+  return Object.keys(plan).length > 0 ? plan : undefined;
 }
 
 export class TenantVapiService {
@@ -87,6 +226,8 @@ export class TenantVapiService {
     let vapiPhoneNumberId: string;
     let assistantId: string;
     let isUsingDefaultProvider = false;
+    /** Set when the number came from a user PhoneProvider we can re-provision. */
+    let healableProviderId: string | undefined;
 
     // If specific phoneProviderId and assistantId are provided, use them
     if (callData.phoneProviderId && callData.assistantId) {
@@ -114,41 +255,99 @@ export class TenantVapiService {
         throw new Error(getNoPhoneProviderErrorMessage(callData.phoneNumber));
       }
 
-      vapiPhoneNumberId = providerResult.vapiPhoneNumberId;
       isUsingDefaultProvider = providerResult.isDefault;
+      healableProviderId = providerResult.providerId;
+
+      if (providerResult.vapiPhoneNumberId) {
+        vapiPhoneNumberId = providerResult.vapiPhoneNumberId;
+      } else if (providerResult.providerId) {
+        // Configured but not yet provisioned on Vapi — do it now, and let any
+        // credential error surface verbatim instead of becoming a misleading
+        // "no phone provider configured".
+        const provider = await PhoneProvider.findById(providerResult.providerId);
+        if (!provider) {
+          throw new Error(getNoPhoneProviderErrorMessage(callData.phoneNumber));
+        }
+        vapiPhoneNumberId = await this.ensureVapiPhoneNumber(provider);
+      } else {
+        throw new Error(getNoPhoneProviderErrorMessage(callData.phoneNumber));
+      }
 
       // Log when using default provider for US numbers
       if (isUsingDefaultProvider) {
         logger.info('USING_DEFAULT_US_PROVIDER', 'Using default phone provider for US number', {
           userId: callData.userId,
-          targetPhoneNumber: callData.phoneNumber,
-          vapiPhoneNumberId
+          data: { targetPhoneNumber: callData.phoneNumber, vapiPhoneNumberId }
         });
       }
     }
 
-    // Make the call using the specified or default assistant
-    const response = await fetch(`${this.baseUrl}/call`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        assistantId: assistantId,
-        phoneNumberId: vapiPhoneNumberId,
-        customer: {
-          number: callData.phoneNumber,
-          name: callData.customer?.name,
-          email: callData.customer?.email,
-          ...(callData.customer?.company && { company: callData.customer.company }),
+    const postCall = (phoneNumberId: string) =>
+      fetch(`${this.baseUrl}/call`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
         },
-        ...(callData.metadata && { metadata: callData.metadata }),
-      }),
-    });
+        body: JSON.stringify({
+          assistantId: assistantId,
+          phoneNumberId,
+          // Only Vapi's own customer fields go here — it rejects extras.
+          customer: {
+            number: callData.phoneNumber,
+            ...(callData.customer?.name && { name: callData.customer.name }),
+            ...(callData.customer?.email && { email: callData.customer.email }),
+          },
+          // Everything the prompt interpolates rides in variableValues instead.
+          ...(callData.variableValues &&
+            Object.keys(callData.variableValues).length > 0 && {
+              assistantOverrides: { variableValues: callData.variableValues },
+            }),
+          ...(callData.metadata && { metadata: callData.metadata }),
+        }),
+      });
+
+    let response = await postCall(vapiPhoneNumberId);
 
     if (!response.ok) {
       const error = await response.text();
+
+      // The stored vapiPhoneNumberId is a cache. If the number was deleted on
+      // Vapi (or created under a different API key/account) every future call
+      // fails identically forever, because nothing revalidates it. Drop the
+      // stale id, re-provision from the provider's credentials, and retry once.
+      if (isStalePhoneNumberError(response.status, error) && healableProviderId) {
+        logger.warn('VAPI_PHONE_NUMBER_STALE', 'Cached Vapi phone number no longer exists — re-provisioning', {
+          userId: callData.userId,
+          data: { staleVapiPhoneNumberId: vapiPhoneNumberId, phoneProviderId: healableProviderId },
+        });
+
+        const provider = await PhoneProvider.findById(healableProviderId);
+        if (provider) {
+          provider.vapiPhoneNumberId = undefined;
+          await provider.save();
+
+          const freshId = await this.ensureVapiPhoneNumber(provider);
+          logger.info('VAPI_PHONE_NUMBER_REPROVISIONED', 'Re-created Vapi phone number', {
+            userId: callData.userId,
+            data: { phoneProviderId: healableProviderId, vapiPhoneNumberId: freshId },
+          });
+
+          response = await postCall(freshId);
+          if (response.ok) return response.json();
+
+          const retryError = await response.text();
+          throw new Error(`Vapi API error after re-provisioning: ${response.status} - ${retryError}`);
+        }
+      }
+
+      if (isStalePhoneNumberError(response.status, error)) {
+        throw new Error(
+          'The phone number configured for this account no longer exists in Vapi. ' +
+            'Reconnect your phone provider in Settings.'
+        );
+      }
+
       throw new Error(`Vapi API error: ${response.status} - ${error}`);
     }
 
@@ -375,14 +574,11 @@ export class TenantVapiService {
       model: 'gpt-4o-mini'
     };
 
-    // Analysis plan will be added to the request body below
+    const analysisPlan = buildAnalysisPlan(config);
 
     const requestBody = {
       name: config.name,
-      voice: {
-        voiceId: config.voice.voiceId,
-        provider: config.voice.provider
-      },
+      voice: buildVoice(config.voice, config.language),
       model: {
         model: config.model?.model || defaultModel.model,
         provider: config.model?.provider || defaultModel.provider,
@@ -391,62 +587,27 @@ export class TenantVapiService {
             role: 'system',
             content: config.mainPrompt
           }
-        ]
+        ],
+        ...(config.tools?.length && { tools: config.tools })
       },
       firstMessage: config.firstMessage || "Hi!",
       voicemailMessage: "Please call back when you're available.",
       endCallFunctionEnabled: false,
       endCallMessage: "Goodbye.",
-      transcriber: {
-        model: 'nova-2',
-        language: config.language || 'en',
-        provider: 'deepgram',
-        endpointing: 300
-      },
+      transcriber: buildTranscriber(config.language),
       serverMessages: [
         "end-of-call-report",
         "status-update"
       ],
       backgroundSound: "off",
       interruptionsEnabled: true,
-      ...(VAPI_WEBHOOK_URL && { 
+      ...((config.serverUrl || VAPI_WEBHOOK_URL) && {
         server: {
-          url: VAPI_WEBHOOK_URL,
+          url: config.serverUrl || VAPI_WEBHOOK_URL,
           timeoutSeconds: 20
         }
       }),
-      ...((config.summaryPrompt || config.structuredDataPrompt) && {
-        analysisPlan: {
-          ...(config.summaryPrompt && {
-            summaryPrompt: config.summaryPrompt
-          }),
-          ...(config.structuredDataPrompt && {
-            structuredDataPrompt: config.structuredDataPrompt,
-            structuredDataSchema: {
-              type: 'object',
-              properties: {
-                email: {
-                  type: 'string',
-                  description: 'prospect\'s email address'
-                },
-                name: {
-                  type: 'string', 
-                  description: 'prospect\'s name if mentioned'
-                },
-                phoneNumber: {
-                  type: 'string',
-                  description: 'prospect\'s phone number'
-                },
-                slot_booked: {
-                  type: 'string',
-                  description: 'appointment date/time in ISO format with timezone'
-                }
-              },
-              required: []
-            }
-          })
-        }
-      })
+      ...(analysisPlan && { analysisPlan }),
     };
 
     logger.info('VAPI_CREATE_ASSISTANT', 'Creating assistant on Vapi', {
@@ -492,10 +653,7 @@ export class TenantVapiService {
 
     const requestBody = {
       name: config.name,
-      voice: {
-        provider: config.voice.provider,
-        voiceId: config.voice.voiceId
-      },
+      voice: buildVoice(config.voice, config.language),
       model: {
         ...(config.model || { provider: 'openai', model: 'gpt-4o-mini' }),
         messages: [
@@ -503,19 +661,23 @@ export class TenantVapiService {
             role: 'system',
             content: config.mainPrompt
           }
-        ]
+        ],
+        ...(config.tools?.length && { tools: config.tools })
       },
       firstMessage: config.firstMessage || "Hi!",
-      transcriber: {
-        provider: 'deepgram',
-        model: 'nova-2',
-        language: config.language,
-        endpointing: 300
-      },
+      transcriber: buildTranscriber(config.language),
+      ...((config.serverUrl || VAPI_WEBHOOK_URL) && {
+        server: { url: config.serverUrl || VAPI_WEBHOOK_URL, timeoutSeconds: 20 }
+      }),
       endCallFunctionEnabled: false,
       recordingEnabled: true,
       interruptionsEnabled: true,
-      ...(VAPI_WEBHOOK_URL && { serverUrl: VAPI_WEBHOOK_URL })
+      // Was previously omitted here, which meant a resync pushed a new prompt
+      // and new tools but left the analysis plan untouched — so summaries
+      // stayed off no matter how many times you resynced.
+      ...(buildAnalysisPlan(config) && { analysisPlan: buildAnalysisPlan(config) }),
+      // The `server` block above is the current field; the legacy top-level
+      // `serverUrl` is intentionally not sent so the two can never disagree.
     };
 
     logger.info('VAPI_UPDATE_ASSISTANT', 'Updating assistant on Vapi', {
@@ -577,6 +739,41 @@ export class TenantVapiService {
     logger.info('VAPI_DELETE_ASSISTANT_SUCCESS', 'Assistant deleted successfully on Vapi', {
       data: { assistantId }
     });
+  }
+
+  /**
+   * Releases a phone number registration on Vapi.
+   *
+   * Best-effort: a 404 means it is already gone, which is the desired end
+   * state. Callers should not fail a local delete because of this — an
+   * orphaned Vapi registration is untidy, a provider you cannot remove is
+   * worse.
+   */
+  async deletePhoneNumber(vapiPhoneNumberId: string): Promise<boolean> {
+    if (!this.apiKey) {
+      throw new Error('Vapi API key is required');
+    }
+
+    const response = await fetch(`${this.baseUrl}/phone-number/${vapiPhoneNumberId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok && response.status !== 404) {
+      const error = await response.text();
+      logger.warn('VAPI_DELETE_PHONE_NUMBER_FAILED', 'Could not release Vapi phone number', {
+        data: { vapiPhoneNumberId, status: response.status, error: error.slice(0, 300) }
+      });
+      return false;
+    }
+
+    logger.info('VAPI_DELETE_PHONE_NUMBER', 'Vapi phone number released', {
+      data: { vapiPhoneNumberId, alreadyGone: response.status === 404 }
+    });
+    return true;
   }
 
   async getAssistant(assistantId: string): Promise<VapiAssistantResponse> {

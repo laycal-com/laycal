@@ -44,6 +44,8 @@ export interface ICallSummary {
     startTime?: string;
     endTime?: string;
     confirmed?: boolean;
+    /** Business timezone, so the UI shows the time the agent actually promised. */
+    timezone?: string;
   };
   
   createdAt: Date;
@@ -112,6 +114,7 @@ const CallSummarySchema = new mongoose.Schema<ICallSummary>({
     title: String,
     startTime: String,
     endTime: String,
+    timezone: String,
     confirmed: {
       type: Boolean,
       default: false

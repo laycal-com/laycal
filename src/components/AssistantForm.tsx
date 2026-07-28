@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { UpgradeModal } from './UpgradeModal';
-import { PromptWizard } from './PromptWizard';
+import { SpeedToLeadWizard, type SpeedToLeadResult } from './SpeedToLeadWizard';
+import { SPEED_TO_LEAD_SUMMARY_PROMPT } from '@/lib/speedToLead/tools';
 
 
 interface AssistantFormProps {
@@ -20,13 +21,19 @@ interface AssistantFormProps {
   onCancel: () => void;
 }
 
+// Vapi's own voices lead the list — they are the lowest-latency option on a
+// phone call, which is what speed-to-lead is optimised for.
 const VOICE_OPTIONS = {
   female: [
+    { id: 'Paige', name: 'Paige (recommended)', provider: 'vapi' },
+    { id: 'Hana', name: 'Hana', provider: 'vapi' },
     { id: 'alloy', name: 'Alloy', provider: 'openai' },
     { id: 'nova', name: 'Nova', provider: 'openai' },
     { id: 'shimmer', name: 'Shimmer', provider: 'openai' },
   ],
   male: [
+    { id: 'Elliot', name: 'Elliot (recommended)', provider: 'vapi' },
+    { id: 'Rohan', name: 'Rohan', provider: 'vapi' },
     { id: 'onyx', name: 'Onyx', provider: 'openai' },
     { id: 'fable', name: 'Fable', provider: 'openai' },
     { id: 'echo', name: 'Echo', provider: 'openai' },
@@ -45,15 +52,16 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
   const [formData, setFormData] = useState({
     name: '',
     voice: {
-      gender: 'female' as 'male' | 'female',
-      provider: 'openai',
-      voiceId: 'alloy'
+      gender: 'male' as 'male' | 'female',
+      provider: 'vapi',
+      voiceId: 'Elliot'
     },
     mainPrompt: '',
     language: 'en-US',
-    firstMessage: 'Hello? is this {{costumer.name}}',
+    firstMessage: 'Hi, is this {{customer.name}}?',
     summary: '',
-    structuredData: ''
+    structuredData: '',
+    serviceConfig: undefined as SpeedToLeadResult['serviceConfig'] | undefined
   });
 
   const [loading, setLoading] = useState(false);
@@ -69,9 +77,10 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
         voice: assistant.voice,
         mainPrompt: assistant.mainPrompt,
         language: assistant.language,
-        firstMessage: assistant.firstMessage || 'Hello? is this {{costumer.name}}',
+        firstMessage: assistant.firstMessage || 'Hi, is this {{customer.name}}?',
         summary: assistant.summary || '',
-        structuredData: assistant.structuredData || ''
+        structuredData: assistant.structuredData || '',
+        serviceConfig: (assistant as any).serviceConfig
       });
     }
   }, [assistant]);
@@ -97,12 +106,18 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleWizardComplete = (prompt: string, summary: string, structuredData?: string) => {
+  const handleWizardComplete = (result: SpeedToLeadResult) => {
     setFormData(prev => ({
       ...prev,
-      mainPrompt: prompt,
-      summary,
-      structuredData
+      // Only name the assistant from the wizard if the user hasn't typed one.
+      name: prev.name.trim() || result.suggestedName,
+      mainPrompt: result.mainPrompt,
+      firstMessage: result.firstMessage,
+      // Summary and extraction are templated, not model-authored, so reporting
+      // can rely on stable field names across every assistant.
+      summary: SPEED_TO_LEAD_SUMMARY_PROMPT,
+      structuredData: 'Extract the speed-to-lead service call fields from this conversation.',
+      serviceConfig: result.serviceConfig
     }));
     setShowWizard(false);
   };
@@ -198,7 +213,7 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
   // Show wizard for new assistants
   if (showWizard) {
     return (
-      <PromptWizard
+      <SpeedToLeadWizard
         onComplete={handleWizardComplete}
         onCancel={onCancel}
       />

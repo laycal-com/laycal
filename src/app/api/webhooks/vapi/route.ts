@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Lead from '@/models/Lead';
 import Assistant from '@/models/Assistant';
-import PendingAppointment from '@/models/PendingAppointment';
+import Appointment from '@/models/Appointment';
 import CallSummary from '@/models/CallSummary';
 import { usageValidator } from '@/lib/usageValidator';
 import { logger } from '@/lib/logger';
+import { calendarManager } from '@/lib/calendar/manager';
 
 // Official Vapi endedReason values that indicate the call was not answered
 // Based on https://docs.vapi.ai/calls/call-ended-reason
@@ -435,7 +436,24 @@ async function processAppointmentFromCall(lead: any, call: any, message: any, pa
 
     // If we found appointment data, store it as pending confirmation
     if (appointmentData && appointmentData.startTime && appointmentData.endTime) {
-      await storePendingAppointment(call, message, appointmentData, lead);
+      // A speed-to-lead agent books live via the bookAppointment tool, which has
+      // already written the calendar event and the appointment record. Extracting
+      // the same slot again from the transcript would queue a duplicate and put a
+      // second calendar event on the same visit.
+      const alreadyBooked = await Appointment.findOne({
+        vapiCallId: call.id,
+        source: 'speed_to_lead_in_call',
+      });
+
+      if (alreadyBooked) {
+        logger.info('APPOINTMENT_ALREADY_BOOKED_IN_CALL', 'Booked live during the call — skipping transcript duplicate', {
+          leadId: lead._id.toString(),
+          vapiCallId: call.id,
+        });
+        return;
+      }
+
+      await storeAppointment(call, message, appointmentData, lead);
 
       // Update lead with appointment information
       if (lead.callResults) {
@@ -548,8 +566,8 @@ function extractAppointmentFromText(text: string, customerName: string, customer
   }
 }
 
-// Store pending appointment for manual confirmation
-async function storePendingAppointment(call: any, message: any, appointmentData: any, lead?: any) {
+// Record a booking extracted from the end-of-call report.
+async function storeAppointment(call: any, message: any, appointmentData: any, lead?: any) {
   try {
     // Extract customer information
     let customerName = appointmentData.customer?.name;
@@ -573,12 +591,45 @@ async function storePendingAppointment(call: any, message: any, appointmentData:
       customerEmail = customerEmail || lead.email; // Only use CSV email as fallback
     }
 
-    // Create pending appointment record
-    const pendingAppointment = new PendingAppointment({
+    const title = appointmentData.title || `Appointment with ${customerName || 'Customer'}`;
+    const notes = appointmentData.notes || message?.summary || '';
+
+    // There is no approval queue any more. An appointment extracted from a
+    // transcript (a legacy assistant with no calendar tools) is written to the
+    // calendar right here, so every row the user sees is genuinely booked and
+    // editable — rather than sitting unconfirmed and invisible.
+    let calendarEventId: string | undefined;
+    if (lead?.userId) {
+      const result = await calendarManager.createEventOn(lead.userId, {
+        title,
+        startTime: appointmentData.startTime,
+        endTime: appointmentData.endTime,
+        description: notes,
+        attendees: customerEmail ? [customerEmail] : undefined,
+      });
+
+      if (result.success) {
+        calendarEventId = result.eventId;
+      } else {
+        logger.error('APPOINTMENT_CALENDAR_WRITE_FAILED', 'Could not write extracted appointment to calendar', {
+          vapiCallId: call.id,
+          userId: lead.userId,
+          data: { error: result.error, startTime: appointmentData.startTime },
+        });
+      }
+    }
+
+    const appointment = new Appointment({
       vapiCallId: call.id,
       phoneNumberId: call.phoneNumberId || 'unknown', // Vapi phone number ID
+      userId: lead?.userId,
+      assistantId: lead?.assignedAssistantId ?? null,
+      leadId: lead?._id ?? null,
+      source: 'vapi_webhook',
+      status: 'booked',
+      calendarEventId,
       appointmentData: {
-        title: appointmentData.title || `Appointment with ${customerName || 'Customer'}`,
+        title,
         startTime: appointmentData.startTime,
         endTime: appointmentData.endTime,
         customer: {
@@ -586,7 +637,7 @@ async function storePendingAppointment(call: any, message: any, appointmentData:
           phone: customerPhone,
           email: customerEmail
         },
-        notes: appointmentData.notes || message?.summary || ''
+        notes
       },
       callData: {
         duration: message?.durationSeconds,
@@ -596,25 +647,25 @@ async function storePendingAppointment(call: any, message: any, appointmentData:
       }
     });
 
-    await pendingAppointment.save();
+    await appointment.save();
 
-    logger.info('PENDING_APPOINTMENT_STORED', 'Stored pending appointment for confirmation', {
-      callId: call.id,
-      phoneNumberId: call.phoneNumberId,
+    logger.info('APPOINTMENT_STORED', 'Appointment recorded and written to calendar', {
+      vapiCallId: call.id,
+      userId: lead?.userId,
       data: {
-        title: pendingAppointment.appointmentData.title,
-        customerName: customerName,
-        customerEmail: customerEmail,
-        customerPhone: customerPhone,
-        startTime: appointmentData.startTime
+        title,
+        customerName,
+        customerPhone,
+        startTime: appointmentData.startTime,
+        calendarEventId: calendarEventId || null
       }
     });
 
-    return pendingAppointment;
+    return appointment;
 
   } catch (error) {
-    logger.error('STORE_PENDING_APPOINTMENT_ERROR', 'Failed to store pending appointment', {
-      callId: call.id,
+    logger.error('STORE_APPOINTMENT_ERROR', 'Failed to store appointment', {
+      vapiCallId: call.id,
       error
     });
     throw error;
@@ -690,7 +741,7 @@ async function processStandaloneAppointment(payload: any, call: any, message: an
     }
 
     // Store as pending appointment (no lead association)
-    await storePendingAppointment(call, message, appointmentData);
+    await storeAppointment(call, message, appointmentData);
 
     logger.info('STANDALONE_APPOINTMENT_STORED', 'Standalone appointment stored for confirmation', {
       callId: call.id,
@@ -753,6 +804,25 @@ async function trackCallUsage(lead: any, message: any) {
   }
 }
 
+/**
+ * Guards against a hallucinated `slot_booked`.
+ *
+ * The analysis model is asked for "ISO 8601 with timezone" with no date anchor
+ * in context, so when it does not know the year it invents a plausible one. A
+ * visit more than a year from the call is never real.
+ */
+function sanitiseSlot(slot: unknown): string | undefined {
+  if (typeof slot !== 'string' || !slot.trim()) return undefined;
+
+  const when = new Date(slot);
+  if (Number.isNaN(when.getTime())) return undefined;
+
+  const driftMs = Math.abs(when.getTime() - Date.now());
+  if (driftMs > 365 * 86_400_000) return undefined;
+
+  return when.toISOString();
+}
+
 // Create or update call summary for data extraction and display
 async function createCallSummary(call: any, message: any, lead?: any, payload?: any) {
   try {
@@ -771,13 +841,26 @@ async function createCallSummary(call: any, message: any, lead?: any, payload?: 
     // Extract structured data from message.analysis.structuredData
     const structuredData = message?.analysis?.structuredData || {};
     
+    // The booking of record, if the agent made one with the calendar tools.
+    // This is the only trustworthy source for the appointment time.
+    const booking = await Appointment.findOne({ vapiCallId: call.id, status: 'booked' }).lean();
+
     // Build extractedInfo from structured data
     const extractedInfo: any = {};
     if (structuredData.name) extractedInfo.name = structuredData.name;
     if (structuredData.email) extractedInfo.email = structuredData.email;
     if (structuredData.phoneNumber) extractedInfo.phoneNumber = structuredData.phoneNumber;
-    if (structuredData.slot_booked) extractedInfo.appointmentTime = structuredData.slot_booked;
-    
+
+    // slot_booked is written by the post-call analysis model, which never sees
+    // the rendered date in the system prompt and therefore has no idea what
+    // year it is. Observed output: "2024-01-04T16:00:00-07:00" and
+    // "2023-07-31T11:00:00-06:00" — right month and day, invented year. Prefer
+    // the real booking, and only fall back for legacy assistants with no
+    // calendar tools, and then only if the date is anywhere near the call.
+    const appointmentTime =
+      (booking as any)?.appointmentData?.startTime || sanitiseSlot(structuredData.slot_booked);
+    if (appointmentTime) extractedInfo.appointmentTime = appointmentTime;
+
     // Add any other custom fields from structured data
     Object.keys(structuredData).forEach(key => {
       if (!['name', 'email', 'phoneNumber', 'slot_booked'].includes(key)) {
@@ -827,13 +910,23 @@ async function createCallSummary(call: any, message: any, lead?: any, payload?: 
       structuredData,
       extractedInfo,
       
-      appointmentCreated: !!(structuredData.slot_booked || payload?.appointment),
-      appointmentData: payload?.appointment ? {
-        title: payload.appointment.title,
-        startTime: payload.appointment.startTime,
-        endTime: payload.appointment.endTime,
-        confirmed: false
-      } : undefined
+      appointmentCreated: !!(booking || appointmentTime || payload?.appointment),
+      appointmentData: booking
+        ? {
+            title: (booking as any).appointmentData?.title,
+            startTime: (booking as any).appointmentData?.startTime,
+            endTime: (booking as any).appointmentData?.endTime,
+            timezone: (booking as any).timezone,
+            confirmed: true,
+          }
+        : payload?.appointment
+          ? {
+              title: payload.appointment.title,
+              startTime: payload.appointment.startTime,
+              endTime: payload.appointment.endTime,
+              confirmed: false,
+            }
+          : undefined
     };
 
     // Create or update call summary

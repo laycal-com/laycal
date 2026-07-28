@@ -10,6 +10,7 @@ import PhoneProvider from '@/models/PhoneProvider';
 import { getPhoneProviderOrDefault, getNoPhoneProviderErrorMessage, isUSPhoneNumber } from '@/lib/defaultPhoneProvider';
 import { usageValidator } from '@/lib/usageValidator';
 import { logger } from '@/lib/logger';
+import { buildCallVariables } from '@/lib/speedToLead/callVariables';
 
 export async function POST(request: NextRequest) {
   try {
@@ -196,8 +197,14 @@ export async function POST(request: NextRequest) {
             customer: {
               name: leadData.name,
               email: leadData.email,
-              company: leadData.company,
             },
+            // CSV leads run the same prompt as form leads, so they need the
+            // same variables or {{client_company}} renders empty.
+            variableValues: buildCallVariables(assistant, {
+              address: (leadData as any).address,
+              details: leadData.notes,
+              company: leadData.company,
+            }),
             metadata: {
               leadId: lead._id.toString(),
               userId: userId,

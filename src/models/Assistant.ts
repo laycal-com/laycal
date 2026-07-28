@@ -14,7 +14,22 @@ export interface IAssistant extends Document {
   
   mainPrompt: string;
   language: string;
-  
+
+  /**
+   * Speed-to-lead configuration. Optional so assistants created by the previous
+   * prompt wizard keep working untouched — only the new flow populates these.
+   */
+  serviceConfig?: {
+    vertical: string;
+    clientCompany: string;
+    serviceArea?: string;
+    timezone: string;
+    businessHours: Record<string, { open: string; close: string }>;
+    appointmentDurationMins: number;
+    bookingHorizonDays: number;
+    diagnosticFee?: string;
+  };
+
   phoneNumbers: Array<{
     phoneNumber: string;
     phoneProviderId: ObjectId;
@@ -70,6 +85,21 @@ const AssistantSchema = new Schema<IAssistant>({
     required: true,
     enum: ['en-US', 'es-ES', 'fr-FR', 'de-DE'],
     default: 'en-US'
+  },
+  serviceConfig: {
+    type: {
+      vertical: { type: String, trim: true },
+      clientCompany: { type: String, trim: true, maxlength: 120 },
+      serviceArea: { type: String, trim: true, maxlength: 200 },
+      timezone: { type: String, default: 'America/New_York' },
+      // Keyed '0'..'6' (Sunday..Saturday); absent day = closed.
+      businessHours: { type: Map, of: new Schema({ open: String, close: String }, { _id: false }) },
+      appointmentDurationMins: { type: Number, default: 90, min: 15, max: 480 },
+      bookingHorizonDays: { type: Number, default: 14, min: 1, max: 90 },
+      diagnosticFee: { type: String, trim: true, maxlength: 60 }
+    },
+    required: false,
+    default: undefined
   },
   phoneNumbers: [{
     phoneNumber: {

@@ -14,6 +14,47 @@ export interface CalendarEventResult {
   provider: string;
 }
 
+/** A half-open time range, ISO 8601. */
+export interface TimeWindow {
+  start: string;
+  end: string;
+}
+
+/** 0 = Sunday … 6 = Saturday. Weekdays absent from the map are treated as closed. */
+export type BusinessHours = Record<number, { open: string; close: string } | undefined>;
+
+export interface FindAvailabilityOptions {
+  /** Start of the slot the caller wants to book. */
+  start: string;
+  /** End of that slot. */
+  end: string;
+  /** Length of the visit, used when proposing alternatives. */
+  durationMins: number;
+  /** IANA zone used to interpret businessHours. */
+  timezone: string;
+  businessHours?: BusinessHours;
+  /** How many fallback slots to offer when the requested one is taken. */
+  maxAlternatives?: number;
+}
+
+export interface AvailabilityResult {
+  /** True when the exact requested window is bookable. */
+  free: boolean;
+  requested: TimeWindow;
+  /** Busy blocks reported inside the search range. */
+  busy: TimeWindow[];
+  /** Bookable slots to offer when `free` is false. */
+  alternatives: TimeWindow[];
+  provider: string;
+  error?: string;
+  /**
+   * Set when the stored OAuth grant predates the freebusy scope. The connection
+   * still works for booking but cannot answer availability until the user
+   * re-consents — surfaced so the UI can prompt a reconnect.
+   */
+  needsReconnect?: boolean;
+}
+
 export interface CalendarProvider {
   name: string;
   isAuthenticated(userId: string): Promise<boolean>;
@@ -22,6 +63,7 @@ export interface CalendarProvider {
   updateEvent(userId: string, eventId: string, event: CalendarEvent): Promise<CalendarEventResult>;
   deleteEvent(userId: string, eventId: string): Promise<CalendarEventResult>;
   refreshAuth(userId: string): Promise<boolean>;
+  findAvailability(userId: string, options: FindAvailabilityOptions): Promise<AvailabilityResult>;
 }
 
 export interface AppointmentData {
@@ -34,6 +76,8 @@ export interface AppointmentData {
     customer: {
       name: string;
       phone: string;
+      /** Read by manager.formatEventDescription and used as the event attendee. */
+      email?: string;
     };
     notes?: string;
   };

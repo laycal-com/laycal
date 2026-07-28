@@ -1,0 +1,271 @@
+/* Laycal landing page — dark editorial theme.
+   Ported from the Claude Design "Modern landing page redesign with GSAP" project.
+   The source design is inline-styled and desktop-only; this file adds the things
+   inline styles cannot express: keyframes, hover/focus states and breakpoints. */
+
+.lc {
+  --lc-bg: #06070b;
+  --lc-panel: rgba(9, 11, 17, 0.75);
+  --lc-fg: #f2f5fa;
+  --lc-fg-strong: #eaf1ff;
+  --lc-fg-soft: #d9e2f2;
+  --lc-muted: #98a2b4;
+  --lc-muted-2: #8e99ac;
+  --lc-muted-3: #6e788c;
+  --lc-muted-4: #5f6a7d;
+  --lc-accent: #2d6aff;
+  --lc-accent-hi: #4a80ff;
+  --lc-accent-soft: #6fa8ff;
+  --lc-accent-pale: #9ec0ff;
+  --lc-line: rgba(255, 255, 255, 0.09);
+  --lc-line-soft: rgba(255, 255, 255, 0.07);
+  --lc-shell: 1240px;
+  --lc-gutter: 32px;
+
+  position: relative;
+  overflow: hidden;
+  background: var(--lc-bg);
+  color: var(--lc-fg);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.lc *,
+.lc *::before,
+.lc *::after { box-sizing: border-box; }
+
+/* Scoped to pages that actually render the landing shell, so the rest of the
+   app keeps its own (light) chrome. Without this the default white body shows
+   through on overscroll above/below the dark page. */
+body:has(.lc) { background: #06070b; }
+html:has(.lc) { scroll-behavior: smooth; background: #06070b; }
+
+/* Clear the 72px fixed header when jumping to an in-page anchor. */
+.lc section[id] { scroll-margin-top: 96px; }
+
+.lc a { text-decoration: none; }
+/* Only unclassed links inherit — otherwise `.lc a` (0,1,1) would outrank every
+   button/link class below (0,1,0) and, for example, paint .lc-btn-light white on white. */
+.lc a:not([class]) { color: inherit; }
+
+.lc-mono {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+.lc-shell {
+  max-width: var(--lc-shell);
+  margin: 0 auto;
+  padding-left: var(--lc-gutter);
+  padding-right: var(--lc-gutter);
+}
+
+/* ---------- keyframes ---------- */
+@keyframes lc-eq { 0%, 100% { transform: scaleY(0.25); } 50% { transform: scaleY(1); } }
+@keyframes lc-drift { 0% { transform: translate3d(0,0,0) scale(1); } 100% { transform: translate3d(0,-40px,0) scale(1.12); } }
+@keyframes lc-marq { 0% { transform: translateY(0); } 100% { transform: translateY(-50%); } }
+@keyframes lc-softpulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+
+.lc-orb { animation: lc-drift 18s ease-in-out infinite alternate; }
+.lc-orb--slow { animation: lc-drift 24s ease-in-out infinite alternate-reverse; }
+.lc-pulse { animation: lc-softpulse 2.4s ease-in-out infinite; }
+.lc-marq { animation: lc-marq 14s linear infinite; }
+.lc-eq span { transform-origin: bottom; animation: lc-eq 1.5s ease-in-out infinite; }
+
+/* ---------- buttons ---------- */
+.lc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--lc-accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 15px 26px;
+  border-radius: 13px;
+  box-shadow: 0 12px 40px rgba(45, 106, 255, 0.42);
+  transition: background 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+}
+.lc-btn:hover {
+  background: var(--lc-accent-hi);
+  box-shadow: 0 16px 52px rgba(45, 106, 255, 0.6);
+  transform: translateY(-1px);
+}
+.lc-btn--sm { padding: 13px 22px; font-size: 14.5px; }
+
+.lc-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #e6ecf7;
+  font-size: 15px;
+  padding: 15px 24px;
+  border-radius: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.22s ease, background 0.22s ease;
+}
+.lc-btn-ghost:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.lc-btn-light {
+  font-size: 14px;
+  font-weight: 500;
+  color: #06070b;
+  background: #f4f7ff;
+  padding: 10px 18px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.lc-btn-light:hover { background: var(--lc-accent); color: #fff; border-color: var(--lc-accent); }
+
+.lc-navlink { color: #9aa3b5; transition: color 0.18s ease; }
+.lc-navlink:hover { color: #e6ecf7; }
+
+.lc-textlink { color: #c9d2e2; transition: color 0.18s ease; }
+.lc-textlink:hover { color: #fff; }
+
+.lc-footlink { color: var(--lc-muted-2); transition: color 0.18s ease; }
+.lc-footlink:hover { color: #e6ecf7; }
+
+/* ---------- panels & grids ---------- */
+.lc-hair {
+  display: grid;
+  gap: 1px;
+  background: var(--lc-line);
+  border: 1px solid var(--lc-line);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.lc-hair > * { background: var(--lc-panel); }
+
+.lc-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.lc-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.lc-section { padding-bottom: 130px; }
+
+/* ---------- range sliders ---------- */
+.lc input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+  outline: none;
+}
+.lc input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--lc-accent);
+  border: 3px solid #0b0e16;
+  box-shadow: 0 0 0 1px rgba(45, 106, 255, 0.6), 0 0 18px rgba(45, 106, 255, 0.7);
+  cursor: pointer;
+}
+.lc input[type="range"]::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--lc-accent);
+  border: 3px solid #0b0e16;
+  box-shadow: 0 0 0 1px rgba(45, 106, 255, 0.6);
+  cursor: pointer;
+}
+
+/* ---------- FAQ ---------- */
+.lc-faq-row { border-bottom: 1px solid var(--lc-line); }
+.lc-faq-q {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 17px;
+  color: #e6ecf7;
+  text-align: left;
+  transition: color 0.18s ease;
+}
+.lc-faq-q:hover { color: #fff; }
+.lc-faq-sign {
+  color: var(--lc-accent-soft);
+  font-size: 20px;
+  line-height: 1;
+  flex: none;
+  transition: transform 0.28s ease;
+}
+.lc-faq-q[aria-expanded="true"] .lc-faq-sign { transform: rotate(45deg); }
+.lc-faq-a {
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.32s ease;
+}
+.lc-faq-a[data-open="true"] { grid-template-rows: 1fr; }
+.lc-faq-a > div { overflow: hidden; }
+
+/* Reveal state is owned entirely by GSAP (see ScrollFx.tsx), which promotes and
+   demotes layers itself. Do NOT set a blanket `will-change` here: with ~40
+   reveal targets it forces 40 permanent compositor layers and Chrome starts
+   dropping paints on the lower sections. */
+
+/* ---------- responsive ---------- */
+@media (max-width: 1080px) {
+  .lc { --lc-gutter: 24px; }
+  .lc-h1 { font-size: 58px !important; }
+  .lc-h2 { font-size: 38px !important; }
+  .lc-h2-lg { font-size: 42px !important; }
+  .lc-split { grid-template-columns: 1fr !important; gap: 40px !important; }
+  .lc-cols-3 { grid-template-columns: 1fr 1fr; }
+  .lc-cols-4 { grid-template-columns: 1fr 1fr; }
+  .lc-hero-panel-grid { grid-template-columns: 1fr !important; }
+  .lc-hero-side { border-left: 0 !important; border-top: 1px solid var(--lc-line-soft); }
+  .lc-nav-links { display: none !important; }
+  /* CallMap / SignalFlow are full-bleed canvases that mask their own edges,
+     so they need no per-breakpoint repositioning. */
+  .lc-section { padding-bottom: 96px; }
+}
+
+@media (max-width: 720px) {
+  .lc { --lc-gutter: 20px; }
+  .lc-h1 { font-size: 40px !important; letter-spacing: -0.03em !important; }
+  .lc-h2, .lc-h2-lg { font-size: 30px !important; }
+  .lc-cols-3, .lc-cols-4 { grid-template-columns: 1fr; }
+  .lc-stack-sm { grid-template-columns: 1fr !important; }
+  .lc-hero { padding-top: 132px !important; }
+  .lc-section { padding-bottom: 72px; }
+  .lc-btn, .lc-btn-ghost { width: 100%; justify-content: center; }
+  .lc-cta-row { flex-direction: column; align-items: stretch !important; }
+  /* comparison table becomes a stacked card list */
+  .lc-cmp-head { display: none !important; }
+  .lc-cmp-row { grid-template-columns: 1fr !important; gap: 6px; padding: 18px 20px !important; }
+  .lc-cmp-row > div { margin: 0 !important; padding: 0 !important; text-align: left !important; }
+  .lc-cmp-row .lc-cmp-cell::before {
+    content: attr(data-label) " — ";
+    color: var(--lc-muted-3);
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .lc-cmp-row .lc-cmp-cell--win { background: none !important; color: var(--lc-accent-soft) !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc *,
+  .lc *::before,
+  .lc *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .lc [data-reveal] { opacity: 1 !important; transform: none !important; }
+}

@@ -7,6 +7,14 @@ export interface ILead extends Document {
   email?: string;
   company?: string;
   notes?: string;
+  /** Service address the technician is dispatched to. */
+  address?: string;
+  /** Free text from the intake form describing the problem. */
+  details?: string;
+  /** Free text describing when the homeowner said they're available. */
+  availability?: string;
+  /** Trade/service the lead asked for, surfaced to the agent as customer.service_type. */
+  serviceType?: string;
   status: 'pending' | 'calling' | 'completed' | 'failed';
   vapiCallId?: string;
   assignedAssistantId?: mongoose.Types.ObjectId;
@@ -51,6 +59,22 @@ const LeadSchema = new Schema<ILead>({
     default: null
   },
   notes: {
+    type: String,
+    default: null
+  },
+  address: {
+    type: String,
+    default: null
+  },
+  details: {
+    type: String,
+    default: null
+  },
+  availability: {
+    type: String,
+    default: null
+  },
+  serviceType: {
     type: String,
     default: null
   },

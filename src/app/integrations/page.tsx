@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { GoogleFormIntegration } from '@/components/GoogleFormIntegration';
+import { SpeedToLeadIntegration } from '@/components/SpeedToLeadIntegration';
 import CalendarSettings from '@/components/CalendarSettings';
 import { useRouter } from 'next/navigation';
 
@@ -66,7 +66,7 @@ export default function IntegrationsPage() {
   const selectedAssistant = assistants.find(a => a._id === selectedAssistantId);
 
   const tabs = [
-    { id: 'google-forms', label: 'Google Forms', icon: '📝' },
+    { id: 'google-forms', label: 'Lead Intake', icon: '⚡' },
     { id: 'google-calendar', label: 'Google Calendar', icon: '📅' },
   ];
 
@@ -144,8 +144,7 @@ export default function IntegrationsPage() {
                     </div>
 
                     {selectedAssistant && userId && (
-                      <GoogleFormIntegration
-                        userId={userId}
+                      <SpeedToLeadIntegration
                         assistantId={selectedAssistant._id}
                         assistantName={selectedAssistant.name}
                       />

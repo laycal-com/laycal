@@ -155,17 +155,42 @@ export default function SettingsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this phone provider?')) return;
-    
+    const provider = providers.find((p) => p.id === id);
+    const isLast = providers.length === 1;
+
+    // Say what actually happens next. Removing the last provider is allowed —
+    // US calls fall back to the shared number — but that should not be a
+    // surprise discovered after the fact.
+    const warning = isLast
+      ? '\n\nThis is your only provider. US calls will fall back to the shared Laycal number, and non-US numbers will stop being callable until you add another provider.'
+      : '';
+
+    if (!confirm(`Delete ${provider?.displayName || 'this phone provider'}?${warning}`)) return;
+
     try {
       const response = await fetch(`/api/phone-providers/${id}`, {
         method: 'DELETE',
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.details || error.error || 'Failed to delete provider');
+        throw new Error(result.details || result.error || 'Failed to delete provider');
       }
+
+      toast.success('Provider deleted', {
+        description: [
+          result.usingSharedDefault ? 'US calls now use the shared Laycal number.' : null,
+          result.promotedDefault ? `${result.promotedDefault} is now your default.` : null,
+          result.assistantsDetached
+            ? `${result.assistantsDetached} assistant(s) unpinned from it.`
+            : null,
+          // Worth surfacing: the number stays on the Vapi account until removed.
+          result.vapiNumberReleased === false ? 'The Vapi number could not be released.' : null,
+        ]
+          .filter(Boolean)
+          .join(' ') || undefined,
+      });
 
       fetchProviders();
     } catch (error) {

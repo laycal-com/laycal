@@ -5,8 +5,9 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Bot, Phone, Edit, Trash2, TestTube, Languages, Mic } from 'lucide-react';
+import { Plus, Bot, Phone, Edit, Trash2, TestTube, Languages, Mic, RefreshCw } from 'lucide-react';
 import { AssistantForm } from '@/components/AssistantForm';
+import { AssistantWebTest } from '@/components/AssistantWebTest';
 import { PaymentGateWrapper } from '@/components/PaymentGateWrapper';
 import { toast } from 'sonner';
 
@@ -21,6 +22,10 @@ interface Assistant {
   };
   mainPrompt: string;
   language: string;
+  serviceConfig?: {
+    vertical?: string;
+    clientCompany?: string;
+  };
   phoneNumbers: Array<{
     phoneNumber: string;
     phoneProviderId: {
@@ -46,6 +51,8 @@ export default function AssistantsPage() {
   const [showTestModal, setShowTestModal] = useState(false);
   const [selectedAssistantForTest, setSelectedAssistantForTest] = useState<Assistant | null>(null);
   const [testPhoneNumber, setTestPhoneNumber] = useState('');
+  const [webTestAssistant, setWebTestAssistant] = useState<Assistant | null>(null);
+  const [resyncingId, setResyncingId] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<any>(null);
 
   useEffect(() => {
@@ -102,6 +109,45 @@ export default function AssistantsPage() {
     } catch (error) {
       console.error('Error deleting assistant:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to delete assistant');
+    }
+  };
+
+  const handleResync = async (assistant: Assistant, baseUrl?: string) => {
+    setResyncingId(assistant._id);
+    try {
+      const res = await fetch(`/api/assistants/${assistant._id}/resync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(baseUrl ? { baseUrl } : {}),
+      });
+      const data = await res.json();
+
+      // Browsing on localhost gives no publicly reachable host to infer, so ask
+      // for the tunnel URL rather than failing with advice to edit .env.
+      if (!res.ok && data.needsBaseUrl) {
+        const entered = window.prompt(
+          'Vapi cannot reach localhost. Paste your public tunnel URL (e.g. https://abc123.ngrok-free.app):',
+          ''
+        );
+        if (entered && entered.trim()) {
+          setResyncingId(null);
+          return handleResync(assistant, entered.trim().replace(/\/$/, ''));
+        }
+        throw new Error('A public URL is required for the calendar tools to work.');
+      }
+
+      if (!res.ok) throw new Error(data.error || 'Re-sync failed');
+
+      toast.success('Re-synced to Vapi', {
+        description: data.toolsUrl ? `Tools now point at ${data.toolsUrl}` : 'Assistant updated',
+      });
+      if (data.warning) toast.warning(data.warning);
+    } catch (e) {
+      toast.error('Re-sync failed', {
+        description: e instanceof Error ? e.message : 'Unknown error',
+      });
+    } finally {
+      setResyncingId(null);
     }
   };
 
@@ -359,6 +405,32 @@ export default function AssistantsPage() {
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
+
+                {/* Browser call — exercises prompt, calendar tools and the
+                    end-of-call webhook without any telephony provider. */}
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setWebTestAssistant(assistant)}
+                    disabled={!assistant.isActive}
+                    className="flex-1 bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    <Mic className="w-4 h-4 mr-1" />
+                    Talk in browser
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleResync(assistant)}
+                    disabled={resyncingId === assistant._id}
+                    title="Re-push tool and webhook URLs to Vapi (needed after an ngrok restart)"
+                    className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${resyncingId === assistant._id ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -375,6 +447,16 @@ export default function AssistantsPage() {
             setShowForm(false);
             setEditingAssistant(null);
           }}
+        />
+      )}
+
+      {webTestAssistant && (
+        <AssistantWebTest
+          assistantId={webTestAssistant._id}
+          vapiAssistantId={webTestAssistant.vapiAssistantId}
+          assistantName={webTestAssistant.name}
+          vertical={webTestAssistant.serviceConfig?.vertical}
+          onClose={() => setWebTestAssistant(null)}
         />
       )}
 

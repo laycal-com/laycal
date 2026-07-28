@@ -5,6 +5,7 @@ import Assistant from '@/models/Assistant';
 import { TenantVapiService } from '@/lib/tenantVapi';
 import { logger } from '@/lib/logger';
 import { validatePhoneNumber, normalizePhoneNumber } from '@/lib/csvProcessor';
+import { buildCallVariables } from '@/lib/speedToLead/callVariables';
 
 export async function POST(req: NextRequest) {
   try {
@@ -110,18 +111,26 @@ export async function POST(req: NextRequest) {
       try {
         const vapiService = new TenantVapiService();
 
-        // Prepare customer data with all custom fields
-        const customerData: Record<string, any> = {
-          name: fullName,
-          number: normalizedPhone,
-          ...customFields
-        };
-
         vapiCallResponse = await vapiService.initiateCall({
           userId,
           phoneNumber: normalizedPhone,
           assistantId: assistant.vapiAssistantId,
-          customer: customerData,
+          // Only Vapi's own customer fields; everything else is a prompt
+          // variable. Custom form fields are merged in below so a prompt can
+          // reference them as {{field_name}}.
+          customer: { name: fullName, ...(email && { email }) },
+          variableValues: {
+            ...buildCallVariables(assistant, {
+              // The legacy form has no dedicated address field; take it from
+              // the custom fields when the customer happened to add one.
+              address: (customFields as Record<string, any>).address,
+              details: about,
+              company,
+            }),
+            ...Object.fromEntries(
+              Object.entries(customFields).map(([k, v]) => [k, String(v ?? '')])
+            ),
+          },
           metadata: {
             leadId: lead._id.toString(),
             source: 'googleform',

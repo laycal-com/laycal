@@ -23,9 +23,9 @@ export function isUSPhoneNumber(phoneNumber: string): boolean {
  * @returns Phone provider object with vapiPhoneNumberId, or null if no provider available
  */
 export async function getPhoneProviderOrDefault(
-  userId: string, 
+  userId: string,
   targetPhoneNumber?: string
-): Promise<{ vapiPhoneNumberId: string; isDefault: boolean } | null> {
+): Promise<{ vapiPhoneNumberId: string | null; isDefault: boolean; providerId?: string } | null> {
   await connectToDatabase();
 
   // First, try to find user's own phone provider
@@ -35,16 +35,26 @@ export async function getPhoneProviderOrDefault(
     isDefault: true
   });
 
-  if (userPhoneProvider && userPhoneProvider.vapiPhoneNumberId) {
+  // Returned even when vapiPhoneNumberId is missing. A configured provider that
+  // simply has not been provisioned yet (or whose number was cleared after going
+  // stale) must not fall through to "no phone provider configured" — that hides
+  // the real failure, which is usually bad credentials.
+  if (userPhoneProvider) {
     logger.info('PHONE_PROVIDER_FOUND', 'Using user phone provider', {
       userId,
-      phoneProviderId: userPhoneProvider._id,
-      targetPhoneNumber
+      data: {
+        phoneProviderId: userPhoneProvider._id?.toString(),
+        vapiPhoneNumberId: userPhoneProvider.vapiPhoneNumberId ?? null,
+        needsProvisioning: !userPhoneProvider.vapiPhoneNumberId,
+        targetPhoneNumber
+      }
     });
-    
+
     return {
-      vapiPhoneNumberId: userPhoneProvider.vapiPhoneNumberId,
-      isDefault: false
+      vapiPhoneNumberId: userPhoneProvider.vapiPhoneNumberId ?? null,
+      isDefault: false,
+      // Lets the caller re-provision when the cached id turns out to be dead.
+      providerId: userPhoneProvider._id?.toString()
     };
   }
 
@@ -52,8 +62,7 @@ export async function getPhoneProviderOrDefault(
   if (targetPhoneNumber && isUSPhoneNumber(targetPhoneNumber)) {
     logger.info('DEFAULT_US_PROVIDER_USED', 'Using default US phone provider (no user provider found)', {
       userId,
-      targetPhoneNumber,
-      defaultVapiPhoneNumberId: DEFAULT_US_VAPI_PHONE_NUMBER_ID
+      data: { targetPhoneNumber, defaultVapiPhoneNumberId: DEFAULT_US_VAPI_PHONE_NUMBER_ID }
     });
     
     return {
@@ -66,7 +75,7 @@ export async function getPhoneProviderOrDefault(
   if (targetPhoneNumber && !isUSPhoneNumber(targetPhoneNumber)) {
     logger.warn('NON_US_NUMBER_NO_PROVIDER', 'Cannot use default provider for non-US number', {
       userId,
-      targetPhoneNumber
+      data: { targetPhoneNumber }
     });
     
     return null;

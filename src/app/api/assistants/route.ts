@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Assistant from '@/models/Assistant';
+import { buildCalendarTools } from '@/lib/speedToLead/tools';
+import { SPEED_TO_LEAD_SCHEMA, SPEED_TO_LEAD_SUMMARY_PROMPT } from '@/lib/speedToLead/tools';
 import PhoneProvider from '@/models/PhoneProvider';
 import { tenantVapiService } from '@/lib/tenantVapi';
 import { usageValidator } from '@/lib/usageValidator';
@@ -45,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
-    const { name, voice, mainPrompt, language, phoneNumbers, firstMessage, summary, structuredData } = data;
+    const { name, voice, mainPrompt, language, phoneNumbers, firstMessage, summary, structuredData, serviceConfig } = data;
 
     if (!name || !voice || !mainPrompt || !language) {
       return NextResponse.json(
@@ -84,6 +87,18 @@ export async function POST(request: NextRequest) {
       data: { name, language, voice: voice.gender }
     });
 
+    // The calendar tool URLs embed this assistant's Mongo id, but Vapi is
+    // created before the local record exists — so mint the id up front and use
+    // the same one for both.
+    const assistantObjectId = new mongoose.Types.ObjectId();
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.laycal.com';
+
+    // Speed-to-lead assistants get live calendar tools; assistants created the
+    // old way keep exactly the shape they had.
+    const tools = serviceConfig
+      ? buildCalendarTools(assistantObjectId.toString(), appUrl)
+      : undefined;
+
     // Create assistant on Vapi first
     const vapiConfig = {
       name,
@@ -91,20 +106,34 @@ export async function POST(request: NextRequest) {
       mainPrompt,
       language,
       firstMessage: firstMessage || "Hello",
-      summaryPrompt: summary || "You are an expert note-taker. You will be given a transcript of a call. Summarize the call in 2-3 sentences, highlighting key points and outcomes.",
-      ...(structuredData && { structuredDataPrompt: structuredData })
+      // A speed-to-lead assistant gets the dispatcher-oriented summary; only
+      // legacy cold-calling assistants fall back to the generic note-taker.
+      summaryPrompt:
+        summary ||
+        (serviceConfig
+          ? SPEED_TO_LEAD_SUMMARY_PROMPT
+          : 'You are an expert note-taker. You will be given a transcript of a call. Summarize the call in 2-3 sentences, highlighting key points and outcomes.'),
+      structuredDataPrompt:
+        structuredData ||
+        (serviceConfig
+          ? 'Extract the speed-to-lead service call fields from this conversation.'
+          : undefined),
+      ...(serviceConfig && { structuredDataSchema: SPEED_TO_LEAD_SCHEMA }),
+      ...(tools && { tools })
     };
 
     const vapiAssistant = await tenantVapiService.createAssistant(vapiConfig);
 
     // Create local assistant record (no phone numbers - they're handled separately)
     const assistant = new Assistant({
+      _id: assistantObjectId,
       userId,
       name,
       vapiAssistantId: vapiAssistant.id,
       voice,
       mainPrompt,
       language,
+      ...(serviceConfig && { serviceConfig }),
       phoneNumbers: [], // Always empty - assistants are independent of phone numbers
       isActive: true
     });

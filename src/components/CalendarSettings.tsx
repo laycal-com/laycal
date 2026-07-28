@@ -3,7 +3,14 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
-interface CalendarProvider {
+interface CalendarProviderStatusExtras {
+  /** False when freebusy.query fails — booking works, availability doesn't. */
+  canCheckAvailability?: boolean;
+  /** True when the stored grant predates the freebusy scopes. */
+  needsReconnect?: boolean;
+}
+
+interface CalendarProvider extends CalendarProviderStatusExtras {
   name: string;
   connected: boolean;
   authenticated: boolean;
@@ -185,6 +192,14 @@ export default function CalendarSettings() {
                   >
                     {connecting === provider.name ? 'Connecting...' : 'Connect'}
                   </button>
+                ) : provider.needsReconnect ? (
+                  <button
+                    onClick={() => handleConnect(provider.name)}
+                    disabled={connecting === provider.name}
+                    className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors disabled:opacity-50"
+                  >
+                    {connecting === provider.name ? 'Reconnecting...' : 'Reconnect'}
+                  </button>
                 ) : (
                   <button
                     onClick={() => handleDisconnect(provider.name)}
@@ -195,6 +210,16 @@ export default function CalendarSettings() {
                 )}
               </div>
             </div>
+
+            {provider.connected && provider.authenticated && provider.needsReconnect && (
+              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-900">
+                  <strong>Reconnect required.</strong> This connection was authorised before availability
+                  checking was added, so the agent can book visits but cannot see which slots are free.
+                  Reconnecting takes one click and keeps your existing permissions.
+                </p>
+              </div>
+            )}
 
             {provider.name === 'google' && (
               <div className="mt-3 text-sm text-gray-600">

@@ -25,10 +25,31 @@ export async function GET(request: NextRequest) {
         const connected = activeProviders.includes(providerName);
         const authenticated = connected ? await provider.isAuthenticated(userId) : false;
 
+        // A connection made before the freebusy scopes were added still books
+        // fine but cannot answer availability. Probe it here so the user is
+        // told to reconnect in Settings rather than discovering it mid-call.
+        let canCheckAvailability = false;
+        let needsReconnect = false;
+
+        if (authenticated) {
+          const probeStart = new Date(Date.now() + 3_600_000);
+          const probe = await calendarManager.findAvailability(userId, {
+            start: probeStart.toISOString(),
+            end: new Date(probeStart.getTime() + 1_800_000).toISOString(),
+            durationMins: 30,
+            timezone: 'UTC',
+            maxAlternatives: 0,
+          });
+          needsReconnect = !!probe.needsReconnect;
+          canCheckAvailability = !probe.error;
+        }
+
         return {
           name: providerName,
           connected,
-          authenticated
+          authenticated,
+          canCheckAvailability,
+          needsReconnect
         };
       })
     );

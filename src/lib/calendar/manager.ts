@@ -1,4 +1,11 @@
-import { CalendarProvider, CalendarEvent, CalendarEventResult, AppointmentData } from './types';
+import {
+  CalendarProvider,
+  CalendarEvent,
+  CalendarEventResult,
+  AppointmentData,
+  FindAvailabilityOptions,
+  AvailabilityResult,
+} from './types';
 import { GoogleCalendarProvider } from './providers/google';
 import { logger } from '@/lib/logger';
 import CalendarConnection from '@/models/CalendarConnection';
@@ -21,6 +28,45 @@ export class CalendarManager {
 
   getAvailableProviders(): string[] {
     return Array.from(this.providers.keys());
+  }
+
+  /**
+   * Availability for the user's first active provider.
+   *
+   * Deliberately single-provider: booking a technician against two calendars
+   * that disagree would produce double-bookings, so speed-to-lead reads and
+   * writes the same one calendar.
+   */
+  async findAvailability(userId: string, options: FindAvailabilityOptions): Promise<AvailabilityResult> {
+    const active = await this.getUserActiveProviders(userId);
+    const providerName = active[0];
+    const provider = providerName ? this.getProvider(providerName) : undefined;
+
+    if (!provider) {
+      return {
+        free: false,
+        requested: { start: options.start, end: options.end },
+        busy: [],
+        alternatives: [],
+        provider: 'none',
+        error: 'No active calendar connection',
+      };
+    }
+
+    return provider.findAvailability(userId, options);
+  }
+
+  /** Books a single event on the user's first active provider. */
+  async createEventOn(userId: string, event: CalendarEvent): Promise<CalendarEventResult> {
+    const active = await this.getUserActiveProviders(userId);
+    const providerName = active[0];
+    const provider = providerName ? this.getProvider(providerName) : undefined;
+
+    if (!provider) {
+      return { success: false, error: 'No active calendar connection', provider: 'none' };
+    }
+
+    return this.createEventWithRetry(provider, userId, event);
   }
 
   async getUserActiveProviders(userId: string): Promise<string[]> {

@@ -5,6 +5,8 @@ import Lead from '@/models/Lead';
 import { vapiService } from '@/lib/vapi';
 import { tenantVapiService } from '@/lib/tenantVapi';
 import PhoneProvider from '@/models/PhoneProvider';
+import Assistant from '@/models/Assistant';
+import { buildCallVariables } from '@/lib/speedToLead/callVariables';
 
 export async function POST(
   request: NextRequest,
@@ -54,14 +56,21 @@ export async function POST(
       
       if (phoneProvider) {
         // Use tenant-specific provider
+        const retryAssistant = lead.assignedAssistantId
+          ? await Assistant.findById(lead.assignedAssistantId)
+          : null;
+
         vapiResponse = await tenantVapiService.initiateCall({
           userId,
           phoneNumber: lead.phoneNumber,
+          ...(retryAssistant?.vapiAssistantId && { assistantId: retryAssistant.vapiAssistantId }),
           customer: {
             name: lead.name,
             email: lead.email,
-            company: lead.company,
           },
+          // Keeps a retry identical to the original attempt — otherwise the
+          // prompt's variables come back empty the second time around.
+          variableValues: buildCallVariables(retryAssistant, lead),
           metadata: {
             leadId: lead._id.toString(),
             userId: userId,

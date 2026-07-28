@@ -6,6 +6,7 @@ import PhoneProvider from '@/models/PhoneProvider';
 import Lead from '@/models/Lead';
 import { tenantVapiService } from '@/lib/tenantVapi';
 import { logger } from '@/lib/logger';
+import { buildCalendarTools, SPEED_TO_LEAD_SCHEMA } from '@/lib/speedToLead/tools';
 
 export async function GET(
   request: NextRequest,
@@ -53,7 +54,7 @@ export async function PUT(
 
     const { id } = await params;
     const data = await request.json();
-    const { name, voice, mainPrompt, language, phoneNumbers, firstMessage } = data;
+    const { name, voice, mainPrompt, language, phoneNumbers, firstMessage, serviceConfig } = data;
 
     await connectToDatabase();
 
@@ -98,13 +99,23 @@ export async function PUT(
       data: { assistantId: id, name }
     });
 
+    // A speed-to-lead assistant must keep its calendar tools on every update —
+    // Vapi replaces the model object wholesale, so omitting them silently
+    // strips live booking from a working agent.
+    const effectiveServiceConfig = serviceConfig ?? assistant.serviceConfig;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.laycal.com';
+
     // Update assistant on Vapi
     const vapiConfig = {
       name: name || assistant.name,
       voice: voice || assistant.voice,
       mainPrompt: mainPrompt || assistant.mainPrompt,
       language: language || assistant.language,
-      firstMessage: firstMessage || "Hello! How can I help you today?"
+      firstMessage: firstMessage || "Hello! How can I help you today?",
+      ...(effectiveServiceConfig && {
+        tools: buildCalendarTools(String(assistant._id), appUrl),
+        structuredDataSchema: SPEED_TO_LEAD_SCHEMA
+      })
     };
 
     await tenantVapiService.updateAssistant(assistant.vapiAssistantId, vapiConfig);
@@ -115,6 +126,7 @@ export async function PUT(
     if (voice) updateData.voice = voice;
     if (mainPrompt) updateData.mainPrompt = mainPrompt;
     if (language) updateData.language = language;
+    if (serviceConfig) updateData.serviceConfig = serviceConfig;
     if (phoneNumbers && phoneNumbers.length > 0) {
       updateData.phoneNumbers = phoneNumbers.map((pn: any, index: number) => ({
         phoneNumber: pn.phoneNumber,

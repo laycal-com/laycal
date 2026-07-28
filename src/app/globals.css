@@ -125,8 +125,10 @@
     text-rendering: optimizeSpeed;
   }
   
-  /* Ensure light theme for non-landing pages */
-  body {
+  /* Ensure light theme for non-landing pages.
+     The :not(:has(.lc)) guard keeps this off the dark landing shell — an
+     !important in a cascade layer would otherwise outrank landing.css. */
+  body:not(:has(.lc)) {
     background-color: #ffffff !important;
     color: #000000 !important;
   }

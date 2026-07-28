@@ -6,6 +6,7 @@ import PhoneProvider from '@/models/PhoneProvider';
 import { tenantVapiService } from '@/lib/tenantVapi';
 import { logger } from '@/lib/logger';
 import { getPhoneProviderOrDefault, isUSPhoneNumber, getNoPhoneProviderErrorMessage } from '@/lib/defaultPhoneProvider';
+import { buildCallVariables } from '@/lib/speedToLead/callVariables';
 
 export async function POST(
   request: NextRequest,
@@ -109,6 +110,12 @@ export async function POST(
       userId,
       phoneNumber,
       assistantId: assistant.vapiAssistantId,
+      // Without these the prompt's {{client_company}}, {{service_type}} and
+      // {{address}} render as empty strings, so a test call sounds broken even
+      // when the assistant is configured correctly.
+      variableValues: buildCallVariables(assistant, {
+        address: 'the address on file',
+      }),
       metadata: {
         isTest: true,
         assistantName: assistant.name,

@@ -4,56 +4,59 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Phone, User, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Phone, User, CheckCircle, MapPin, CalendarClock, Trash2 } from 'lucide-react';
 import { PaymentGateWrapper } from '@/components/PaymentGateWrapper';
 import { toast } from 'sonner';
+import { formatVisit, zoneLabel } from '@/lib/formatAppointment';
 
-interface PendingAppointment {
+/**
+ * Booked visits.
+ *
+ * There is no approve/reject queue any more — the agent books the slot live
+ * while the homeowner is on the phone, so every row here is already on the
+ * calendar. The only useful actions are moving it or calling it off, and both
+ * write through to Google Calendar.
+ */
+
+interface Appointment {
   _id: string;
   vapiCallId: string;
-  phoneNumberId: string;
-  status: 'pending_confirmation' | 'confirmed' | 'rejected';
+  status: string;
   appointmentData: {
     title: string;
     startTime: string;
     endTime: string;
-    customer: {
-      name: string;
-      phone: string;
-      email?: string;
-    };
+    customer: { name: string; phone: string; email?: string };
     notes?: string;
   };
-  callData: {
-    duration?: number;
-    summary?: string;
-    transcript?: string;
-    endReason?: string;
-  };
+  callData: { duration?: number; summary?: string };
+  /** Business timezone captured at booking; absent on pre-2026-07-28 rows. */
+  timezone?: string;
   createdAt: string;
-  confirmedAt?: string;
-  confirmedBy?: string;
+}
+
+/** Formats an ISO string for a datetime-local input in the viewer's zone. */
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState<PendingAppointment[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'pending_confirmation' | 'confirmed' | 'rejected'>('pending_confirmation');
-  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [newTime, setNewTime] = useState('');
 
   const fetchAppointments = async () => {
     try {
-      const response = await fetch(`/api/appointments?status=${filter}`);
-      const data = await response.json();
-      
-      if (response.ok) {
-        setAppointments(data.appointments);
-      } else {
-        toast.error('Failed to fetch appointments');
-      }
-    } catch (error) {
-      toast.error('Error fetching appointments');
-      console.error('Fetch error:', error);
+      const res = await fetch('/api/appointments?status=booked');
+      const data = await res.json();
+      if (res.ok) setAppointments(data.appointments || []);
+      else toast.error(data.error || 'Failed to load appointments');
+    } catch {
+      toast.error('Failed to load appointments');
     } finally {
       setLoading(false);
     }
@@ -61,91 +64,74 @@ export default function AppointmentsPage() {
 
   useEffect(() => {
     fetchAppointments();
-  }, [filter]);
+  }, []);
 
-  const handleConfirm = async (appointmentId: string) => {
-    setProcessingIds(prev => new Set(prev).add(appointmentId));
-    
+  const startEdit = (a: Appointment) => {
+    setEditingId(a._id);
+    setNewTime(toLocalInput(a.appointmentData.startTime));
+  };
+
+  const reschedule = async (id: string) => {
+    if (!newTime) return;
+    setBusyId(id);
     try {
-      const response = await fetch(`/api/appointments/${appointmentId}/confirm`, {
-        method: 'POST',
+      const res = await fetch(`/api/appointments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        // datetime-local has no zone; toISOString applies the viewer's offset.
+        body: JSON.stringify({ startTime: new Date(newTime).toISOString() }),
       });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast.success('Appointment confirmed and added to calendar!');
-        fetchAppointments(); // Refresh the list
-      } else {
-        toast.error(data.error || 'Failed to confirm appointment');
-      }
-    } catch (error) {
-      toast.error('Error confirming appointment');
-      console.error('Confirm error:', error);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to reschedule');
+      toast.success('Rescheduled', { description: 'The calendar event was moved too.' });
+      setEditingId(null);
+      fetchAppointments();
+    } catch (e) {
+      toast.error('Could not reschedule', {
+        description: e instanceof Error ? e.message : 'Unknown error',
+      });
     } finally {
-      setProcessingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(appointmentId);
-        return newSet;
-      });
+      setBusyId(null);
     }
   };
 
-  const handleReject = async (appointmentId: string) => {
-    setProcessingIds(prev => new Set(prev).add(appointmentId));
-    
+  const cancel = async (a: Appointment) => {
+    if (!confirm(`Cancel the visit for ${a.appointmentData.customer.name}? This removes it from your calendar.`)) {
+      return;
+    }
+    setBusyId(a._id);
     try {
-      const response = await fetch(`/api/appointments/${appointmentId}/reject`, {
-        method: 'POST',
+      const res = await fetch(`/api/appointments/${a._id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to cancel');
+      toast.success('Appointment cancelled', {
+        description: 'Removed from your calendar. Kept in your booking history.',
       });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast.success('Appointment rejected');
-        fetchAppointments(); // Refresh the list
-      } else {
-        toast.error(data.error || 'Failed to reject appointment');
-      }
-    } catch (error) {
-      toast.error('Error rejecting appointment');
-      console.error('Reject error:', error);
+      fetchAppointments();
+    } catch (e) {
+      toast.error('Could not cancel', {
+        description: e instanceof Error ? e.message : 'Unknown error',
+      });
     } finally {
-      setProcessingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(appointmentId);
-        return newSet;
-      });
+      setBusyId(null);
     }
   };
 
-  const formatDateTime = (isoString: string) => {
-    const date = new Date(isoString);
-    return {
-      date: date.toLocaleDateString(),
-      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending_confirmation':
-        return <Badge variant="outline" className="text-yellow-600 border-yellow-600"><AlertCircle className="w-3 h-3 mr-1" />Pending</Badge>;
-      case 'confirmed':
-        return <Badge variant="outline" className="text-green-600 border-green-600"><CheckCircle className="w-3 h-3 mr-1" />Confirmed</Badge>;
-      case 'rejected':
-        return <Badge variant="outline" className="text-red-600 border-red-600"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
+  // Rendered in the business's zone, not the viewer's — the technician's day
+  // happens where the customer lives, and that is the time the agent promised.
+  const fmt = (iso: string, tz?: string) => ({
+    date: formatVisit(iso, tz, { weekday: 'short', month: 'short', day: 'numeric', hour: undefined, minute: undefined }),
+    time: formatVisit(iso, tz, { weekday: undefined, month: undefined, day: undefined, hour: '2-digit', minute: '2-digit' }),
+    zone: zoneLabel(iso, tz),
+    past: new Date(iso).getTime() < Date.now(),
+  });
 
   if (loading) {
     return (
       <div className="container mx-auto py-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" />
             <p>Loading appointments...</p>
           </div>
         </div>
@@ -157,159 +143,135 @@ export default function AppointmentsPage() {
     <PaymentGateWrapper>
       <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', color: '#000000' }}>
         <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Appointments</h1>
-          <p className="text-gray-600 mt-2">Manage your pending appointment confirmations</p>
-        </div>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6 w-fit">
-        {[
-          { key: 'pending_confirmation', label: 'Pending', icon: AlertCircle },
-          { key: 'confirmed', label: 'Confirmed', icon: CheckCircle },
-          { key: 'rejected', label: 'Rejected', icon: XCircle },
-        ].map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            onClick={() => setFilter(key as any)}
-            className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              filter === key
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Icon className="w-4 h-4 mr-2" />
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Appointments List */}
-      {appointments.length === 0 ? (
-        <Card style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <CardContent className="text-center py-12" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No {filter.replace('_', ' ')} appointments</h3>
-            <p className="text-gray-500">
-              {filter === 'pending_confirmation' 
-                ? 'New appointment confirmations will appear here when calls are completed.'
-                : `No ${filter} appointments found.`
-              }
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold">Appointments</h1>
+            <p className="text-gray-600 mt-2">
+              Visits booked by your agents during calls. Already on your calendar — reschedule or cancel here.
             </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {appointments.map((appointment) => {
-            const startDateTime = formatDateTime(appointment.appointmentData.startTime);
-            const endDateTime = formatDateTime(appointment.appointmentData.endTime);
-            const isProcessing = processingIds.has(appointment._id);
+          </div>
 
-            return (
-              <Card key={appointment._id} className="overflow-hidden" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-                <CardHeader style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{appointment.appointmentData.title}</CardTitle>
-                      <CardDescription className="mt-1">
-                        Call ID: {appointment.vapiCallId}
-                      </CardDescription>
-                    </div>
-                    {getStatusBadge(appointment.status)}
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Appointment Details */}
-                    <div className="space-y-3">
-                      <div className="flex items-center text-sm">
-                        <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                        <span>{startDateTime.date}</span>
-                      </div>
-                      
-                      <div className="flex items-center text-sm">
-                        <Clock className="w-4 h-4 mr-2 text-gray-500" />
-                        <span>{startDateTime.time} - {endDateTime.time}</span>
-                      </div>
-                      
-                      <div className="flex items-center text-sm">
-                        <User className="w-4 h-4 mr-2 text-gray-500" />
+          {appointments.length === 0 ? (
+            <Card style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
+              <CardContent className="text-center py-12" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No appointments yet</h3>
+                <p className="text-gray-500">
+                  When an agent books a visit during a call, it appears here and on your Google Calendar.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {appointments.map((a) => {
+                const start = fmt(a.appointmentData.startTime, a.timezone);
+                const end = fmt(a.appointmentData.endTime, a.timezone);
+                const busy = busyId === a._id;
+
+                return (
+                  <Card key={a._id} className="overflow-hidden" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
+                    <CardHeader style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+                      <div className="flex items-start justify-between gap-4">
                         <div>
-                          <div>{appointment.appointmentData.customer.name}</div>
-                          {appointment.appointmentData.customer.email && (
-                            <div className="text-gray-500">{appointment.appointmentData.customer.email}</div>
+                          <CardTitle className="text-lg">{a.appointmentData.title}</CardTitle>
+                          <CardDescription className="mt-1">
+                            Booked {new Date(a.createdAt).toLocaleString()}
+                          </CardDescription>
+                        </div>
+                        <Badge variant="outline" className={start.past ? 'text-gray-500 border-gray-400' : 'text-green-600 border-green-600'}>
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          {start.past ? 'Past' : 'Booked'}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="pt-0" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                          <div className="flex items-center text-sm">
+                            <Calendar className="w-4 h-4 mr-2 text-gray-500" />
+                            <span className="font-medium">{start.date}</span>
+                          </div>
+                          <div className="flex items-center text-sm">
+                            <Clock className="w-4 h-4 mr-2 text-gray-500" />
+                            <span>
+                              {start.time} – {end.time}
+                              {start.zone && <span className="ml-1.5 text-gray-400">{start.zone}</span>}
+                            </span>
+                          </div>
+                          <div className="flex items-center text-sm">
+                            <User className="w-4 h-4 mr-2 text-gray-500" />
+                            <div>
+                              <div>{a.appointmentData.customer.name}</div>
+                              {a.appointmentData.customer.email && (
+                                <div className="text-gray-500">{a.appointmentData.customer.email}</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center text-sm">
+                            <Phone className="w-4 h-4 mr-2 text-gray-500" />
+                            <span className={a.appointmentData.customer.phone === 'unknown' ? 'text-gray-400' : ''}>
+                              {a.appointmentData.customer.phone}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          {a.callData.summary && (
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900 mb-1">Problem</h4>
+                              <p className="text-sm text-gray-600">{a.callData.summary}</p>
+                            </div>
+                          )}
+                          {a.appointmentData.notes && (
+                            <div className="flex gap-2 text-sm text-gray-600">
+                              <MapPin className="w-4 h-4 text-gray-500 flex-none mt-0.5" />
+                              <p className="whitespace-pre-line">{a.appointmentData.notes}</p>
+                            </div>
                           )}
                         </div>
                       </div>
-                      
-                      <div className="flex items-center text-sm">
-                        <Phone className="w-4 h-4 mr-2 text-gray-500" />
-                        <span>{appointment.appointmentData.customer.phone}</span>
-                      </div>
-                    </div>
 
-                    {/* Call Details & Actions */}
-                    <div className="space-y-3">
-                      {appointment.callData.summary && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900 mb-1">Call Summary</h4>
-                          <p className="text-sm text-gray-600">{appointment.callData.summary}</p>
-                        </div>
-                      )}
-                      
-                      {appointment.appointmentData.notes && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900 mb-1">Notes</h4>
-                          <p className="text-sm text-gray-600">{appointment.appointmentData.notes}</p>
-                        </div>
-                      )}
-
-                      {appointment.callData.duration && (
-                        <div className="text-sm text-gray-500">
-                          Call duration: {Math.round(appointment.callData.duration)} seconds
-                        </div>
-                      )}
-                      
-                      {appointment.status === 'pending_confirmation' && (
-                        <div className="flex space-x-3 pt-2">
-                          <Button
-                            onClick={() => handleConfirm(appointment._id)}
-                            disabled={isProcessing}
-                            className="flex-1"
-                          >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            {isProcessing ? 'Confirming...' : 'Confirm & Add to Calendar'}
+                      {editingId === a._id ? (
+                        <div className="flex flex-wrap items-center gap-3 mt-5 pt-4 border-t border-gray-200">
+                          <input
+                            type="datetime-local"
+                            value={newTime}
+                            onChange={(e) => setNewTime(e.target.value)}
+                            className="p-2 border border-gray-300 rounded-lg text-sm"
+                          />
+                          <Button onClick={() => reschedule(a._id)} disabled={busy || !newTime}>
+                            {busy ? 'Saving…' : 'Save new time'}
                           </Button>
-                          
+                          <Button variant="outline" onClick={() => setEditingId(null)} disabled={busy}>
+                            Cancel
+                          </Button>
+                          <span className="text-xs text-gray-500">
+                            Keeps the same duration and moves the calendar event.
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex gap-3 mt-5 pt-4 border-t border-gray-200">
+                          <Button variant="outline" onClick={() => startEdit(a)} disabled={busy}>
+                            <CalendarClock className="w-4 h-4 mr-2" />
+                            Reschedule
+                          </Button>
                           <Button
                             variant="outline"
-                            onClick={() => handleReject(appointment._id)}
-                            disabled={isProcessing}
-                            className="flex-1"
+                            onClick={() => cancel(a)}
+                            disabled={busy}
+                            className="text-red-600 border-red-300 hover:bg-red-50"
                           >
-                            <XCircle className="w-4 h-4 mr-2" />
-                            {isProcessing ? 'Rejecting...' : 'Reject'}
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            {busy ? 'Cancelling…' : 'Cancel visit'}
                           </Button>
                         </div>
                       )}
-
-                      {appointment.confirmedAt && (
-                        <div className="text-sm text-gray-500 pt-2">
-                          {appointment.status === 'confirmed' ? 'Confirmed' : 'Rejected'} on{' '}
-                          {new Date(appointment.confirmedAt).toLocaleString()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </PaymentGateWrapper>

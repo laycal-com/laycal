@@ -18,6 +18,9 @@ const isPublicRoute = createRouteMatcher([
   "/pricing",
   "/contact",
   "/api/webhooks(.*)",
+  // Vapi invokes these mid-conversation and cannot present a Clerk session.
+  // They authorise on the assistant id in the path and are rate limited.
+  "/api/vapi/calendar(.*)",
   "/api/pricing",
   "/api/paypal(.*)",
   "/api/user/select-plan",
