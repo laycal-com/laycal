@@ -16,8 +16,10 @@ import {
 } from 'lucide-react';
 import { UpgradeModal } from './UpgradeModal';
 import PhoneProviderPrompt from './PhoneProviderPrompt';
-import { BarList, DonutChart, TrendChart } from './dashboard/charts';
+import { ActivityChart, ActivityLegend, AssistantBars, OutcomesDonut } from './dashboard/portal-charts';
 import { EmptyState, Panel, PanelHeader, Reveal, StatCard } from './dashboard/panels';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { cn } from '@/lib/utils';
 import {
   BalancePanel,
   NumbersPanel,
@@ -87,14 +89,13 @@ const RANGES = [
   { days: 90, label: '90d' },
 ];
 
-const COLORS = {
-  leads: '#2563eb',
-  calls: '#8b5cf6',
-  booked: '#10b981',
-  answered: '#f59e0b',
-  failed: '#f43f5e',
-  pending: '#94a3b8',
-  calling: '#0ea5e9',
+/* One accent, the rest neutral. Sparklines and status segments share these. */
+const TONE = {
+  accent: 'var(--brand)',
+  strong: '#fafafa',
+  mid: '#737373',
+  dim: '#404040',
+  muted: 'var(--muted-foreground)',
 };
 
 function formatDuration(seconds: number): string {
@@ -278,10 +279,10 @@ export function DashboardClient() {
     const o = stats?.outcomes;
     if (!o) return [];
     return [
-      { label: 'Reached', value: o.completed, color: COLORS.booked },
-      { label: 'In progress', value: o.calling, color: COLORS.calling },
-      { label: 'Queued', value: o.pending, color: COLORS.pending },
-      { label: 'Failed', value: o.failed, color: COLORS.failed },
+      { key: 'completed', label: 'Reached', value: o.completed, color: TONE.strong },
+      { key: 'calling', label: 'In progress', value: o.calling, color: TONE.accent },
+      { key: 'pending', label: 'Queued', value: o.pending, color: TONE.mid },
+      { key: 'failed', label: 'Failed', value: o.failed, color: TONE.dim },
     ].filter((s) => s.value > 0);
   }, [stats]);
 
@@ -297,388 +298,260 @@ export function DashboardClient() {
 
   if (activatingPayg) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
+      <div className="flex min-h-[70vh] items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-emerald-500" />
-          <p className="text-lg font-medium text-slate-800">Setting up your Pay-as-you-go plan…</p>
-          <p className="mt-2 text-sm text-slate-500">Redirecting to PayPal…</p>
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-border border-t-primary" />
+          <p className="text-lg font-medium text-foreground">Setting up your Pay-as-you-go plan…</p>
+          <p className="mt-2 text-sm text-muted-foreground">Redirecting to PayPal…</p>
         </div>
       </div>
     );
   }
 
+  const link =
+    'rounded-sm text-xs font-medium text-muted-foreground underline-offset-4 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring';
+
   return (
-    <div className="min-h-screen bg-slate-50" style={{ paddingTop: '80px' }}>
+    <div className="mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
       <PhoneProviderPrompt />
 
-      <main className="container mx-auto max-w-7xl px-6 py-8">
-        {/* Header */}
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Dashboard</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              How your agents are turning inbound leads into booked visits.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex rounded-lg border border-slate-200 bg-white p-0.5">
-              {RANGES.map((r) => (
-                <button
-                  key={r.days}
-                  onClick={() => setDays(r.days)}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    days === r.days
-                      ? 'bg-slate-900 text-white'
-                      : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  {r.label}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={refresh}
-              disabled={refreshing}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50"
-              aria-label="Refresh"
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
+      {/* Header */}
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-foreground">Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            How your agents are turning inbound leads into booked visits.
+          </p>
         </div>
 
-        {/* Only-when-actionable nudges, in place of the old permanent onboarding */}
-        {!loading && (noAssistants || lowBalance) && (
-          <Reveal className="mb-6 space-y-2">
-            {noAssistants && (
-              <Link
-                href="/assistants"
-                className="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm transition-colors hover:bg-blue-100/70"
+        <div className="flex items-center gap-2">
+          <div role="group" aria-label="Date range" className="flex rounded-lg border border-border bg-card p-0.5">
+            {RANGES.map((r) => (
+              <button
+                key={r.days}
+                onClick={() => setDays(r.days)}
+                aria-pressed={days === r.days}
+                className={cn(
+                  'rounded-md px-3 py-1.5 font-mono text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring',
+                  days === r.days ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground'
+                )}
               >
-                <Bot className="h-4 w-4 flex-none text-blue-600" />
-                <span className="flex-1 text-blue-900">
-                  <span className="font-medium">No assistant yet.</span> Create one and it starts
-                  answering new leads within seconds.
-                </span>
-                <ArrowRight className="h-4 w-4 flex-none text-blue-600" />
-              </Link>
-            )}
-            {lowBalance && (
-              <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
-                <AlertTriangle className="h-4 w-4 flex-none text-amber-600" />
-                <span className="flex-1 text-amber-900">
-                  <span className="font-medium">Credits are low.</span> Calls stop once the balance
-                  runs out — top up below.
-                </span>
-              </div>
-            )}
-          </Reveal>
-        )}
-
-        {loading ? (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {[0, 1, 2, 3].map((i) => (
-                <Panel key={i} className="h-[122px] animate-pulse bg-slate-100/60" />
-              ))}
-            </div>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <Panel className="h-[340px] animate-pulse bg-slate-100/60 lg:col-span-2" />
-              <Panel className="h-[340px] animate-pulse bg-slate-100/60" />
-            </div>
+                {r.label}
+              </button>
+            ))}
           </div>
-        ) : (
-          <div className="space-y-6">
-            {/* KPIs */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard
-                index={0}
-                label="Leads in"
-                value={stats?.totals.leads ?? 0}
-                delta={stats?.deltas.leads}
-                spark={sparks.leads}
-                color={COLORS.leads}
-                icon={Users}
-              />
-              <StatCard
-                index={1}
-                label="Calls placed"
-                value={stats?.totals.calls ?? 0}
-                delta={stats?.deltas.calls}
-                spark={sparks.calls}
-                color={COLORS.calls}
-                icon={PhoneCall}
-              />
-              <StatCard
-                index={2}
-                label="Answer rate"
-                value={stats?.totals.answerRate ?? 0}
-                decimals={1}
-                suffix="%"
-                delta={stats?.deltas.answerRate}
-                spark={sparks.answered}
-                color={COLORS.answered}
-                icon={PhoneIncoming}
-              />
-              <StatCard
-                index={3}
-                label="Visits booked"
-                value={stats?.totals.booked ?? 0}
-                delta={stats?.deltas.booked}
-                spark={sparks.booked}
-                color={COLORS.booked}
-                icon={CalendarCheck}
-              />
-            </div>
+          <button
+            onClick={refresh}
+            disabled={refreshing}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            aria-label="Refresh"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
 
-            {/* Trend + status mix */}
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <Reveal delay={0.05} className="lg:col-span-2">
-                <Panel className="h-full">
-                  <PanelHeader
-                    title="Activity"
-                    subtitle={`Last ${days} days · ${stats?.totals.talkMinutes ?? 0} minutes of talk time`}
-                    action={
-                      <div className="flex items-center gap-3 text-xs text-slate-500">
-                        {[
-                          { label: 'Leads', color: COLORS.leads },
-                          { label: 'Calls', color: COLORS.calls },
-                          { label: 'Booked', color: COLORS.booked },
-                        ].map((l) => (
-                          <span key={l.label} className="flex items-center gap-1.5">
-                            <span
-                              className="h-2 w-2 rounded-full"
-                              style={{ backgroundColor: l.color }}
-                            />
-                            {l.label}
-                          </span>
-                        ))}
-                      </div>
-                    }
-                  />
-                  <div className="p-4">
-                    {stats && stats.totals.leads > 0 ? (
-                      <TrendChart
-                        key={days}
-                        data={stats.series}
-                        height={272}
-                        series={[
-                          { key: 'leads', label: 'Leads', color: COLORS.leads },
-                          { key: 'calls', label: 'Calls', color: COLORS.calls },
-                          { key: 'booked', label: 'Booked', color: COLORS.booked },
-                        ]}
-                      />
-                    ) : (
-                      <EmptyState
-                        icon={PhoneCall}
-                        title="Nothing in this window"
-                        body="Once leads start arriving, this chart fills in day by day."
-                        action={
-                          <Link
-                            href="/integrations"
-                            className="text-xs font-medium text-blue-600 hover:text-blue-700"
-                          >
-                            Connect a lead source →
-                          </Link>
-                        }
-                      />
-                    )}
-                  </div>
-                </Panel>
-              </Reveal>
+      {/* Only-when-actionable nudges, in place of the old permanent onboarding */}
+      {!loading && (noAssistants || lowBalance) && (
+        <Reveal className="mb-6 space-y-2">
+          {noAssistants && (
+            <Link
+              href="/assistants"
+              className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm outline-none transition-colors hover:bg-primary/15 focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Bot className="h-4 w-4 flex-none text-brand-soft" />
+              <span className="flex-1 text-muted-foreground">
+                <span className="font-medium text-foreground">No assistant yet.</span> Create one and it starts
+                answering new leads within seconds.
+              </span>
+              <ArrowRight className="h-4 w-4 flex-none text-brand-soft" />
+            </Link>
+          )}
+          {lowBalance && (
+            <a
+              href="#credits"
+              className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm outline-none transition-colors hover:bg-amber-500/15 focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <AlertTriangle className="h-4 w-4 flex-none text-amber-500" />
+              <span className="flex-1 text-muted-foreground">
+                <span className="font-medium text-foreground">Credits are low.</span> Calls stop once the balance
+                runs out. Top up below.
+              </span>
+            </a>
+          )}
+        </Reveal>
+      )}
 
-              <Reveal delay={0.1}>
-                <Panel className="h-full">
-                  <PanelHeader title="Lead status" subtitle={`${stats?.totals.leads ?? 0} in range`} />
-                  <div className="p-5">
-                    {outcomeSegments.length > 0 ? (
-                      <DonutChart
-                        key={days}
-                        segments={outcomeSegments}
-                        centerValue={`${stats?.totals.bookRate ?? 0}%`}
-                        centerLabel="booked"
-                      />
-                    ) : (
-                      <EmptyState
-                        icon={Users}
-                        title="No leads yet"
-                        body="Statuses appear here as leads move from queued to reached."
-                      />
-                    )}
-                  </div>
-                </Panel>
-              </Reveal>
-            </div>
+      {loading ? (
+        <div className="space-y-4" aria-busy="true" aria-label="Loading dashboard">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <Panel key={i} className="h-[138px] animate-pulse bg-muted/40" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <Panel className="h-[380px] animate-pulse bg-muted/40 lg:col-span-2" />
+            <Panel className="h-[380px] animate-pulse bg-muted/40" />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* KPIs */}
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatCard
+              index={0}
+              label="Leads in"
+              value={stats?.totals.leads ?? 0}
+              delta={stats?.deltas.leads}
+              spark={sparks.leads}
+              color={TONE.muted}
+              icon={Users}
+            />
+            <StatCard
+              index={1}
+              label="Calls placed"
+              value={stats?.totals.calls ?? 0}
+              delta={stats?.deltas.calls}
+              spark={sparks.calls}
+              color={TONE.muted}
+              icon={PhoneCall}
+            />
+            <StatCard
+              index={2}
+              label="Answer rate"
+              value={stats?.totals.answerRate ?? 0}
+              decimals={1}
+              suffix="%"
+              delta={stats?.deltas.answerRate}
+              spark={sparks.answered}
+              color={TONE.muted}
+              icon={PhoneIncoming}
+            />
+            <StatCard
+              index={3}
+              label="Visits booked"
+              value={stats?.totals.booked ?? 0}
+              delta={stats?.deltas.booked}
+              spark={sparks.booked}
+              color={TONE.accent}
+              icon={CalendarCheck}
+            />
+          </div>
 
-            {/* Assistants + upcoming */}
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <Reveal delay={0.05} className="lg:col-span-2">
-                <Panel className="h-full">
-                  <PanelHeader
-                    title="Assistants"
-                    subtitle={rankByBookings ? 'Visits booked per agent' : 'Calls placed per agent'}
-                    action={
-                      <Link
-                        href="/assistants"
-                        className="text-xs font-medium text-blue-600 hover:text-blue-700"
-                      >
-                        Manage
-                      </Link>
-                    }
-                  />
-                  <div className="p-5">
-                    {stats && stats.assistants.length > 0 ? (
-                      <BarList
-                        key={days}
-                        rows={stats.assistants.map((a) => ({
-                          label: a.name,
-                          value: rankByBookings ? a.booked : a.calls,
-                          sublabel: rankByBookings
-                            ? `${a.calls} call${a.calls === 1 ? '' : 's'} · ${a.bookRate}% booked`
-                            : 'no bookings yet',
-                          color: a.isActive
-                            ? rankByBookings
-                              ? COLORS.booked
-                              : COLORS.calls
-                            : COLORS.pending,
-                        }))}
-                      />
-                    ) : (
-                      <EmptyState
-                        icon={Bot}
-                        title="No assistants"
-                        body="Create your first agent to start answering leads automatically."
-                        action={
-                          <Link
-                            href="/assistants"
-                            className="text-xs font-medium text-blue-600 hover:text-blue-700"
-                          >
-                            Create an assistant →
-                          </Link>
-                        }
-                      />
-                    )}
-                  </div>
-                </Panel>
-              </Reveal>
+          {/* Trend + status mix */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <Reveal delay={0.05} className="lg:col-span-2">
+              <Panel className="h-full">
+                <PanelHeader
+                  title="Activity"
+                  subtitle={`Last ${days} days · ${stats?.totals.talkMinutes ?? 0} minutes of talk time`}
+                  action={<ActivityLegend />}
+                />
+                <div className="p-4 pt-5">
+                  {stats && stats.totals.leads > 0 ? (
+                    <ActivityChart key={days} data={stats.series} />
+                  ) : (
+                    <EmptyState
+                      icon={PhoneCall}
+                      title="Nothing in this window"
+                      body="Once leads start arriving, this chart fills in day by day."
+                      action={
+                        <Link href="/integrations" className={link}>
+                          Connect a lead source →
+                        </Link>
+                      }
+                    />
+                  )}
+                </div>
+              </Panel>
+            </Reveal>
 
-              <Reveal delay={0.1}>
-                <Panel className="h-full">
-                  <PanelHeader
-                    title="Upcoming visits"
-                    action={
-                      <Link
-                        href="/appointments"
-                        className="text-xs font-medium text-blue-600 hover:text-blue-700"
-                      >
-                        All
-                      </Link>
-                    }
-                  />
-                  <div className="p-5">
-                    {stats && stats.upcoming.length > 0 ? (
-                      <ul className="space-y-3">
-                        {stats.upcoming.map((a) => {
-                          const when = new Date(a.startTime);
-                          const inZone = (o: Intl.DateTimeFormatOptions) =>
-                            new Intl.DateTimeFormat(undefined, {
-                              ...o,
-                              ...(a.timezone ? { timeZone: a.timezone } : {}),
-                            }).format(when);
-                          return (
-                            <li key={a.id} className="flex items-start gap-3">
-                              <span className="mt-0.5 flex h-8 w-8 flex-none flex-col items-center justify-center rounded-lg bg-slate-100 text-[10px] font-semibold uppercase leading-none text-slate-600">
-                                <span>{inZone({ month: 'short' })}</span>
-                                <span className="text-xs text-slate-900">{inZone({ day: 'numeric' })}</span>
-                              </span>
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-medium text-slate-900">
-                                  {a.customer}
-                                </p>
-                                <p className="truncate text-xs text-slate-500">
-                                  {inZone({ hour: '2-digit', minute: '2-digit' })} · {a.title}
-                                </p>
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    ) : (
-                      <EmptyState
-                        icon={CalendarClock}
-                        title="Nothing scheduled"
-                        body="Visits your agents book during calls land here and on your calendar."
-                      />
-                    )}
-                  </div>
-                </Panel>
-              </Reveal>
-            </div>
+            <Reveal delay={0.1}>
+              <Panel className="h-full">
+                <PanelHeader title="Lead status" subtitle={`${stats?.totals.leads ?? 0} in range`} />
+                <div className="p-5">
+                  {outcomeSegments.length > 0 ? (
+                    <OutcomesDonut
+                      key={days}
+                      segments={outcomeSegments}
+                      centerValue={`${stats?.totals.bookRate ?? 0}%`}
+                      centerLabel="booked"
+                    />
+                  ) : (
+                    <EmptyState
+                      icon={Users}
+                      title="No leads yet"
+                      body="Statuses appear here as leads move from queued to reached."
+                    />
+                  )}
+                </div>
+              </Panel>
+            </Reveal>
+          </div>
 
-            {/* Recent calls */}
-            <Reveal delay={0.05}>
-              <Panel>
+          {/* Recent calls + upcoming */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <Reveal delay={0.05} className="lg:col-span-2">
+              <Panel className="h-full overflow-hidden">
                 <PanelHeader
                   title="Recent calls"
                   action={
-                    <Link
-                      href="/leads"
-                      className="text-xs font-medium text-blue-600 hover:text-blue-700"
-                    >
+                    <Link href="/leads" className={link}>
                       All leads
                     </Link>
                   }
                 />
                 {stats && stats.recent.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-100 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
-                          <th className="px-5 py-2.5">Lead</th>
-                          <th className="px-5 py-2.5">Assistant</th>
-                          <th className="px-5 py-2.5">When</th>
-                          <th className="px-5 py-2.5">Duration</th>
-                          <th className="px-5 py-2.5 text-right">Outcome</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {stats.recent.map((r) => (
-                          <tr key={r.id} className="border-b border-slate-50 last:border-0">
-                            <td className="px-5 py-3 font-medium text-slate-900">{r.name}</td>
-                            <td className="px-5 py-3 text-slate-500">{r.assistant || '—'}</td>
-                            <td className="px-5 py-3 text-slate-500">
-                              {r.calledAt ? new Date(r.calledAt).toLocaleString() : '—'}
-                            </td>
-                            <td className="px-5 py-3 tabular-nums text-slate-500">
-                              {formatDuration(r.duration)}
-                            </td>
-                            <td className="px-5 py-3 text-right">
-                              <span
-                                className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                                  r.booked
-                                    ? 'bg-emerald-50 text-emerald-700'
-                                    : r.status === 'failed'
-                                      ? 'bg-rose-50 text-rose-700'
-                                      : r.answered
-                                        ? 'bg-slate-100 text-slate-600'
-                                        : 'bg-slate-100 text-slate-500'
-                                }`}
-                              >
-                                {r.booked
-                                  ? 'Booked'
-                                  : r.status === 'failed'
-                                    ? 'Failed'
-                                    : r.answered
-                                      ? 'No booking'
-                                      : 'No answer'}
-                              </span>
-                            </td>
-                          </tr>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-border hover:bg-transparent">
+                        {['Lead', 'Assistant', 'When', 'Duration'].map((h) => (
+                          <TableHead key={h} className="h-10 px-5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                            {h}
+                          </TableHead>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        <TableHead className="h-10 px-5 text-right font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                          Outcome
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {stats.recent.map((r) => {
+                        const outcome = r.booked
+                          ? { label: 'Booked', dot: 'bg-green-500', text: 'text-foreground' }
+                          : r.status === 'failed'
+                            ? { label: 'Failed', dot: 'bg-red-500', text: 'text-foreground' }
+                            : r.answered
+                              ? { label: 'No booking', dot: 'bg-muted-foreground', text: 'text-muted-foreground' }
+                              : { label: 'No answer', dot: 'bg-muted-foreground/40', text: 'text-muted-foreground' };
+                        return (
+                          <TableRow key={r.id} className="border-border hover:bg-muted/40">
+                            <TableCell className="px-5 py-3.5 font-medium text-foreground">{r.name}</TableCell>
+                            <TableCell className="px-5 py-3.5 text-muted-foreground">{r.assistant || '—'}</TableCell>
+                            <TableCell className="px-5 py-3.5 text-muted-foreground">
+                              {r.calledAt
+                                ? new Date(r.calledAt).toLocaleString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                  })
+                                : '—'}
+                            </TableCell>
+                            <TableCell className="px-5 py-3.5 font-mono text-xs tabular-nums text-muted-foreground">
+                              {formatDuration(r.duration)}
+                            </TableCell>
+                            <TableCell className="px-5 py-3.5">
+                              <span className={cn('flex items-center justify-end gap-2 text-[13px]', outcome.text)}>
+                                <span className={cn('size-1.5 rounded-full', outcome.dot)} />
+                                {outcome.label}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
                 ) : (
                   <EmptyState
                     icon={PhoneCall}
@@ -689,25 +562,117 @@ export function DashboardClient() {
               </Panel>
             </Reveal>
 
-            {/* Account */}
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <Reveal delay={0.05}>
-                <BalancePanel credits={credits} pricing={pricing} />
-              </Reveal>
-              <Reveal delay={0.1}>
-                <PlanPanel
-                  usage={usage}
-                  pricing={pricing}
-                  onUpgrade={() => setShowUpgradeModal(true)}
+            <Reveal delay={0.1}>
+              <Panel className="h-full">
+                <PanelHeader
+                  title="Upcoming visits"
+                  action={
+                    <Link href="/appointments" className={link}>
+                      All
+                    </Link>
+                  }
                 />
-              </Reveal>
-              <Reveal delay={0.15}>
-                <NumbersPanel providers={providers} />
-              </Reveal>
-            </div>
+                <div className="p-5">
+                  {stats && stats.upcoming.length > 0 ? (
+                    <ul className="space-y-4">
+                      {stats.upcoming.map((a) => {
+                        const when = new Date(a.startTime);
+                        const inZone = (o: Intl.DateTimeFormatOptions) =>
+                          new Intl.DateTimeFormat(undefined, {
+                            ...o,
+                            ...(a.timezone ? { timeZone: a.timezone } : {}),
+                          }).format(when);
+                        return (
+                          <li key={a.id} className="flex items-center gap-3">
+                            <span className="flex h-10 w-10 flex-none flex-col items-center justify-center rounded-lg border border-border bg-muted/50 leading-none">
+                              <span className="font-mono text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+                                {inZone({ month: 'short' })}
+                              </span>
+                              <span className="mt-0.5 font-mono text-sm font-medium text-foreground">
+                                {inZone({ day: 'numeric' })}
+                              </span>
+                            </span>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-foreground">{a.customer}</p>
+                              <p className="truncate text-xs text-muted-foreground">
+                                {inZone({ hour: '2-digit', minute: '2-digit' })} · {a.title}
+                              </p>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <EmptyState
+                      icon={CalendarClock}
+                      title="Nothing scheduled"
+                      body="Visits your agents book during calls land here and on your calendar."
+                    />
+                  )}
+                </div>
+              </Panel>
+            </Reveal>
           </div>
-        )}
-      </main>
+
+          {/* Assistants + numbers */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <Reveal delay={0.05} className="lg:col-span-2">
+              <Panel className="h-full">
+                <PanelHeader
+                  title="Assistants"
+                  subtitle={rankByBookings ? 'Visits booked per agent' : 'Calls placed per agent'}
+                  action={
+                    <Link href="/assistants" className={link}>
+                      Manage
+                    </Link>
+                  }
+                />
+                <div className="p-5">
+                  {stats && stats.assistants.length > 0 ? (
+                    <AssistantBars
+                      key={days}
+                      rows={stats.assistants.map((a) => ({
+                        id: a.id,
+                        label: a.name,
+                        value: rankByBookings ? a.booked : a.calls,
+                        sublabel: rankByBookings
+                          ? `${a.calls} call${a.calls === 1 ? '' : 's'} · ${a.bookRate}% booked`
+                          : 'no bookings yet',
+                        active: a.isActive,
+                      }))}
+                    />
+                  ) : (
+                    <EmptyState
+                      icon={Bot}
+                      title="No assistants"
+                      body="Create your first agent to start answering leads automatically."
+                      action={
+                        <Link href="/assistants" className={link}>
+                          Create an assistant →
+                        </Link>
+                      }
+                    />
+                  )}
+                </div>
+              </Panel>
+            </Reveal>
+
+            <Reveal delay={0.1}>
+              <NumbersPanel providers={providers} />
+            </Reveal>
+          </div>
+
+          {/* Account */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Reveal delay={0.05}>
+              <BalancePanel credits={credits} pricing={pricing} />
+            </Reveal>
+            <Reveal delay={0.1}>
+              <PlanPanel usage={usage} pricing={pricing} onUpgrade={() => setShowUpgradeModal(true)} />
+            </Reveal>
+          </div>
+        </div>
+      )}
 
       {showUpgradeModal && <UpgradeModal onClose={() => setShowUpgradeModal(false)} />}
     </div>

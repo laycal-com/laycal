@@ -70,10 +70,10 @@ export function PaymentGateWrapper({ children }: PaymentGateWrapperProps) {
   // Show loading screen
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="flex min-h-[70vh] items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3b82f6] mx-auto mb-4"></div>
-          <p className="text-[#64748b]">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-border border-t-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -87,10 +87,10 @@ export function PaymentGateWrapper({ children }: PaymentGateWrapperProps) {
       window.location.href = '/select-plan';
     }
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="flex min-h-[70vh] items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3b82f6] mx-auto mb-4"></div>
-          <p className="text-[#64748b]">Redirecting to plan selection...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-border border-t-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Redirecting to plan selection...</p>
         </div>
       </div>
     );

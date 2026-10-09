@@ -151,10 +151,10 @@ const components = {
   h1: ({ children }: any) => {
     const id = typeof children === 'string' ? children.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
     return (
-      <h1 id={id} className="text-4xl font-bold text-gray-900 mb-6 mt-8 scroll-mt-24">
-        <a href={`#${id}`} className="group hover:text-blue-600 transition-colors">
+      <h1 id={id} className="text-4xl font-semibold text-foreground mb-6 mt-8 scroll-mt-24">
+        <a href={`#${id}`} className="group hover:text-brand-soft transition-colors">
           {children}
-          <span className="ml-2 opacity-0 group-hover:opacity-100 text-blue-500 transition-opacity">#</span>
+          <span className="ml-2 opacity-0 group-hover:opacity-100 text-brand-soft transition-opacity">#</span>
         </a>
       </h1>
     );
@@ -162,10 +162,10 @@ const components = {
   h2: ({ children }: any) => {
     const id = typeof children === 'string' ? children.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
     return (
-      <h2 id={id} className="text-3xl font-bold text-gray-900 mb-4 mt-8 scroll-mt-24">
-        <a href={`#${id}`} className="group hover:text-blue-600 transition-colors">
+      <h2 id={id} className="text-3xl font-semibold text-foreground mb-4 mt-8 scroll-mt-24">
+        <a href={`#${id}`} className="group hover:text-brand-soft transition-colors">
           {children}
-          <span className="ml-2 opacity-0 group-hover:opacity-100 text-blue-500 transition-opacity">#</span>
+          <span className="ml-2 opacity-0 group-hover:opacity-100 text-brand-soft transition-opacity">#</span>
         </a>
       </h2>
     );
@@ -173,10 +173,10 @@ const components = {
   h3: ({ children }: any) => {
     const id = typeof children === 'string' ? children.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
     return (
-      <h3 id={id} className="text-2xl font-bold text-gray-900 mb-3 mt-6 scroll-mt-24">
-        <a href={`#${id}`} className="group hover:text-blue-600 transition-colors">
+      <h3 id={id} className="text-2xl font-semibold text-foreground mb-3 mt-6 scroll-mt-24">
+        <a href={`#${id}`} className="group hover:text-brand-soft transition-colors">
           {children}
-          <span className="ml-2 opacity-0 group-hover:opacity-100 text-blue-500 transition-opacity">#</span>
+          <span className="ml-2 opacity-0 group-hover:opacity-100 text-brand-soft transition-opacity">#</span>
         </a>
       </h3>
     );
@@ -197,28 +197,28 @@ const components = {
     }
     
     return (
-      <p className="text-lg text-gray-700 leading-relaxed mb-4">{children}</p>
+      <p className="text-lg text-muted-foreground leading-relaxed mb-4">{children}</p>
     );
   },
   ul: ({ children }: any) => (
-    <ul className="list-disc list-inside text-lg text-gray-700 mb-4 space-y-2">{children}</ul>
+    <ul className="list-disc list-inside text-lg text-muted-foreground mb-4 space-y-2">{children}</ul>
   ),
   ol: ({ children }: any) => (
-    <ol className="list-decimal list-inside text-lg text-gray-700 mb-4 space-y-2">{children}</ol>
+    <ol className="list-decimal list-inside text-lg text-muted-foreground mb-4 space-y-2">{children}</ol>
   ),
   li: ({ children }: any) => (
     <li className="mb-1">{children}</li>
   ),
   blockquote: ({ children }: any) => (
-    <blockquote className="border-l-4 border-blue-500 pl-6 py-2 mb-6 bg-blue-50 rounded-r-lg">
-      <div className="text-lg text-gray-700 italic">{children}</div>
+    <blockquote className="border-l-4 border-primary pl-6 py-2 mb-6 bg-primary/10 rounded-r-lg">
+      <div className="text-lg text-muted-foreground italic">{children}</div>
     </blockquote>
   ),
   code: ({ children }: any) => (
-    <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono text-purple-600">{children}</code>
+    <code className="bg-muted px-2 py-1 rounded text-sm font-mono text-brand-soft">{children}</code>
   ),
   pre: ({ children }: any) => (
-    <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg mb-6 overflow-x-auto">
+    <pre className="bg-card text-muted-foreground p-4 rounded-lg mb-6 overflow-x-auto">
       <code>{children}</code>
     </pre>
   ),
@@ -241,7 +241,7 @@ const components = {
   a: ({ href, children, ...props }: any) => (
     <a 
       href={href} 
-      className="text-blue-600 hover:text-blue-700 underline transition-colors font-medium"
+      className="text-brand-soft hover:text-brand-soft underline transition-colors font-medium"
       target={href?.startsWith('http') ? '_blank' : undefined}
       rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
       {...props}
@@ -258,7 +258,7 @@ const components = {
     if (videoId) {
       return (
         <figure className="my-8 max-w-2xl mx-auto">
-          <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden shadow-lg">
+          <div className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-lg">
             <iframe
               src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
               title={title || 'YouTube Video'}
@@ -271,7 +271,7 @@ const components = {
             />
           </div>
           {title && (
-            <figcaption className="text-center text-sm text-gray-600 mt-2 italic">{title}</figcaption>
+            <figcaption className="text-center text-sm text-muted-foreground mt-2 italic">{title}</figcaption>
           )}
         </figure>
       );
@@ -310,7 +310,7 @@ export default async function BlogPostPage({ params }: Props) {
   const tableOfContents = generateTableOfContents(post.content);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-card">
       <PublicNavbar />
       
       {/* Hero Section with Background Image */}
@@ -343,12 +343,12 @@ export default async function BlogPostPage({ params }: Props) {
               </div>
               
               <div className="mb-6">
-                <span className="bg-blue-600/90 text-white px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
+                <span className="bg-primary text-white px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm">
                   {post.category}
                 </span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight text-white drop-shadow-lg">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold mb-6 leading-tight text-white drop-shadow-lg">
                 {post.title}
               </h1>
               
@@ -358,8 +358,8 @@ export default async function BlogPostPage({ params }: Props) {
               
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-                    <span className="text-white font-bold text-lg">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-white font-semibold text-lg">
                       {post.author.charAt(0)}
                     </span>
                   </div>
@@ -379,7 +379,7 @@ export default async function BlogPostPage({ params }: Props) {
                 
                 <div className="flex flex-wrap gap-2">
                   {post.tags.slice(0, 3).map((tag) => (
-                    <span key={tag} className="bg-white/20 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
+                    <span key={tag} className="bg-card text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
                       {tag}
                     </span>
                   ))}
@@ -419,11 +419,11 @@ export default async function BlogPostPage({ params }: Props) {
               </div>
               
               {/* Tags */}
-              <div className="mt-12 pt-8 border-t border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Tags</h3>
+              <div className="mt-12 pt-8 border-t border-border">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Tags</h3>
                 <div className="flex flex-wrap gap-2">
                   {post.tags.map((tag) => (
-                    <span key={tag} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm hover:bg-blue-200 cursor-pointer transition-colors">
+                    <span key={tag} className="bg-primary/10 text-brand-soft px-3 py-1 rounded-full text-sm hover:bg-primary/15 cursor-pointer transition-colors">
                       {tag}
                     </span>
                   ))}
@@ -436,13 +436,13 @@ export default async function BlogPostPage({ params }: Props) {
 
       {/* Related Posts */}
       {relatedPosts.length > 0 && (
-        <section className="bg-gray-50 py-16">
+        <section className="bg-muted/40 py-16">
           <div className="max-w-6xl mx-auto px-4">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8">Related Articles</h2>
+            <h2 className="text-3xl font-semibold text-foreground mb-8">Related Articles</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {relatedPosts.map((relatedPost) => (
                 <Link key={relatedPost.slug} href={`/blogs/${relatedPost.slug}`} className="group">
-                  <article className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+                  <article className="bg-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
                     <div className="relative h-48">
                       <Image
                         src={relatedPost.image}
@@ -452,7 +452,7 @@ export default async function BlogPostPage({ params }: Props) {
                       />
                     </div>
                     <div className="p-6">
-                      <div className="text-sm text-gray-500 mb-2">
+                      <div className="text-sm text-muted-foreground mb-2">
                         <time>{new Date(relatedPost.publishedAt).toLocaleDateString('en-US', { 
                           year: 'numeric', 
                           month: 'long', 
@@ -461,7 +461,7 @@ export default async function BlogPostPage({ params }: Props) {
                         <span className="mx-2">•</span>
                         <span>{relatedPost.readTime}</span>
                       </div>
-                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                      <h3 className="text-lg font-semibold text-foreground group-hover:text-brand-soft transition-colors line-clamp-2">
                         {relatedPost.title}
                       </h3>
                     </div>

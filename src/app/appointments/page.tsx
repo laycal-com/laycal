@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Phone, User, CheckCircle, MapPin, CalendarClock, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { CalendarCheck, CalendarClock, Mail, MapPin, Phone, X } from 'lucide-react';
+import { PageHeader, PortalPage } from '@/components/portal/page';
+import { cn } from '@/lib/utils';
 import { PaymentGateWrapper } from '@/components/PaymentGateWrapper';
 import { toast } from 'sonner';
 import { formatVisit, zoneLabel } from '@/lib/formatAppointment';
@@ -48,6 +49,8 @@ export default function AppointmentsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newTime, setNewTime] = useState('');
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
 
   const fetchAppointments = async () => {
     try {
@@ -96,9 +99,7 @@ export default function AppointmentsPage() {
   };
 
   const cancel = async (a: Appointment) => {
-    if (!confirm(`Cancel the visit for ${a.appointmentData.customer.name}? This removes it from your calendar.`)) {
-      return;
-    }
+    setConfirmingId(null);
     setBusyId(a._id);
     try {
       const res = await fetch(`/api/appointments/${a._id}`, { method: 'DELETE' });
@@ -122,158 +123,201 @@ export default function AppointmentsPage() {
   const fmt = (iso: string, tz?: string) => ({
     date: formatVisit(iso, tz, { weekday: 'short', month: 'short', day: 'numeric', hour: undefined, minute: undefined }),
     time: formatVisit(iso, tz, { weekday: undefined, month: undefined, day: undefined, hour: '2-digit', minute: '2-digit' }),
+    // Asked for one part at a time so the layout never depends on how a locale orders them.
+    weekday: formatVisit(iso, tz, { weekday: 'long', month: undefined, day: undefined, hour: undefined, minute: undefined }),
+    month: formatVisit(iso, tz, { weekday: undefined, month: 'short', day: undefined, hour: undefined, minute: undefined }),
+    day: formatVisit(iso, tz, { weekday: undefined, month: undefined, day: 'numeric', hour: undefined, minute: undefined }),
     zone: zoneLabel(iso, tz),
     past: new Date(iso).getTime() < Date.now(),
   });
 
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" />
-            <p>Loading appointments...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const now = Date.now();
+  const isPast = (a: Appointment) => new Date(a.appointmentData.startTime).getTime() < now;
+  const byStart = (dir: 1 | -1) => (x: Appointment, y: Appointment) =>
+    dir * (new Date(x.appointmentData.startTime).getTime() - new Date(y.appointmentData.startTime).getTime());
+  const upcoming = appointments.filter((a) => !isPast(a)).sort(byStart(1));
+  const past = appointments.filter(isPast).sort(byStart(-1));
+  const shown = tab === 'upcoming' ? upcoming : past;
+
+  const outline = 'h-8 gap-1.5 rounded-lg border-input bg-transparent px-3 text-foreground hover:bg-accent';
 
   return (
     <PaymentGateWrapper>
-      <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', color: '#000000' }}>
-        <div className="container mx-auto py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold">Appointments</h1>
-            <p className="text-gray-600 mt-2">
-              Visits booked by your agents during calls. Already on your calendar — reschedule or cancel here.
+      <PortalPage>
+        <PageHeader
+          title="Appointments"
+          description="Visits your agents booked during calls. They are already on your calendar."
+        />
+
+        <div role="group" aria-label="Show" className="mb-4 inline-flex gap-0.5 rounded-lg border border-border bg-card p-0.5">
+          {(
+            [
+              ['upcoming', 'Upcoming', upcoming.length],
+              ['past', 'Past', past.length],
+            ] as const
+          ).map(([value, label, count]) => (
+            <button
+              key={value}
+              onClick={() => setTab(value)}
+              aria-pressed={tab === value}
+              className={cn(
+                'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring',
+                tab === value ? 'bg-accent font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {label}
+              <span className="font-mono text-xs tabular-nums text-muted-foreground">{loading ? '–' : count}</span>
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="space-y-3" aria-busy="true" aria-label="Loading appointments">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-[132px] animate-pulse rounded-xl border border-border bg-muted/40" />
+            ))}
+          </div>
+        ) : shown.length === 0 ? (
+          <div className="flex flex-col items-center rounded-xl border border-border bg-card px-6 py-16 text-center">
+            <CalendarCheck className="size-8 text-muted-foreground/50" />
+            <p className="mt-3 text-sm font-medium text-foreground">
+              {tab === 'upcoming' ? 'Nothing scheduled' : 'No past visits'}
+            </p>
+            <p className="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">
+              When an agent books a visit during a call, it appears here and on your Google Calendar.
             </p>
           </div>
+        ) : (
+          <ul className="space-y-3">
+            {shown.map((a) => {
+              const start = fmt(a.appointmentData.startTime, a.timezone);
+              const end = fmt(a.appointmentData.endTime, a.timezone);
+              const busy = busyId === a._id;
+              const phone = a.appointmentData.customer.phone;
 
-          {appointments.length === 0 ? (
-            <Card style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-              <CardContent className="text-center py-12" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No appointments yet</h3>
-                <p className="text-gray-500">
-                  When an agent books a visit during a call, it appears here and on your Google Calendar.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {appointments.map((a) => {
-                const start = fmt(a.appointmentData.startTime, a.timezone);
-                const end = fmt(a.appointmentData.endTime, a.timezone);
-                const busy = busyId === a._id;
-
-                return (
-                  <Card key={a._id} className="overflow-hidden" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-                    <CardHeader style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <CardTitle className="text-lg">{a.appointmentData.title}</CardTitle>
-                          <CardDescription className="mt-1">
-                            Booked {new Date(a.createdAt).toLocaleString()}
-                          </CardDescription>
+              return (
+                <li
+                  key={a._id}
+                  className="rounded-xl border border-border bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+                >
+                  <div className="flex flex-col gap-5 p-5 md:flex-row md:items-start">
+                    <div className="flex items-center gap-4 md:w-64 md:shrink-0">
+                      <span
+                        className={cn(
+                          'flex size-14 shrink-0 flex-col items-center justify-center rounded-xl border leading-none',
+                          start.past ? 'border-border bg-muted/40' : 'border-primary/40 bg-primary/10'
+                        )}
+                      >
+                        <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                          {start.month}
+                        </span>
+                        <span className="mt-1 font-mono text-xl font-medium text-foreground">{start.day}</span>
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-foreground">{start.weekday}</div>
+                        <div className="mt-0.5 font-mono text-xs tabular-nums text-muted-foreground">
+                          {start.time} – {end.time}
+                          {start.zone && <span className="ml-1.5">{start.zone}</span>}
                         </div>
-                        <Badge variant="outline" className={start.past ? 'text-gray-500 border-gray-400' : 'text-green-600 border-green-600'}>
-                          <CheckCircle className="w-3 h-3 mr-1" />
+                      </div>
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <h2 className="text-[15px] font-medium text-foreground">{a.appointmentData.title}</h2>
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <span className={cn('size-1.5 rounded-full', start.past ? 'bg-muted-foreground/50' : 'bg-green-500')} />
                           {start.past ? 'Past' : 'Booked'}
-                        </Badge>
+                        </span>
                       </div>
-                    </CardHeader>
-
-                    <CardContent className="pt-0" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-3">
-                          <div className="flex items-center text-sm">
-                            <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                            <span className="font-medium">{start.date}</span>
-                          </div>
-                          <div className="flex items-center text-sm">
-                            <Clock className="w-4 h-4 mr-2 text-gray-500" />
-                            <span>
-                              {start.time} – {end.time}
-                              {start.zone && <span className="ml-1.5 text-gray-400">{start.zone}</span>}
-                            </span>
-                          </div>
-                          <div className="flex items-center text-sm">
-                            <User className="w-4 h-4 mr-2 text-gray-500" />
-                            <div>
-                              <div>{a.appointmentData.customer.name}</div>
-                              {a.appointmentData.customer.email && (
-                                <div className="text-gray-500">{a.appointmentData.customer.email}</div>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center text-sm">
-                            <Phone className="w-4 h-4 mr-2 text-gray-500" />
-                            <span className={a.appointmentData.customer.phone === 'unknown' ? 'text-gray-400' : ''}>
-                              {a.appointmentData.customer.phone}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
-                          {a.callData.summary && (
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-900 mb-1">Problem</h4>
-                              <p className="text-sm text-gray-600">{a.callData.summary}</p>
-                            </div>
-                          )}
-                          {a.appointmentData.notes && (
-                            <div className="flex gap-2 text-sm text-gray-600">
-                              <MapPin className="w-4 h-4 text-gray-500 flex-none mt-0.5" />
-                              <p className="whitespace-pre-line">{a.appointmentData.notes}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {editingId === a._id ? (
-                        <div className="flex flex-wrap items-center gap-3 mt-5 pt-4 border-t border-gray-200">
-                          <input
-                            type="datetime-local"
-                            value={newTime}
-                            onChange={(e) => setNewTime(e.target.value)}
-                            className="p-2 border border-gray-300 rounded-lg text-sm"
-                          />
-                          <Button onClick={() => reschedule(a._id)} disabled={busy || !newTime}>
-                            {busy ? 'Saving…' : 'Save new time'}
-                          </Button>
-                          <Button variant="outline" onClick={() => setEditingId(null)} disabled={busy}>
-                            Cancel
-                          </Button>
-                          <span className="text-xs text-gray-500">
-                            Keeps the same duration and moves the calendar event.
+                      <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
+                        <span className="text-foreground">{a.appointmentData.customer.name}</span>
+                        <span className="flex items-center gap-1.5">
+                          <Phone className="size-3.5" />
+                          <span className={cn('font-mono text-xs', phone === 'unknown' && 'opacity-60')}>{phone}</span>
+                        </span>
+                        {a.appointmentData.customer.email && (
+                          <span className="flex items-center gap-1.5">
+                            <Mail className="size-3.5" />
+                            {a.appointmentData.customer.email}
                           </span>
-                        </div>
-                      ) : (
-                        <div className="flex gap-3 mt-5 pt-4 border-t border-gray-200">
-                          <Button variant="outline" onClick={() => startEdit(a)} disabled={busy}>
-                            <CalendarClock className="w-4 h-4 mr-2" />
-                            Reschedule
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => cancel(a)}
-                            disabled={busy}
-                            className="text-red-600 border-red-300 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            {busy ? 'Cancelling…' : 'Cancel visit'}
-                          </Button>
-                        </div>
+                        )}
+                      </div>
+                      {a.callData.summary && (
+                        <p className="mt-3 max-w-[70ch] text-sm leading-6 text-muted-foreground">{a.callData.summary}</p>
                       )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
+                      {a.appointmentData.notes && (
+                        <p className="mt-2 flex gap-2 text-sm leading-6 text-muted-foreground">
+                          <MapPin className="mt-1 size-3.5 flex-none" />
+                          <span className="whitespace-pre-line">{a.appointmentData.notes}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 border-t border-border px-5 py-3">
+                    {editingId === a._id ? (
+                      <>
+                        <Input
+                          type="datetime-local"
+                          aria-label="New start time"
+                          value={newTime}
+                          onChange={(e) => setNewTime(e.target.value)}
+                          className="h-8 w-auto rounded-lg [color-scheme:dark]"
+                        />
+                        <Button size="sm" onClick={() => reschedule(a._id)} disabled={busy || !newTime} className="h-8 rounded-lg px-3">
+                          {busy ? 'Saving…' : 'Save new time'}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingId(null)} disabled={busy} className={outline}>
+                          Keep current time
+                        </Button>
+                        <span className="text-xs text-muted-foreground">Keeps the same duration and moves the calendar event.</span>
+                      </>
+                    ) : confirmingId === a._id ? (
+                      <>
+                        <span className="text-sm text-foreground">
+                          Cancel the visit for {a.appointmentData.customer.name}? It is removed from your calendar.
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => cancel(a)}
+                          className="h-8 rounded-lg border-red-500/40 bg-red-500/10 px-3 text-red-500 hover:bg-red-500/20 hover:text-red-400"
+                        >
+                          Yes, cancel visit
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setConfirmingId(null)} className={outline}>
+                          Keep it
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => startEdit(a)} disabled={busy} className={outline}>
+                          <CalendarClock className="size-3.5" />
+                          Reschedule
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setConfirmingId(a._id)}
+                          disabled={busy}
+                          className="h-8 gap-1.5 rounded-lg px-3 text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
+                        >
+                          <X className="size-3.5" />
+                          {busy ? 'Cancelling…' : 'Cancel visit'}
+                        </Button>
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          Booked {new Date(a.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </PortalPage>
     </PaymentGateWrapper>
   );
 }

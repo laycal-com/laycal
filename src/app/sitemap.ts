@@ -10,17 +10,13 @@ const baseUrl = 'https://www.laycal.com';
 const staticRoutes = [
   // Public pages (high priority)
   { url: '', priority: 1.0, changeFrequency: 'daily' as const },
-  { url: '/pricing', priority: 0.9, changeFrequency: 'weekly' as const },
-  { url: '/features', priority: 0.9, changeFrequency: 'weekly' as const },
-  { url: '/about', priority: 0.8, changeFrequency: 'monthly' as const },
+  { url: '/lead-reactivation', priority: 0.8, changeFrequency: 'monthly' as const },
   { url: '/contact', priority: 0.8, changeFrequency: 'monthly' as const },
   { url: '/blogs', priority: 0.9, changeFrequency: 'daily' as const },
   
   // Alternative/comparison pages
   { url: '/justcall-alternative', priority: 0.8, changeFrequency: 'weekly' as const },
   { url: '/nooks-alternative', priority: 0.8, changeFrequency: 'weekly' as const },
-  { url: '/case-studies', priority: 0.7, changeFrequency: 'monthly' as const },
-  { url: '/sdr', priority: 0.7, changeFrequency: 'monthly' as const },
   
   // Legal pages
   { url: '/privacy', priority: 0.3, changeFrequency: 'yearly' as const },

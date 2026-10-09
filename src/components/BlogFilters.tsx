@@ -43,10 +43,10 @@ export default function BlogFilters({ posts, categories }: BlogFiltersProps) {
           <button 
             onClick={() => handleCategoryFilter('All Categories')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              activeCategory === 'All Categories' 
-                ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+ activeCategory === 'All Categories' 
+ ? 'bg-primary text-white hover:bg-primary/90' 
+ : 'bg-muted text-muted-foreground hover:bg-accent'
+ }`}
           >
             All Categories
           </button>
@@ -55,10 +55,10 @@ export default function BlogFilters({ posts, categories }: BlogFiltersProps) {
               key={category}
               onClick={() => handleCategoryFilter(category)}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeCategory === category
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+ activeCategory === category
+ ? 'bg-primary text-white hover:bg-primary/90'
+ : 'bg-muted text-muted-foreground hover:bg-accent'
+ }`}
             >
               {category}
             </button>
@@ -71,8 +71,8 @@ export default function BlogFilters({ posts, categories }: BlogFiltersProps) {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredPosts.map((post) => (
             <Link key={post.slug} href={`/blogs/${post.slug}`} className="group">
-              <article className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300">
-                <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200">
+              <article className="bg-card rounded-xl overflow-hidden border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
+                <div className="relative h-48">
                   <Image
                     src={post.image}
                     alt={post.title}
@@ -80,13 +80,13 @@ export default function BlogFilters({ posts, categories }: BlogFiltersProps) {
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute top-4 left-4">
-                    <span className="bg-white bg-opacity-90 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">
+                    <span className="bg-card bg-opacity-90 text-foreground px-3 py-1 rounded-full text-sm font-medium">
                       {post.category}
                     </span>
                   </div>
                 </div>
                 <div className="p-6">
-                  <div className="flex items-center text-sm text-gray-500 mb-3">
+                  <div className="flex items-center text-sm text-muted-foreground mb-3">
                     <span>{new Date(post.publishedAt).toLocaleDateString('en-US', { 
                       year: 'numeric', 
                       month: 'long', 
@@ -95,17 +95,17 @@ export default function BlogFilters({ posts, categories }: BlogFiltersProps) {
                     <span className="mx-2">•</span>
                     <span>{post.readTime}</span>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+                  <h3 className="text-lg font-semibold text-foreground mb-3 group-hover:text-brand-soft transition-colors line-clamp-2">
                     {post.title}
                   </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3">
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-3">
                     {post.description}
                   </p>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">By {post.author}</span>
+                    <span className="text-sm text-muted-foreground">By {post.author}</span>
                     <div className="flex space-x-2">
                       {post.tags.slice(0, 2).map((tag) => (
-                        <span key={tag} className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
+                        <span key={tag} className="bg-muted text-muted-foreground px-2 py-1 rounded text-xs">
                           {tag}
                         </span>
                       ))}
@@ -119,7 +119,7 @@ export default function BlogFilters({ posts, categories }: BlogFiltersProps) {
         
         {filteredPosts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No posts found in this category.</p>
+            <p className="text-muted-foreground text-lg">No posts found in this category.</p>
           </div>
         )}
       </section>

@@ -221,30 +221,30 @@ function SupportPageContent() {
 
   const getStatusIcon = (status: string) => {
     const icons = {
-      'open': <Clock className="h-4 w-4 text-blue-500" />,
-      'in-progress': <AlertCircle className="h-4 w-4 text-yellow-500" />,
+      'open': <Clock className="h-4 w-4 text-brand-soft" />,
+      'in-progress': <AlertCircle className="h-4 w-4 text-amber-500" />,
       'closed': <CheckCircle className="h-4 w-4 text-green-500" />,
-      'on-hold': <XCircle className="h-4 w-4 text-gray-500" />
+      'on-hold': <XCircle className="h-4 w-4 text-muted-foreground" />
     };
     return icons[status as keyof typeof icons] || icons.open;
   };
 
   const getStatusColor = (status: string) => {
     const colors = {
-      'open': 'bg-blue-100 text-blue-800',
-      'in-progress': 'bg-yellow-100 text-yellow-800',
-      'closed': 'bg-green-100 text-green-800',
-      'on-hold': 'bg-gray-100 text-gray-800'
+      'open': 'bg-primary/10 text-brand-soft',
+      'in-progress': 'bg-amber-500/10 text-amber-500',
+      'closed': 'bg-green-500/10 text-green-500',
+      'on-hold': 'bg-muted text-foreground'
     };
     return colors[status as keyof typeof colors] || colors.open;
   };
 
   const getPriorityColor = (priority: string) => {
     const colors = {
-      'low': 'bg-gray-100 text-gray-800',
-      'medium': 'bg-blue-100 text-blue-800',
-      'high': 'bg-orange-100 text-orange-800',
-      'urgent': 'bg-red-100 text-red-800'
+      'low': 'bg-muted text-foreground',
+      'medium': 'bg-primary/10 text-brand-soft',
+      'high': 'bg-amber-500/10 text-amber-500',
+      'urgent': 'bg-red-500/10 text-red-500'
     };
     return colors[priority as keyof typeof colors] || colors.medium;
   };
@@ -261,25 +261,25 @@ function SupportPageContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]" style={{ paddingTop: '80px' }}>
+    <div>
       <SignedOut>
-        <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
-          <Card className="max-w-md w-full mx-4 bg-white shadow-lg border border-[#e2e8f0]">
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Card className="max-w-md w-full mx-4 bg-card shadow-lg border border-border">
             <CardContent className="p-8 text-center">
-              <MessageCircle className="h-12 w-12 text-[#64748b] mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-[#1f2937] mb-4">Sign In Required</h2>
-              <p className="text-[#64748b] mb-6">
+              <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h2 className="text-2xl font-semibold text-foreground mb-4">Sign In Required</h2>
+              <p className="text-muted-foreground mb-6">
                 Please sign in to access the support center and create support tickets.
               </p>
               <SignInButton>
-                <Button className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white">
+                <Button className="w-full bg-primary hover:bg-primary/90 text-white">
                   Sign In to Continue
                 </Button>
               </SignInButton>
@@ -289,19 +289,19 @@ function SupportPageContent() {
       </SignedOut>
       
       <SignedIn>
-        <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center">
+        <div className="mb-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-[#1f2937]">Support Center</h1>
-              <p className="text-[#64748b] mt-2">
+              <h1 className="text-2xl font-semibold tracking-[-0.02em] text-foreground">Support</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Get help with your account, billing, or technical issues
               </p>
             </div>
             <Button
               onClick={() => setShowCreateForm(true)}
-              className="bg-[#3b82f6] hover:bg-[#2563eb] text-white"
+              className="bg-primary hover:bg-primary/90 text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
               New Ticket
@@ -311,7 +311,7 @@ function SupportPageContent() {
 
         {/* Create Ticket Modal/Form */}
         {showCreateForm && (
-          <Card className="mb-8 border-blue-200 bg-blue-50">
+          <Card className="mb-8 border-primary/30 bg-primary/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageCircle className="h-5 w-5" />
@@ -322,13 +322,13 @@ function SupportPageContent() {
               <form onSubmit={handleCreateTicket} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">
                       Category
                     </label>
                     <select
                       value={formData.category}
                       onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                     >
                       <option value="general">General Question</option>
                       <option value="billing">Billing & Payments</option>
@@ -340,36 +340,36 @@ function SupportPageContent() {
                     </select>
                   </div>
                   <div className="flex items-center gap-2 pt-6">
-                    <User className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
                       {user?.primaryEmailAddress?.emailAddress}
                     </span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Subject *
                   </label>
                   <input
                     type="text"
                     value={formData.subject}
                     onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                     placeholder="Brief description of your issue"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Description *
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                     placeholder="Please provide detailed information about your issue, including any error messages or steps to reproduce the problem."
                     required
                   />
@@ -386,7 +386,7 @@ function SupportPageContent() {
                   </Button>
                   <Button
                     type="submit"
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-primary hover:bg-primary/90"
                     disabled={creating}
                   >
                     {creating ? 'Creating...' : 'Create Ticket'}
@@ -408,16 +408,16 @@ function SupportPageContent() {
           <CardContent>
             {tickets.length === 0 ? (
               <div className="text-center py-12">
-                <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <MessageCircle className="h-12 w-12 text-muted-foreground/60 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">
                   No Support Tickets
                 </h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-muted-foreground mb-6">
                   You haven't created any support tickets yet. Need help?
                 </p>
                 <Button
                   onClick={() => setShowCreateForm(true)}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-primary hover:bg-primary/90"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Ticket
@@ -428,13 +428,13 @@ function SupportPageContent() {
                 {tickets.map((ticket) => (
                   <div
                     key={ticket._id}
-                    className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors cursor-pointer"
+                    className="border border-border rounded-lg p-4 hover:border-muted-foreground/50 transition-colors cursor-pointer"
                     onClick={() => fetchTicketDetails(ticket.ticketId)}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="font-mono text-sm text-gray-500">
+                          <span className="font-mono text-sm text-muted-foreground">
                             #{ticket.ticketId}
                           </span>
                           <Badge className={getStatusColor(ticket.status)}>
@@ -448,11 +448,11 @@ function SupportPageContent() {
                           </Badge>
                         </div>
                         
-                        <h3 className="font-semibold text-gray-900 mb-1">
+                        <h3 className="font-semibold text-foreground mb-1">
                           {ticket.subject}
                         </h3>
                         
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span>Category: {ticket.category}</span>
                           <span>Created: {formatDate(ticket.createdAt)}</span>
                           {ticket.updatedAt !== ticket.createdAt && (
@@ -461,7 +461,7 @@ function SupportPageContent() {
                         </div>
                       </div>
                       
-                      <ChevronRight className="h-5 w-5 text-gray-400" />
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
                 ))}
@@ -475,10 +475,10 @@ function SupportPageContent() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
-                <Mail className="h-5 w-5 text-blue-600" />
+                <Mail className="h-5 w-5 text-brand-soft" />
                 <h3 className="font-semibold">Direct Contact</h3>
               </div>
-              <p className="text-gray-600 text-sm mb-2">
+              <p className="text-muted-foreground text-sm mb-2">
                 Need immediate assistance? You can also reach us directly:
               </p>
               <p className="text-sm">
@@ -491,10 +491,10 @@ function SupportPageContent() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
-                <AlertCircle className="h-5 w-5 text-orange-600" />
+                <AlertCircle className="h-5 w-5 text-amber-500" />
                 <h3 className="font-semibold">Before You Submit</h3>
               </div>
-              <ul className="text-sm text-gray-600 space-y-1">
+              <ul className="text-sm text-muted-foreground space-y-1">
                 <li>• Check your account settings first</li>
                 <li>• Include error messages when possible</li>
                 <li>• Billing questions get priority support</li>
@@ -514,7 +514,7 @@ function SupportPageContent() {
                         <MessageCircle className="h-5 w-5" />
                         Ticket #{selectedTicket.ticketId}
                       </CardTitle>
-                      <p className="text-gray-600 mt-1">{selectedTicket.subject}</p>
+                      <p className="text-muted-foreground mt-1">{selectedTicket.subject}</p>
                     </div>
                     <Button 
                       variant="outline" 
@@ -532,9 +532,9 @@ function SupportPageContent() {
                 <CardContent>
                   <div className="space-y-6">
                     {/* Ticket Info */}
-                    <div className="grid md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="grid md:grid-cols-3 gap-4 p-4 bg-muted/40 rounded-lg">
                       <div>
-                        <span className="text-sm font-medium text-gray-700">Status:</span>
+                        <span className="text-sm font-medium text-muted-foreground">Status:</span>
                         <div className="mt-1">
                           <Badge className={getStatusColor(selectedTicket.status)}>
                             <div className="flex items-center gap-1">
@@ -545,7 +545,7 @@ function SupportPageContent() {
                         </div>
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-700">Priority:</span>
+                        <span className="text-sm font-medium text-muted-foreground">Priority:</span>
                         <div className="mt-1">
                           <Badge className={getPriorityColor(selectedTicket.priority)}>
                             {selectedTicket.priority.toUpperCase()}
@@ -553,8 +553,8 @@ function SupportPageContent() {
                         </div>
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-700">Category:</span>
-                        <div className="mt-1 text-sm text-gray-900 capitalize">
+                        <span className="text-sm font-medium text-muted-foreground">Category:</span>
+                        <div className="mt-1 text-sm text-foreground capitalize">
                           {selectedTicket.category.replace('_', ' ')}
                         </div>
                       </div>
@@ -569,8 +569,8 @@ function SupportPageContent() {
                             key={message.id || index}
                             className={`p-4 rounded-lg ${
                               message.from === 'user' 
-                                ? 'bg-blue-50 ml-8' 
-                                : 'bg-gray-50 mr-8'
+                                ? 'bg-primary/10 ml-8' 
+                                : 'bg-muted/40 mr-8'
                             }`}
                           >
                             <div className="flex justify-between items-start mb-2">
@@ -584,11 +584,11 @@ function SupportPageContent() {
                                   </Badge>
                                 )}
                               </div>
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-muted-foreground">
                                 {formatDate(message.createdAt.toString())}
                               </span>
                             </div>
-                            <p className="text-gray-800 whitespace-pre-wrap">
+                            <p className="text-foreground whitespace-pre-wrap">
                               {message.message}
                             </p>
                           </div>
@@ -602,14 +602,14 @@ function SupportPageContent() {
                         <h3 className="text-lg font-semibold mb-4">Add Reply</h3>
                         <form onSubmit={handleSendReply} className="space-y-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-muted-foreground mb-2">
                               Your Message
                             </label>
                             <textarea
                               value={replyMessage}
                               onChange={(e) => setReplyMessage(e.target.value)}
                               rows={4}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                               placeholder="Type your reply here..."
                               disabled={sendingReply}
                               required
@@ -618,7 +618,7 @@ function SupportPageContent() {
                           <div className="flex justify-end">
                             <Button
                               type="submit"
-                              className="bg-blue-600 hover:bg-blue-700"
+                              className="bg-primary hover:bg-primary/90"
                               disabled={sendingReply || !replyMessage.trim()}
                             >
                               {sendingReply ? 'Sending...' : 'Send Reply'}
@@ -631,19 +631,19 @@ function SupportPageContent() {
                     {/* Closed Ticket Notice */}
                     {selectedTicket.status === 'closed' && (
                       <div className="border-t pt-6">
-                        <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 text-center">
+                        <div className="bg-muted border border-border rounded-lg p-4 text-center">
                           <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                          <h3 className="font-semibold text-gray-900 mb-1">Ticket Closed</h3>
-                          <p className="text-sm text-gray-600 mb-3">
+                          <h3 className="font-semibold text-foreground mb-1">Ticket Closed</h3>
+                          <p className="text-sm text-muted-foreground mb-3">
                             This ticket has been closed by our support team.
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             Need more help? <button 
                               onClick={() => {
                                 setSelectedTicket(null);
                                 setShowCreateForm(true);
                               }}
-                              className="text-blue-600 hover:text-blue-700 underline"
+                              className="text-brand-soft hover:text-brand-soft underline"
                             >
                               Create a new ticket
                             </button>
@@ -653,7 +653,7 @@ function SupportPageContent() {
                     )}
 
                     {/* Quick Info */}
-                    <div className="text-xs text-gray-600 pt-4 border-t">
+                    <div className="text-xs text-muted-foreground pt-4 border-t">
                       <p><strong>Created:</strong> {formatDate(selectedTicket.createdAt)}</p>
                       {selectedTicket.updatedAt !== selectedTicket.createdAt && (
                         <p><strong>Last Updated:</strong> {formatDate(selectedTicket.updatedAt)}</p>
@@ -679,8 +679,8 @@ function SupportPageContent() {
 export default function SupportPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     }>
       <SupportPageContent />

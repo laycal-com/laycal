@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { CalendarDays, Zap } from 'lucide-react';
 import { useAuth } from '@clerk/nextjs';
 import { SpeedToLeadIntegration } from '@/components/SpeedToLeadIntegration';
 import CalendarSettings from '@/components/CalendarSettings';
@@ -53,10 +54,10 @@ export default function IntegrationsPage() {
 
   if (!isLoaded || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
+      <div className="py-6 px-4 md:px-8 md:py-8">
+        <div className="mx-auto w-full max-w-[1440px]">
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         </div>
       </div>
@@ -66,22 +67,22 @@ export default function IntegrationsPage() {
   const selectedAssistant = assistants.find(a => a._id === selectedAssistantId);
 
   const tabs = [
-    { id: 'google-forms', label: 'Lead Intake', icon: '⚡' },
-    { id: 'google-calendar', label: 'Google Calendar', icon: '📅' },
+    { id: 'google-forms', label: 'Lead Intake', icon: <Zap className="size-4" /> },
+    { id: 'google-calendar', label: 'Google Calendar', icon: <CalendarDays className="size-4" /> },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Integrations</h1>
-          <p className="mt-2 text-gray-600">
+    <div className="py-6 px-4 md:px-8 md:py-8">
+      <div className="mx-auto w-full max-w-[1440px]">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-foreground">Integrations</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Connect external platforms to automatically call your leads and manage appointments
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="border-b border-gray-200">
+        <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
+          <div className="border-b border-border">
             <nav className="flex -mb-px">
               {tabs.map((tab) => (
                 <button
@@ -89,8 +90,8 @@ export default function IntegrationsPage() {
                   onClick={() => setActiveTab(tab.id as TabType)}
                   className={`flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm transition-colors ${
                     activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-primary text-brand-soft'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/50'
                   }`}
                 >
                   <span className="mr-2">{tab.icon}</span>
@@ -106,18 +107,18 @@ export default function IntegrationsPage() {
                 {assistants.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="max-w-md mx-auto">
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No Assistants Found</h3>
-                      <p className="text-gray-600 mb-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-2">No Assistants Found</h3>
+                      <p className="text-muted-foreground mb-6">
                         You need to create an assistant first before setting up integrations.
                       </p>
                       <a
                         href="/dashboard"
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
                       >
                         Create Assistant
                       </a>
@@ -126,14 +127,14 @@ export default function IntegrationsPage() {
                 ) : (
                   <>
                     <div className="mb-6">
-                      <label htmlFor="assistant-select" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="assistant-select" className="block text-sm font-medium text-muted-foreground mb-2">
                         Select Assistant
                       </label>
                       <select
                         id="assistant-select"
                         value={selectedAssistantId}
                         onChange={(e) => setSelectedAssistantId(e.target.value)}
-                        className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full max-w-md px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary"
                       >
                         {assistants.map((assistant) => (
                           <option key={assistant._id} value={assistant._id}>

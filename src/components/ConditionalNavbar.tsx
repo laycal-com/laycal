@@ -10,7 +10,10 @@ export default function ConditionalNavbar() {
   const publicPages = ['/', '/contact', '/privacy', '/status', '/terms'];
   
   // Don't show white navbar on admin paths or public pages
-  if (pathname.startsWith('/admin') || publicPages.includes(pathname)) {
+  // Auth pages bring their own frame.
+  const isAuthPage = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up');
+
+  if (pathname.startsWith('/admin') || isAuthPage || publicPages.includes(pathname)) {
     return null;
   }
   

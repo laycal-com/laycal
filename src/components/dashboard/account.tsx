@@ -62,9 +62,9 @@ export interface PricingData {
 }
 
 function Meter({ value, tone = 'blue' }: { value: number; tone?: 'blue' | 'amber' | 'rose' }) {
-  const bar = { blue: 'bg-blue-600', amber: 'bg-amber-500', rose: 'bg-rose-500' }[tone];
+  const bar = { blue: 'bg-primary', amber: 'bg-amber-500', rose: 'bg-red-500' }[tone];
   return (
-    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
       <div
         className={`h-full rounded-full transition-[width] duration-700 ease-out ${bar}`}
         style={{ width: `${Math.min(Math.max(value, 0), 100)}%` }}
@@ -111,17 +111,17 @@ export function BalancePanel({
   };
 
   return (
-    <Panel className="flex h-full flex-col">
+    <Panel id="credits" className="flex h-full scroll-mt-20 flex-col">
       <PanelHeader
         title="Credits"
         subtitle={credits?.needsTopup ? 'Below your minimum balance' : 'Spent as your agents talk'}
       />
       <div className="flex flex-1 flex-col gap-4 p-5">
         <div>
-          <p className="text-3xl font-semibold leading-none text-slate-900">
+          <p className="font-mono text-[2rem] font-medium leading-none tracking-[-0.02em] text-foreground">
             <CountUp value={credits?.balance ?? 0} decimals={2} prefix="$" />
           </p>
-          <p className="mt-1.5 text-xs text-slate-500">
+          <p className="mt-1.5 text-xs text-muted-foreground">
             {credits?.needsTopup
               ? `Minimum is $${(credits.minimumBalance || 5).toFixed(2)} — calls stop below zero.`
               : 'Available balance'}
@@ -133,19 +133,19 @@ export function BalancePanel({
             type="button"
             onClick={() => setAmount((a) => Math.max(step, a - step))}
             disabled={busy || amount <= step}
-            className="flex h-9 w-9 flex-none items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-40"
+            className="flex h-9 w-9 flex-none items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
             aria-label="Decrease amount"
           >
             <Minus className="h-4 w-4" />
           </button>
-          <div className="flex h-9 flex-1 items-center justify-center rounded-lg border border-slate-200 text-base font-semibold text-slate-900">
+          <div className="flex h-9 flex-1 items-center justify-center rounded-lg border border-border font-mono text-base font-medium tabular-nums text-foreground">
             ${amount}
           </div>
           <button
             type="button"
             onClick={() => setAmount((a) => a + step)}
             disabled={busy}
-            className="flex h-9 w-9 flex-none items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-40"
+            className="flex h-9 w-9 flex-none items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
             aria-label="Increase amount"
           >
             <Plus className="h-4 w-4" />
@@ -158,17 +158,17 @@ export function BalancePanel({
         </Button>
 
         {credits && credits.recentTransactions.length > 0 && (
-          <div className="mt-auto border-t border-slate-100 pt-3">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+          <div className="mt-auto border-t border-border pt-3">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Recent
             </p>
             <ul className="space-y-1.5">
               {credits.recentTransactions.slice(0, 3).map((t, i) => (
                 <li key={i} className="flex items-center justify-between gap-3 text-xs">
-                  <span className="min-w-0 truncate text-slate-600">{t.description}</span>
+                  <span className="min-w-0 truncate text-muted-foreground">{t.description}</span>
                   <span
                     className={`flex-none font-medium tabular-nums ${
-                      t.amount > 0 ? 'text-emerald-600' : 'text-slate-500'
+                      t.amount > 0 ? 'text-green-600 dark:text-green-500' : 'text-muted-foreground'
                     }`}
                   >
                     {t.amount > 0 ? '+' : '−'}${Math.abs(t.amount).toFixed(2)}
@@ -198,7 +198,7 @@ export function PlanPanel({
     return (
       <Panel className="h-full">
         <PanelHeader title="Plan" />
-        <div className="p-5 text-sm text-slate-500">Plan details are unavailable right now.</div>
+        <div className="p-5 text-sm text-muted-foreground">Plan details are unavailable right now.</div>
       </Panel>
     );
   }
@@ -227,7 +227,7 @@ export function PlanPanel({
               ).toLocaleDateString()}`
         }
         action={
-          <span className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700">
+          <span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium text-foreground">
             {usage.planName}
           </span>
         }
@@ -236,8 +236,8 @@ export function PlanPanel({
         {isTrial ? (
           <div>
             <div className="mb-1.5 flex items-baseline justify-between text-sm">
-              <span className="font-medium text-slate-700">Trial calls</span>
-              <span className="tabular-nums text-slate-500">
+              <span className="font-medium text-foreground">Trial calls</span>
+              <span className="tabular-nums text-muted-foreground">
                 {callsUsed} / {callLimit}
               </span>
             </div>
@@ -249,14 +249,14 @@ export function PlanPanel({
         ) : (
           <div>
             <div className="mb-1.5 flex items-baseline justify-between text-sm">
-              <span className="font-medium text-slate-700">Calling minutes</span>
-              <span className="tabular-nums text-slate-500">
+              <span className="font-medium text-foreground">Calling minutes</span>
+              <span className="tabular-nums text-muted-foreground">
                 {usage.minutesUsed}
                 {usage.minuteLimit === -1 ? '' : ` / ${usage.minuteLimit}`}
               </span>
             </div>
             {usage.minuteLimit === -1 ? (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 Pay-as-you-go — ${pricing?.cost_per_minute_payg ?? 0.07} per minute
               </p>
             ) : (
@@ -270,26 +270,26 @@ export function PlanPanel({
 
         <div>
           <div className="mb-1.5 flex items-baseline justify-between text-sm">
-            <span className="flex items-center gap-1.5 font-medium text-slate-700">
-              <Bot className="h-3.5 w-3.5 text-slate-400" />
+            <span className="flex items-center gap-1.5 font-medium text-foreground">
+              <Bot className="h-3.5 w-3.5 text-muted-foreground" />
               Assistants
             </span>
-            <span className="tabular-nums text-slate-500">
+            <span className="tabular-nums text-muted-foreground">
               {usage.assistantsCreated}
               {unlimitedAssistants ? '' : ` / ${usage.assistantLimit}`}
             </span>
           </div>
           {unlimitedAssistants ? (
-            <p className="text-xs text-slate-500">Unlimited on your plan</p>
+            <p className="text-xs text-muted-foreground">Unlimited on your plan</p>
           ) : (
             <Meter value={assistantPct} tone={usage.assistantsRemaining === 0 ? 'amber' : 'blue'} />
           )}
         </div>
 
-        <div className="mt-auto flex items-end justify-between border-t border-slate-100 pt-4">
+        <div className="mt-auto flex items-end justify-between border-t border-border pt-4">
           <div>
-            <p className="text-xs text-slate-500">This period</p>
-            <p className="text-lg font-semibold text-slate-900">
+            <p className="text-xs text-muted-foreground">This period</p>
+            <p className="font-mono text-lg font-medium tabular-nums text-foreground">
               ${usage.currentPeriodCost.toFixed(2)}
             </p>
           </div>
@@ -299,8 +299,8 @@ export function PlanPanel({
             </Button>
           ) : (
             <Link
-              href="/pricing"
-              className="text-xs font-medium text-blue-600 transition-colors hover:text-blue-700"
+              href="/#pricing"
+              className="text-xs font-medium text-foreground underline-offset-4 transition-colors hover:underline"
             >
               View plans →
             </Link>
@@ -324,19 +324,20 @@ export function NumbersPanel({ providers }: { providers: ProviderData[] }) {
         action={
           <Link
             href="/settings"
-            className="text-xs font-medium text-blue-600 transition-colors hover:text-blue-700"
+            className="text-xs font-medium text-foreground underline-offset-4 transition-colors hover:underline"
           >
             Manage
           </Link>
         }
       />
       <div className="flex flex-1 flex-col gap-2 p-5">
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-          <span className="flex items-center gap-2 text-sm text-slate-700">
-            <Phone className="h-3.5 w-3.5 text-slate-400" />
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/50 px-3 py-2.5">
+          <span className="flex items-center gap-2 text-sm text-foreground">
+            <Phone className="h-3.5 w-3.5 text-muted-foreground" />
             Shared US number
           </span>
-          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+          <span className="flex items-center gap-1.5 text-xs text-foreground">
+            <span className="size-1.5 rounded-full bg-green-500" />
             Ready
           </span>
         </div>
@@ -344,25 +345,25 @@ export function NumbersPanel({ providers }: { providers: ProviderData[] }) {
         {active.map((p) => (
           <div
             key={p.id}
-            className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2.5"
+            className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5"
           >
-            <span className="flex min-w-0 items-center gap-2 text-sm text-slate-700">
-              <Phone className="h-3.5 w-3.5 flex-none text-slate-400" />
+            <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+              <Phone className="h-3.5 w-3.5 flex-none text-muted-foreground" />
               <span className="truncate">{p.displayName}</span>
               {p.isDefault && (
-                <span className="flex-none rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
+                <span className="flex-none rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                   Default
                 </span>
               )}
             </span>
-            <span className="flex-none text-xs tabular-nums text-slate-500">
+            <span className="flex-none text-xs tabular-nums text-muted-foreground">
               {p.vapiPhoneNumberId ? p.phoneNumber : 'Not provisioned'}
             </span>
           </div>
         ))}
 
         {active.length === 0 && (
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             No custom providers. US calls go out on the shared number — add your own Twilio, Plivo
             or Vonage number to call internationally.
           </p>

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { DEMO_URL } from '@/lib/links';
 import Link from 'next/link';
 import Image from 'next/image';
 import PublicNavbar from '@/components/PublicNavbar';
@@ -20,13 +21,13 @@ export const metadata: Metadata = {
 
 export default function JustCallAlternativePage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-card">
       <PublicNavbar />
       
       {/* SEO Header */}
-      <header className="bg-blue-600 text-white py-16 pt-32">
+      <header className="bg-primary text-white py-16 pt-32">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold mb-4">
+          <h1 className="text-4xl font-semibold mb-4">
             The #1 JustCall Alternative for 2026
           </h1>
           <p className="text-xl opacity-90">
@@ -39,14 +40,14 @@ export default function JustCallAlternativePage() {
         <div className="max-w-4xl mx-auto px-4">
           {/* Why Switch Section */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8">
+            <h2 className="text-3xl font-semibold text-foreground mb-8">
               Why Switch from JustCall to Laycal?
             </h2>
             
             <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-red-50 p-6 rounded-lg">
-                <h3 className="text-xl font-bold text-red-700 mb-4 flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-white rounded flex items-center justify-center p-1">
+              <div className="bg-red-500/10 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-red-500 mb-4 flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-card rounded flex items-center justify-center p-1">
                     <Image
                       src="/assets/justcall.svg"
                       alt="JustCall"
@@ -57,7 +58,7 @@ export default function JustCallAlternativePage() {
                   </div>
                   <span>Problems</span>
                 </h3>
-                <ul className="space-y-2 text-gray-700">
+                <ul className="space-y-2 text-muted-foreground">
                   <li>❌ Expensive per-seat pricing</li>
                   <li>❌ Limited simultaneous calls</li>
                   <li>❌ Hidden fees and sudden price hikes</li>
@@ -68,9 +69,9 @@ export default function JustCallAlternativePage() {
                 </ul>
               </div>
               
-              <div className="bg-green-50 p-6 rounded-lg">
-                <h3 className="text-xl font-bold text-green-700 mb-4">🚀 Laycal Solutions</h3>
-                <ul className="space-y-2 text-gray-700">
+              <div className="bg-green-500/10 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-green-500 mb-4">🚀 Laycal Solutions</h3>
+                <ul className="space-y-2 text-muted-foreground">
                   <li>✅ Pay-as-you-go pricing (no per-seat fees)</li>
                   <li>✅ 500+ simultaneous calls</li>
                   <li>✅ Transparent pricing, no hidden costs</li>
@@ -85,49 +86,49 @@ export default function JustCallAlternativePage() {
 
           {/* Detailed Comparison */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+            <h2 className="text-3xl font-semibold text-foreground mb-8 text-center">
               JustCall vs Laycal: Detailed Comparison (2026)
             </h2>
             
-            <div className="overflow-x-auto bg-white rounded-lg shadow-lg">
+            <div className="overflow-x-auto bg-card rounded-lg shadow-lg">
               <table className="w-full">
-                <thead className="bg-gray-100">
+                <thead className="bg-muted">
                   <tr>
-                    <th className="px-6 py-4 text-left font-bold">Feature</th>
-                    <th className="px-6 py-4 text-center font-bold text-red-600">JustCall</th>
-                    <th className="px-6 py-4 text-center font-bold text-blue-600">Laycal</th>
+                    <th className="px-6 py-4 text-left font-semibold">Feature</th>
+                    <th className="px-6 py-4 text-center font-semibold text-red-500">JustCall</th>
+                    <th className="px-6 py-4 text-center font-semibold text-brand-soft">Laycal</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-border">
                   <tr>
                     <td className="px-6 py-4 font-medium">Pricing Model</td>
-                    <td className="px-6 py-4 text-center text-red-600">Per-seat + usage fees</td>
-                    <td className="px-6 py-4 text-center text-blue-600">Pay-as-you-go only</td>
+                    <td className="px-6 py-4 text-center text-red-500">Per-seat + usage fees</td>
+                    <td className="px-6 py-4 text-center text-brand-soft">Pay-as-you-go only</td>
                   </tr>
                   <tr>
                     <td className="px-6 py-4 font-medium">Simultaneous Calls</td>
-                    <td className="px-6 py-4 text-center text-red-600">Limited by seats</td>
-                    <td className="px-6 py-4 text-center text-blue-600">500+ calls</td>
+                    <td className="px-6 py-4 text-center text-red-500">Limited by seats</td>
+                    <td className="px-6 py-4 text-center text-brand-soft">500+ calls</td>
                   </tr>
                   <tr>
                     <td className="px-6 py-4 font-medium">AI Prompt Builder</td>
-                    <td className="px-6 py-4 text-center text-red-600">❌ Not available</td>
-                    <td className="px-6 py-4 text-center text-blue-600">✅ Full control</td>
+                    <td className="px-6 py-4 text-center text-red-500">❌ Not available</td>
+                    <td className="px-6 py-4 text-center text-brand-soft">✅ Full control</td>
                   </tr>
                   <tr>
                     <td className="px-6 py-4 font-medium">Setup Time</td>
-                    <td className="px-6 py-4 text-center text-red-600">Hours to days</td>
-                    <td className="px-6 py-4 text-center text-blue-600">5 minutes</td>
+                    <td className="px-6 py-4 text-center text-red-500">Hours to days</td>
+                    <td className="px-6 py-4 text-center text-brand-soft">5 minutes</td>
                   </tr>
                   <tr>
                     <td className="px-6 py-4 font-medium">Contract Requirements</td>
-                    <td className="px-6 py-4 text-center text-red-600">Annual contracts</td>
-                    <td className="px-6 py-4 text-center text-blue-600">No contracts</td>
+                    <td className="px-6 py-4 text-center text-red-500">Annual contracts</td>
+                    <td className="px-6 py-4 text-center text-brand-soft">No contracts</td>
                   </tr>
                   <tr>
                     <td className="px-6 py-4 font-medium">Hidden Fees</td>
-                    <td className="px-6 py-4 text-center text-red-600">❌ Many reported</td>
-                    <td className="px-6 py-4 text-center text-blue-600">✅ 100% transparent</td>
+                    <td className="px-6 py-4 text-center text-red-500">❌ Many reported</td>
+                    <td className="px-6 py-4 text-center text-brand-soft">✅ 100% transparent</td>
                   </tr>
                 </tbody>
               </table>
@@ -136,38 +137,38 @@ export default function JustCallAlternativePage() {
 
           {/* Migration Guide */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8">
+            <h2 className="text-3xl font-semibold text-foreground mb-8">
               How to Migrate from JustCall to Laycal
             </h2>
             
-            <div className="bg-blue-50 p-8 rounded-lg">
+            <div className="bg-primary/10 p-8 rounded-lg">
               <div className="space-y-4">
                 <div className="flex items-start space-x-4">
-                  <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">1</div>
+                  <div className="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-semibold">1</div>
                   <div>
-                    <h3 className="font-bold text-gray-900">Export Your JustCall Data</h3>
-                    <p className="text-gray-700">Download your lead lists and call history from JustCall</p>
+                    <h3 className="font-semibold text-foreground">Export Your JustCall Data</h3>
+                    <p className="text-muted-foreground">Download your lead lists and call history from JustCall</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
-                  <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">2</div>
+                  <div className="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-semibold">2</div>
                   <div>
-                    <h3 className="font-bold text-gray-900">Sign Up for Laycal</h3>
-                    <p className="text-gray-700">Create your account in under 2 minutes</p>
+                    <h3 className="font-semibold text-foreground">Sign Up for Laycal</h3>
+                    <p className="text-muted-foreground">Create your account in under 2 minutes</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
-                  <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">3</div>
+                  <div className="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-semibold">3</div>
                   <div>
-                    <h3 className="font-bold text-gray-900">Upload Your Leads</h3>
-                    <p className="text-gray-700">Bulk upload your CSV files with drag-and-drop</p>
+                    <h3 className="font-semibold text-foreground">Upload Your Leads</h3>
+                    <p className="text-muted-foreground">Bulk upload your CSV files with drag-and-drop</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
-                  <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">4</div>
+                  <div className="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-semibold">4</div>
                   <div>
-                    <h3 className="font-bold text-gray-900">Start Calling</h3>
-                    <p className="text-gray-700">Launch your first AI calling campaign immediately</p>
+                    <h3 className="font-semibold text-foreground">Start Calling</h3>
+                    <p className="text-muted-foreground">Launch your first AI calling campaign immediately</p>
                   </div>
                 </div>
               </div>
@@ -175,8 +176,8 @@ export default function JustCallAlternativePage() {
           </section>
 
           {/* CTA Section */}
-          <section className="text-center bg-gradient-to-r from-blue-600 to-blue-800 text-white p-12 rounded-2xl">
-            <h2 className="text-3xl font-bold mb-4">
+          <section className="text-center text-white p-12 rounded-2xl">
+            <h2 className="text-3xl font-semibold mb-4">
               Ready to Switch from JustCall?
             </h2>
             <p className="text-xl mb-8 opacity-90">
@@ -184,8 +185,8 @@ export default function JustCallAlternativePage() {
             </p>
             <div className="space-y-4">
               <Link 
-                href="/sign-up" 
-                className="inline-block bg-yellow-400 text-blue-900 px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-300 transition-colors"
+                href={DEMO_URL} 
+                className="inline-block bg-primary text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary/90 transition-colors"
               >
                 Start Free Trial - No Credit Card Required
               </Link>

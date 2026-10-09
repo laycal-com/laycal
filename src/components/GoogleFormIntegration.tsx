@@ -73,35 +73,35 @@ export function GoogleFormIntegration({ userId, assistantId, assistantName }: Go
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <h4 className="font-semibold text-gray-900">Setup Instructions</h4>
+        <h4 className="font-semibold text-foreground">Setup Instructions</h4>
         
         <div className="space-y-3">
-          <div className="flex items-start space-x-3 p-4 bg-white border rounded-lg">
-            <div className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+          <div className="flex items-start space-x-3 p-4 bg-card border rounded-lg">
+            <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
               1
             </div>
             <div className="flex-1">
-              <h5 className="font-medium text-gray-900 mb-1">Create your Google Form</h5>
-              <p className="text-sm text-gray-600">
-                Create a Google Form with fields: <span className="font-mono bg-gray-100 px-1">First Name</span>, <span className="font-mono bg-gray-100 px-1">Last Name</span>, <span className="font-mono bg-gray-100 px-1">Phone</span> (required), and optionally <span className="font-mono bg-gray-100 px-1">Email</span>
+              <h5 className="font-medium text-foreground mb-1">Create your Google Form</h5>
+              <p className="text-sm text-muted-foreground">
+                Create a Google Form with fields: <span className="font-mono bg-muted px-1">First Name</span>, <span className="font-mono bg-muted px-1">Last Name</span>, <span className="font-mono bg-muted px-1">Phone</span> (required), and optionally <span className="font-mono bg-muted px-1">Email</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-start space-x-3 p-4 bg-white border rounded-lg">
-            <div className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+          <div className="flex items-start space-x-3 p-4 bg-card border rounded-lg">
+            <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
               2
             </div>
             <div className="flex-1">
-              <h5 className="font-medium text-gray-900 mb-1">On Your Google Sheet</h5>
-              <p className="text-sm text-gray-600 mb-2">
+              <h5 className="font-medium text-foreground mb-1">On Your Google Sheet</h5>
+              <p className="text-sm text-muted-foreground mb-2">
                 under Extensions → <strong>Apps Script</strong>
               </p>
               <a 
                 href="https://www.youtube.com/results?search_query=google+forms+apps+script+tutorial" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800"
+                className="inline-flex items-center space-x-1 text-sm text-brand-soft hover:text-brand-soft"
               >
                 <Play className="w-4 h-4" />
                 <span>Watch tutorial</span>
@@ -110,19 +110,19 @@ export function GoogleFormIntegration({ userId, assistantId, assistantName }: Go
             </div>
           </div>
 
-          <div className="flex items-start space-x-3 p-4 bg-white border rounded-lg">
-            <div className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+          <div className="flex items-start space-x-3 p-4 bg-card border rounded-lg">
+            <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
               3
             </div>
             <div className="flex-1">
-              <h5 className="font-medium text-gray-900 mb-2">Copy and paste this script</h5>
+              <h5 className="font-medium text-foreground mb-2">Copy and paste this script</h5>
               <div className="relative">
-                <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto max-h-96">
+                <pre className="bg-black border border-border text-neutral-300 p-4 rounded-lg text-xs overflow-x-auto max-h-96">
                   <code>{generateScript()}</code>
                 </pre>
                 <button
                   onClick={copyToClipboard}
-                  className="absolute top-2 right-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs flex items-center space-x-1 transition-colors"
+                  className="absolute top-2 right-2 px-3 py-1.5 border border-input bg-card hover:bg-accent text-foreground rounded text-xs flex items-center space-x-1 transition-colors"
                 >
                   {copied ? (
                     <>
@@ -140,18 +140,18 @@ export function GoogleFormIntegration({ userId, assistantId, assistantName }: Go
             </div>
           </div>
 
-          <div className="flex items-start space-x-3 p-4 bg-white border rounded-lg">
-            <div className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+          <div className="flex items-start space-x-3 p-4 bg-card border rounded-lg">
+            <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
               4
             </div>
             <div className="flex-1">
-              <h5 className="font-medium text-gray-900 mb-1">Set up the trigger</h5>
-              <div className="text-sm text-gray-600 space-y-1">
+              <h5 className="font-medium text-foreground mb-1">Set up the trigger</h5>
+              <div className="text-sm text-muted-foreground space-y-1">
                 <p>1. In Apps Script editor, click the <strong>clock icon</strong> (Triggers)</p>
                 <p>2. Click <strong>+ Add Trigger</strong></p>
                 <p>3. Configure:</p>
                 <ul className="list-disc list-inside ml-4 space-y-1">
-                  <li>Function: <span className="font-mono bg-gray-100 px-1">onFormSubmit</span></li>
+                  <li>Function: <span className="font-mono bg-muted px-1">onFormSubmit</span></li>
                   {/* <li>Event source: <strong>From form</strong></li> */}
                   {/* <li>Event type: <strong>On form submit</strong></li> */}
                 </ul>
@@ -160,13 +160,13 @@ export function GoogleFormIntegration({ userId, assistantId, assistantName }: Go
             </div>
           </div>
 
-          <div className="flex items-start space-x-3 p-4 bg-white border rounded-lg">
+          <div className="flex items-start space-x-3 p-4 bg-card border rounded-lg">
             <div className="flex-shrink-0 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
               ✓
             </div>
             <div className="flex-1">
-              <h5 className="font-medium text-gray-900 mb-1">Test your integration</h5>
-              <p className="text-sm text-gray-600">
+              <h5 className="font-medium text-foreground mb-1">Test your integration</h5>
+              <p className="text-sm text-muted-foreground">
                 Submit a test response to your Google Form. The lead will be created and called automatically!
               </p>
             </div>
@@ -174,8 +174,8 @@ export function GoogleFormIntegration({ userId, assistantId, assistantName }: Go
         </div>
       </div>
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-sm text-yellow-800">
+      <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+        <p className="text-sm text-amber-500">
           <strong>Important:</strong> Make sure your form field names match the script (First Name, Last Name, Phone, Email, Company, About). You can adjust the field mapping in the script if needed.
         </p>
       </div>

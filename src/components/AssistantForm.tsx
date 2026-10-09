@@ -184,9 +184,9 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
   if (!isLoaded) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <Card className="max-w-md w-full" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <CardContent className="p-6 text-center" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
             <p>Loading...</p>
           </CardContent>
         </Card>
@@ -197,11 +197,11 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
   if (!user) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <Card className="max-w-md w-full" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <CardContent className="p-6 text-center" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center">
             <h3 className="text-lg font-semibold mb-2">Authentication Required</h3>
-            <p className="text-gray-600 mb-4">Please sign in to create assistants.</p>
-            <Button onClick={onCancel} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <p className="text-muted-foreground mb-4">Please sign in to create assistants.</p>
+            <Button onClick={onCancel} className="bg-primary hover:bg-primary/90 text-white">
               Close
             </Button>
           </CardContent>
@@ -222,24 +222,24 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-        <CardHeader style={{ backgroundColor: '#ffffff' }}>
+      <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle style={{ color: '#000000' }}>
+            <CardTitle>
               {assistant ? 'Edit Assistant' : 'Create New Assistant'}
             </CardTitle>
             <Button
               variant="outline"
               size="sm"
               onClick={onCancel}
-              className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="bg-card border-input text-muted-foreground hover:bg-accent border border-border"
             >
               ×
             </Button>
           </div>
         </CardHeader>
         
-        <CardContent style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+        <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <Label htmlFor="name">Assistant Name *</Label>
@@ -351,7 +351,7 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
                 variant="outline"
                 size="sm"
                 onClick={() => setShowWizard(true)}
-                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                className="bg-primary/10 border-primary/30 text-brand-soft hover:bg-primary/15"
               >
                 🪄 Use Prompt Wizard
               </Button>
@@ -366,7 +366,7 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
             />
             <div className="flex justify-between items-center mt-1">
               {errors.mainPrompt && <p className="text-sm text-red-500">{errors.mainPrompt}</p>}
-              <span className="text-xs text-gray-500 ml-auto">
+              <span className="text-xs text-muted-foreground ml-auto">
                 {formData.mainPrompt.length}/10000
               </span>
             </div>
@@ -378,14 +378,14 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
               type="button" 
               variant="outline" 
               onClick={onCancel} 
-              className="flex-1 bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="flex-1 bg-card border-input text-muted-foreground hover:bg-accent border border-border"
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
               disabled={loading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-300 disabled:text-gray-500"
+              className="flex-1 bg-primary hover:bg-primary/90 text-white disabled:bg-muted disabled:text-muted-foreground"
             >
               {loading ? (
                 <span className="flex items-center">

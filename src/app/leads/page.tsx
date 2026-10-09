@@ -1,10 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from 'sonner';
+import { ArrowUpRight, ChevronLeft, ChevronRight, Loader2, RotateCw, Search, Upload, Users } from 'lucide-react';
 import CsvUpload from "@/components/CsvUpload";
 import { PaymentGateWrapper } from "@/components/PaymentGateWrapper";
+import { PageHeader, PortalPage } from '@/components/portal/page';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 interface Lead {
   _id: string;
@@ -76,6 +83,40 @@ interface LeadsResponse {
   statusCounts: StatusCounts;
 }
 
+const PAGE_SIZE = 20;
+
+const STATUS: Record<Lead['status'], { label: string; dot: string; pulse?: boolean }> = {
+  pending: { label: 'Queued', dot: 'bg-muted-foreground/50' },
+  calling: { label: 'Calling', dot: 'bg-primary', pulse: true },
+  completed: { label: 'Completed', dot: 'bg-green-500' },
+  failed: { label: 'Failed', dot: 'bg-red-500' },
+};
+
+const FILTERS: { value: 'all' | Lead['status']; label: string; count: keyof StatusCounts }[] = [
+  { value: 'all', label: 'All', count: 'total' },
+  { value: 'pending', label: 'Queued', count: 'pending' },
+  { value: 'calling', label: 'Calling', count: 'calling' },
+  { value: 'completed', label: 'Completed', count: 'completed' },
+  { value: 'failed', label: 'Failed', count: 'failed' },
+];
+
+const formatDuration = (seconds?: number) => {
+  if (!seconds) return null;
+  const minutes = Math.floor(seconds / 60);
+  const rest = Math.round(seconds % 60);
+  return `${minutes}:${rest.toString().padStart(2, '0')}`;
+};
+
+const formatDate = (dateString: string) =>
+  new Date(dateString).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
+const headCell = 'h-10 px-5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground';
+
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [statusCounts, setStatusCounts] = useState<StatusCounts>({
@@ -85,18 +126,29 @@ export default function LeadsPage() {
     failed: 0,
     total: 0,
   });
+  const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | Lead['status']>('all');
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showUpload, setShowUpload] = useState(false);
   const [retryingLeads, setRetryingLeads] = useState<Set<string>>(new Set());
 
-  const fetchLeads = async () => {
+  // Search as you type, but only once typing pauses.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearchQuery(searchInput.trim());
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const fetchLeads = useCallback(async () => {
     try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: '20',
+        limit: String(PAGE_SIZE),
         ...(statusFilter !== 'all' && { status: statusFilter }),
         ...(searchQuery && { search: searchQuery }),
       });
@@ -107,45 +159,18 @@ export default function LeadsPage() {
       const data: LeadsResponse = await response.json();
       setLeads(data.leads);
       setStatusCounts(data.statusCounts);
+      setPagination({ page: data.pagination.page, pages: Math.max(1, data.pagination.pages), total: data.pagination.total });
     } catch (error) {
       console.error('Error fetching leads:', error);
+      toast.error('Could not load leads');
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, statusFilter, searchQuery]);
 
   useEffect(() => {
     fetchLeads();
-  }, [currentPage, statusFilter, searchQuery]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'calling': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatDuration = (seconds?: number) => {
-    if (!seconds) return 'N/A';
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-
+  }, [fetchLeads]);
 
   const handleRetryCall = async (leadId: string) => {
     if (retryingLeads.has(leadId)) return;
@@ -162,20 +187,16 @@ export default function LeadsPage() {
         throw new Error(error.error || 'Retry failed');
       }
 
-      const result = await response.json();
-      console.log('Retry successful:', result);
-
       // Refresh leads to show updated status
       await fetchLeads();
 
-      // Show success notification
-      toast.success('Call Retry Initiated', {
-        description: 'The call retry has been started successfully'
+      toast.success('Call retry started', {
+        description: 'The lead is being called again.'
       });
 
     } catch (error) {
       console.error('Retry error:', error);
-      toast.error('Retry Failed', {
+      toast.error('Retry failed', {
         description: error instanceof Error ? error.message : 'Unknown error occurred'
       });
     } finally {
@@ -191,204 +212,233 @@ export default function LeadsPage() {
     return lead.status === 'failed' || lead.status === 'completed' || lead.status === 'pending';
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const filtered = statusFilter !== 'all' || searchQuery !== '';
+  const from = pagination.total === 0 ? 0 : (pagination.page - 1) * PAGE_SIZE + 1;
+  const to = Math.min(pagination.page * PAGE_SIZE, pagination.total);
 
   return (
     <PaymentGateWrapper>
-      <div className="min-h-screen bg-gray-50">
+      <PortalPage>
+        <PageHeader
+          title="Leads"
+          description="Everyone your agents have called or are about to call."
+          actions={
+            <Button onClick={() => setShowUpload(true)} className="h-9 gap-2 rounded-full px-4">
+              <Upload className="size-4" />
+              Upload CSV
+            </Button>
+          }
+        />
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Page Title */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Leads Management</h1>
-          <p className="text-gray-600 mt-2">Manage and track your leads</p>
+        {/* Filters */}
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div role="group" aria-label="Filter by status" className="flex gap-0.5 overflow-x-auto rounded-lg border border-border bg-card p-0.5">
+            {FILTERS.map((f) => {
+              const active = statusFilter === f.value;
+              return (
+                <button
+                  key={f.value}
+                  onClick={() => {
+                    setStatusFilter(f.value);
+                    setCurrentPage(1);
+                  }}
+                  aria-pressed={active}
+                  className={cn(
+                    'flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring',
+                    active ? 'bg-accent font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {f.label}
+                  <span className={cn('font-mono text-xs tabular-nums', active ? 'text-muted-foreground' : 'text-muted-foreground/60')}>
+                    {statusCounts[f.count].toLocaleString()}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="relative w-full lg:w-80">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              aria-label="Search leads"
+              placeholder="Search name, phone, email or company"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="h-9 rounded-lg pl-9"
+            />
+          </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="text-2xl font-bold text-gray-900">{statusCounts.total}</div>
-            <div className="text-sm text-gray-600">Total Leads</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="text-2xl font-bold text-yellow-600">{statusCounts.pending}</div>
-            <div className="text-sm text-gray-600">Pending</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="text-2xl font-bold text-blue-600">{statusCounts.calling}</div>
-            <div className="text-sm text-gray-600">Calling</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="text-2xl font-bold text-green-600">{statusCounts.completed}</div>
-            <div className="text-sm text-gray-600">Completed</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="text-2xl font-bold text-red-600">{statusCounts.failed}</div>
-            <div className="text-sm text-gray-600">Failed</div>
-          </div>
-        </div>
-
-        {/* Upload Section */}
-        {showUpload ? (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">Upload CSV</h2>
-              <button
-                onClick={() => setShowUpload(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+        {/* Table */}
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+          {loading ? (
+            <div aria-busy="true" aria-label="Loading leads">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-6 border-b border-border px-5 py-4 last:border-b-0">
+                  <div className="h-4 w-40 animate-pulse rounded bg-muted" />
+                  <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+                  <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+                  <div className="ml-auto h-4 w-24 animate-pulse rounded bg-muted" />
+                </div>
+              ))}
             </div>
-            <CsvUpload />
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800">Your Leads</h2>
-                <p className="text-gray-600">Manage and track your lead calls</p>
-              </div>
-              <button
-                onClick={() => setShowUpload(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          ) : leads.length === 0 ? (
+            <div className="flex flex-col items-center px-6 py-16 text-center">
+              <Users className="size-8 text-muted-foreground/50" />
+              <p className="mt-3 text-sm font-medium text-foreground">
+                {filtered ? 'No leads match these filters' : 'No leads yet'}
+              </p>
+              <p className="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">
+                {filtered
+                  ? 'Try a different status or clear the search.'
+                  : 'Upload a CSV and your assistant starts calling straight away.'}
+              </p>
+              {!filtered && (
+                <Button onClick={() => setShowUpload(true)} variant="outline" className="mt-5 h-9 gap-2 rounded-full border-input bg-transparent px-4 text-foreground hover:bg-accent">
+                  <Upload className="size-4" />
+                  Upload CSV
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className={headCell}>Lead</TableHead>
+                  <TableHead className={headCell}>Phone</TableHead>
+                  <TableHead className={headCell}>Status</TableHead>
+                  <TableHead className={headCell}>Call</TableHead>
+                  <TableHead className={headCell}>Added</TableHead>
+                  <TableHead className={cn(headCell, 'text-right')}>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {leads.map((lead) => {
+                  const status = STATUS[lead.status] ?? STATUS.pending;
+                  const retrying = retryingLeads.has(lead._id);
+                  const duration = formatDuration(lead.callResults?.duration);
+                  const secondary = [lead.company, lead.email].filter(Boolean).join(' · ');
+                  return (
+                    <TableRow key={lead._id} className="border-border hover:bg-muted/40">
+                      <TableCell className="px-5 py-3.5">
+                        <div className="font-medium text-foreground">{lead.name}</div>
+                        {secondary && <div className="mt-0.5 max-w-[22rem] truncate text-xs text-muted-foreground">{secondary}</div>}
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5 font-mono text-xs tabular-nums text-muted-foreground">
+                        {lead.phoneNumber}
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5">
+                        <span className="flex items-center gap-2 text-[13px] text-foreground">
+                          <span className="relative flex size-1.5">
+                            {status.pulse && <span className={cn('absolute inline-flex size-full animate-ping rounded-full opacity-70', status.dot)} />}
+                            <span className={cn('relative inline-flex size-1.5 rounded-full', status.dot)} />
+                          </span>
+                          {status.label}
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5 text-[13px]">
+                        {lead.callResults ? (
+                          <span className={lead.callResults.answered ? 'text-foreground' : 'text-muted-foreground'}>
+                            {lead.callResults.answered ? 'Answered' : 'No answer'}
+                            {duration && <span className="ml-2 font-mono text-xs tabular-nums text-muted-foreground">{duration}</span>}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap px-5 py-3.5 text-[13px] text-muted-foreground">
+                        {formatDate(lead.createdAt)}
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {canRetry(lead) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRetryCall(lead._id)}
+                              disabled={retrying}
+                              className="h-8 gap-1.5 rounded-lg px-2.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                            >
+                              {retrying ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCw className="size-3.5" />}
+                              {retrying ? 'Retrying' : lead.status === 'pending' ? 'Call now' : 'Retry'}
+                            </Button>
+                          )}
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1 rounded-lg border-input bg-transparent px-2.5 text-foreground hover:bg-accent"
+                          >
+                            <Link href={`/call-summary/${lead._id}`}>
+                              Details
+                              <ArrowUpRight className="size-3.5 text-muted-foreground" />
+                            </Link>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {!loading && pagination.total > 0 && (
+          <div className="mt-4 flex items-center justify-between gap-4 text-sm text-muted-foreground">
+            <span>
+              <span className="font-mono tabular-nums text-foreground">{from}–{to}</span> of{' '}
+              <span className="font-mono tabular-nums text-foreground">{pagination.total.toLocaleString()}</span>
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="hidden font-mono text-xs tabular-nums sm:inline">
+                Page {pagination.page} / {pagination.pages}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Previous page"
+                disabled={pagination.page <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="size-9 rounded-lg border-input bg-transparent text-foreground hover:bg-accent"
               >
-                Upload CSV
-              </button>
+                <ChevronLeft className="size-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Next page"
+                disabled={pagination.page >= pagination.pages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="size-9 rounded-lg border-input bg-transparent text-foreground hover:bg-accent"
+              >
+                <ChevronRight className="size-4" />
+              </Button>
             </div>
           </div>
         )}
+      </PortalPage>
 
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Search leads..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="calling">Calling</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
-            </select>
+      <Sheet open={showUpload} onOpenChange={setShowUpload}>
+        <SheetContent className="dark w-full gap-0 overflow-y-auto border-border bg-background text-foreground sm:max-w-xl">
+          <SheetHeader className="border-b border-border p-6">
+            <SheetTitle className="text-lg tracking-[-0.01em]">Upload leads</SheetTitle>
+            <SheetDescription>Calls start as soon as the file is processed.</SheetDescription>
+          </SheetHeader>
+          <div className="p-6">
+            <CsvUpload
+              onUploaded={() => {
+                setCurrentPage(1);
+                fetchLeads();
+              }}
+            />
           </div>
-        </div>
-
-        {/* Leads Table */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          {leads.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-gray-500">No leads found. Upload a CSV to get started!</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Name</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Phone</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Call Results</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Created</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {leads.map((lead) => (
-                    <tr key={lead._id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <div>
-                          <div className="font-medium text-gray-900">{lead.name}</div>
-                          {lead.email && (
-                            <div className="text-sm text-gray-500">{lead.email}</div>
-                          )}
-                          {lead.company && (
-                            <div className="text-sm text-gray-500">{lead.company}</div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{lead.phoneNumber}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(lead.status)}`}>
-                          {lead.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        {lead.callResults ? (
-                          <div>
-                            <div>
-                              {lead.callResults.answered ? '✅ Answered' : '❌ No Answer'}
-                            </div>
-                            {lead.callResults.duration && (
-                              <div className="text-gray-500">
-                                Duration: {formatDuration(lead.callResults.duration)}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {formatDate(lead.createdAt)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex space-x-2">
-                          <Link href={`/call-summary/${lead._id}`} className="bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-blue-700 transition-colors">
-                            View Details
-                          </Link>
-                          {canRetry(lead) && (
-                            <button
-                              onClick={() => handleRetryCall(lead._id)}
-                              disabled={retryingLeads.has(lead._id) || lead.status === 'calling'}
-                              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                                retryingLeads.has(lead._id) || lead.status === 'calling'
-                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                  : 'bg-green-600 text-white hover:bg-green-700'
-                              }`}
-                            >
-                              {retryingLeads.has(lead._id) ? (
-                                <div className="flex items-center">
-                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                                  Retrying...
-                                </div>
-                              ) : (
-                                'Retry Call'
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-
-
-      </div>
+        </SheetContent>
+      </Sheet>
     </PaymentGateWrapper>
   );
 }

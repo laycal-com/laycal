@@ -77,32 +77,32 @@ export default function EmailPopup({ postTitle }: EmailPopupProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 relative overflow-hidden">
+      <div className="bg-card rounded-2xl shadow-2xl max-w-md w-full mx-4 relative overflow-hidden">
         {/* Close button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
+          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors z-10"
         >
           <X className="w-6 h-6" />
         </button>
 
         {/* Header with gradient */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 pb-8">
+        <div className="text-white p-6 pb-8">
           <div className="flex items-center mb-3">
             <Mail className="w-8 h-8 mr-3" />
-            <h3 className="text-2xl font-bold">Get More Insights</h3>
+            <h3 className="text-2xl font-semibold">Get More Insights</h3>
           </div>
-          <p className="text-blue-100">
+          <p className="text-neutral-300">
             Since you're enjoying this article, get our latest AI sales insights delivered to your inbox.
           </p>
         </div>
 
         {/* Form */}
         <div className="p-6 -mt-4">
-          <div className="bg-white rounded-xl shadow-lg p-6 border">
+          <div className="bg-card rounded-xl shadow-lg p-6 border">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="popup-email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="popup-email" className="block text-sm font-medium text-muted-foreground mb-2">
                   Your Email Address
                 </label>
                 <input
@@ -112,14 +112,14 @@ export default function EmailPopup({ postTitle }: EmailPopupProps) {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
                 />
               </div>
               
               <button
                 type="submit"
                 disabled={isSubmitting || !email.trim()}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
+                className="w-full text-white py-3 px-6 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] bg-primary"
               >
                 {isSubmitting ? (
                   <div className="flex items-center justify-center">
@@ -133,7 +133,7 @@ export default function EmailPopup({ postTitle }: EmailPopupProps) {
             </form>
 
             <div className="mt-4 text-center">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 ✅ No spam, ever ✅ Unsubscribe anytime ✅ Weekly insights
               </p>
             </div>
@@ -141,7 +141,7 @@ export default function EmailPopup({ postTitle }: EmailPopupProps) {
         </div>
 
         {/* Bottom accent */}
-        <div className="h-2 bg-gradient-to-r from-blue-600 to-purple-600"></div>
+        <div className="h-2"></div>
       </div>
     </div>
   );

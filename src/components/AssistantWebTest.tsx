@@ -189,22 +189,22 @@ export function AssistantWebTest({ assistantId, vapiAssistantId, assistantName, 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <div className="bg-card rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-border">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Browser test call</h2>
-            <p className="text-sm text-gray-600">{assistantName} — no phone number needed</p>
+            <h2 className="text-lg font-semibold text-foreground">Browser test call</h2>
+            <p className="text-sm text-muted-foreground">{assistantName} — no phone number needed</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Close">
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Close">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6 space-y-5">
           {!publicKey && (
-            <div className="flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-amber-600 flex-none mt-0.5" />
-              <div className="text-sm text-amber-900">
+            <div className="flex gap-3 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-amber-500 flex-none mt-0.5" />
+              <div className="text-sm text-amber-500">
                 <p className="font-medium">Public key missing</p>
                 <p className="mt-1">
                   Add <code className="font-mono">NEXT_PUBLIC_VAPI_PUBLIC_KEY</code> to{' '}
@@ -216,39 +216,39 @@ export function AssistantWebTest({ assistantId, vapiAssistantId, assistantName, 
           )}
 
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800 break-words">
+            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-500 break-words">
               {error}
             </div>
           )}
 
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-3">
+            <p className="text-sm font-medium text-muted-foreground mb-3">
               Simulated lead — these fill the prompt&apos;s variables
             </p>
             <div className="grid grid-cols-2 gap-3">
               <input
-                className="p-2.5 border border-gray-300 rounded-lg text-sm"
+                className="p-2.5 border border-input rounded-lg text-sm"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Customer name"
                 disabled={live}
               />
               <input
-                className="p-2.5 border border-gray-300 rounded-lg text-sm"
+                className="p-2.5 border border-input rounded-lg text-sm"
                 value={serviceType}
                 onChange={(e) => setServiceType(e.target.value)}
                 placeholder="Service type"
                 disabled={live}
               />
               <input
-                className="col-span-2 p-2.5 border border-gray-300 rounded-lg text-sm"
+                className="col-span-2 p-2.5 border border-input rounded-lg text-sm"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Service address"
                 disabled={live}
               />
               <input
-                className="col-span-2 p-2.5 border border-gray-300 rounded-lg text-sm"
+                className="col-span-2 p-2.5 border border-input rounded-lg text-sm"
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
                 placeholder="Problem details"
@@ -262,7 +262,7 @@ export function AssistantWebTest({ assistantId, vapiAssistantId, assistantName, 
               <button
                 onClick={start}
                 disabled={status === 'connecting' || !publicKey}
-                className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
               >
                 {status === 'connecting' ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -274,26 +274,26 @@ export function AssistantWebTest({ assistantId, vapiAssistantId, assistantName, 
             ) : (
               <button
                 onClick={stop}
-                className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                className="flex items-center gap-2 px-5 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-500/90"
               >
                 <PhoneOff className="w-4 h-4" /> End call
               </button>
             )}
 
             {status === 'live' && (
-              <span className="flex items-center gap-2 text-sm text-green-700">
+              <span className="flex items-center gap-2 text-sm text-green-500">
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> Live
               </span>
             )}
             {callId && (
-              <span className="text-xs font-mono text-gray-500 truncate">call {callId.slice(0, 8)}…</span>
+              <span className="text-xs font-mono text-muted-foreground truncate">call {callId.slice(0, 8)}…</span>
             )}
             {status === 'ended' && leadId && (
               <a
                 href={`/call-summary/${leadId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-800 underline"
+                className="text-sm text-brand-soft hover:text-brand-soft underline"
               >
                 View call summary →
               </a>
@@ -301,44 +301,44 @@ export function AssistantWebTest({ assistantId, vapiAssistantId, assistantName, 
           </div>
 
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Transcript &amp; tool calls</p>
+            <p className="text-sm font-medium text-muted-foreground mb-2">Transcript &amp; tool calls</p>
             <div
               ref={logRef}
-              className="h-72 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-2 text-sm"
+              className="h-72 overflow-y-auto border border-border rounded-lg p-4 bg-muted/40 space-y-2 text-sm"
             >
               {entries.length === 0 && (
-                <p className="text-gray-400">
+                <p className="text-muted-foreground">
                   Nothing yet. Start the call, then say you need service and give a day and time —
                   that&apos;s what triggers the calendar tools.
                 </p>
               )}
               {entries.map((e, i) =>
                 e.kind === 'tool' ? (
-                  <div key={i} className="p-2.5 bg-blue-50 border border-blue-200 rounded">
-                    <div className="flex items-center gap-2 text-blue-900 font-medium">
+                  <div key={i} className="p-2.5 bg-primary/10 border border-primary/30 rounded">
+                    <div className="flex items-center gap-2 text-brand-soft font-medium">
                       <Wrench className="w-3.5 h-3.5" /> {e.name}
                     </div>
-                    <pre className="mt-1 text-xs text-blue-800 whitespace-pre-wrap break-all">{e.args}</pre>
+                    <pre className="mt-1 text-xs text-brand-soft whitespace-pre-wrap break-all">{e.args}</pre>
                   </div>
                 ) : e.kind === 'system' ? (
-                  <div key={i} className="text-xs text-gray-500 italic">{e.text}</div>
+                  <div key={i} className="text-xs text-muted-foreground italic">{e.text}</div>
                 ) : (
                   <div key={i}>
                     <span
                       className={
-                        e.role === 'assistant' ? 'font-medium text-blue-700' : 'font-medium text-gray-900'
+                        e.role === 'assistant' ? 'font-medium text-brand-soft' : 'font-medium text-foreground'
                       }
                     >
                       {e.role === 'assistant' ? 'Agent' : 'You'}
                     </span>
-                    <span className="text-gray-700"> — {e.text}</span>
+                    <span className="text-muted-foreground"> — {e.text}</span>
                   </div>
                 )
               )}
             </div>
           </div>
 
-          <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600">
+          <div className="p-3 bg-muted/40 border border-border rounded-lg text-xs text-muted-foreground">
             Calendar tools and the end-of-call webhook call <em>your</em> server, so the assistant must be
             saved while <code className="font-mono">NEXT_PUBLIC_APP_URL</code> and{' '}
             <code className="font-mono">VAPI_WEBHOOK_URL</code> point at your public tunnel — not

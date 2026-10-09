@@ -52,9 +52,9 @@ const TIMEZONES = [
 
 const TOTAL_STEPS = 6;
 
-const labelCls = 'block text-sm font-medium text-gray-700 mb-2';
+const labelCls = 'block text-sm font-medium text-muted-foreground mb-2';
 const inputCls =
-  'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+  'w-full p-3 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-primary';
 
 export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
   const [step, setStep] = useState(1);
@@ -161,14 +161,14 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
   const next = () => (step === 5 ? generate() : setStep((s) => Math.min(s + 1, TOTAL_STEPS)));
 
   return (
-    <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+    <div className="fixed inset-0 bg-card z-50 overflow-y-auto border border-border">
       <div className="max-w-3xl mx-auto p-6">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Speed-to-Lead Setup</h1>
-            <p className="text-sm text-gray-600">Step {step} of {TOTAL_STEPS}</p>
+            <h1 className="text-xl font-semibold text-foreground">Speed-to-Lead Setup</h1>
+            <p className="text-sm text-muted-foreground">Step {step} of {TOTAL_STEPS}</p>
           </div>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600" aria-label="Cancel">
+          <button onClick={onCancel} className="text-muted-foreground hover:text-foreground" aria-label="Cancel">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -177,13 +177,13 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
           {Array.from({ length: TOTAL_STEPS }, (_, i) => (
             <div
               key={i}
-              className={`h-2 flex-1 rounded ${i < step ? 'bg-blue-600' : 'bg-gray-200'}`}
+              className={`h-2 flex-1 rounded ${i < step ? 'bg-primary' : 'bg-muted'}`}
             />
           ))}
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-500">
             {error}
           </div>
         )}
@@ -192,8 +192,8 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
         {step === 1 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">The business</h2>
-              <p className="text-gray-600">Who is the agent calling on behalf of?</p>
+              <h2 className="text-2xl font-semibold text-foreground mb-2">The business</h2>
+              <p className="text-muted-foreground">Who is the agent calling on behalf of?</p>
             </div>
             <div>
               <label className={labelCls}>Company name *</label>
@@ -214,15 +214,15 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
                     onClick={() => changeVertical(v.id)}
                     className={`p-3 border rounded-lg text-left text-sm transition-colors ${
                       vertical === v.id
-                        ? 'border-blue-500 bg-blue-50 text-blue-900 font-medium'
-                        : 'border-gray-200 hover:bg-gray-50'
+                        ? 'border-primary bg-primary/10 text-brand-soft font-medium'
+                        : 'border-border hover:bg-accent'
                     }`}
                   >
                     {v.label}
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-2 text-xs text-muted-foreground">
                 Sets the qualifying questions the agent asks. You can edit them in step 4.
               </p>
             </div>
@@ -242,8 +242,8 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
         {step === 2 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">The agent</h2>
-              <p className="text-gray-600">How they introduce themselves and sound.</p>
+              <h2 className="text-2xl font-semibold text-foreground mb-2">The agent</h2>
+              <p className="text-muted-foreground">How they introduce themselves and sound.</p>
             </div>
             <div>
               <label className={labelCls}>Agent name *</label>
@@ -262,11 +262,11 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
                     type="button"
                     onClick={() => setTone(id)}
                     className={`w-full p-3 border rounded-lg text-left transition-colors ${
-                      tone === id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'
+                      tone === id ? 'border-primary bg-primary/10' : 'border-border hover:bg-accent'
                     }`}
                   >
-                    <div className="font-medium text-gray-900">{title}</div>
-                    <div className="text-sm text-gray-600">{desc}</div>
+                    <div className="font-medium text-foreground">{title}</div>
+                    <div className="text-sm text-muted-foreground">{desc}</div>
                   </button>
                 ))}
               </div>
@@ -278,8 +278,8 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
         {step === 3 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Scheduling</h2>
-              <p className="text-gray-600">
+              <h2 className="text-2xl font-semibold text-foreground mb-2">Scheduling</h2>
+              <p className="text-muted-foreground">
                 The agent checks your calendar live and will never offer a time outside these hours.
               </p>
             </div>
@@ -346,13 +346,13 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
                             })
                           }
                         />
-                        <span className="text-sm text-gray-700">{WEEKDAY_LABELS[day]}</span>
+                        <span className="text-sm text-muted-foreground">{WEEKDAY_LABELS[day]}</span>
                       </label>
                       {open ? (
                         <>
                           <input
                             type="time"
-                            className="p-2 border border-gray-300 rounded"
+                            className="p-2 border border-input rounded"
                             value={open.open}
                             onChange={(e) =>
                               setBusinessHours((prev) => ({
@@ -361,10 +361,10 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
                               }))
                             }
                           />
-                          <span className="text-gray-400">to</span>
+                          <span className="text-muted-foreground">to</span>
                           <input
                             type="time"
-                            className="p-2 border border-gray-300 rounded"
+                            className="p-2 border border-input rounded"
                             value={open.close}
                             onChange={(e) =>
                               setBusinessHours((prev) => ({
@@ -375,7 +375,7 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
                           />
                         </>
                       ) : (
-                        <span className="text-sm text-gray-400">Closed</span>
+                        <span className="text-sm text-muted-foreground">Closed</span>
                       )}
                     </div>
                   );
@@ -389,8 +389,8 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
         {step === 4 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Qualifying questions</h2>
-              <p className="text-gray-600">
+              <h2 className="text-2xl font-semibold text-foreground mb-2">Qualifying questions</h2>
+              <p className="text-muted-foreground">
                 Asked one at a time after the greeting. These are what turn a lead into a useful dispatch —
                 edit them to match how your techs triage.
               </p>
@@ -398,7 +398,7 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
             <div className="space-y-2">
               {questions.map((q, i) => (
                 <div key={i} className="flex gap-2">
-                  <span className="mt-3 text-sm text-gray-400 w-5">{i + 1}.</span>
+                  <span className="mt-3 text-sm text-muted-foreground w-5">{i + 1}.</span>
                   <textarea
                     className={inputCls}
                     rows={2}
@@ -410,7 +410,7 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
                   <button
                     type="button"
                     onClick={() => setQuestions((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="px-3 text-red-600 hover:bg-red-50 rounded"
+                    className="px-3 text-red-500 hover:bg-red-500/15 rounded"
                     aria-label="Remove question"
                   >
                     <X className="w-4 h-4" />
@@ -421,7 +421,7 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
             <button
               type="button"
               onClick={() => setQuestions((prev) => [...prev, ''])}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-brand-soft border border-primary/30 rounded-lg hover:bg-primary/15"
             >
               <Plus className="w-4 h-4" /> Add question
             </button>
@@ -432,12 +432,12 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
         {step === 5 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Objections</h2>
-              <p className="text-gray-600">What the agent says when the homeowner pushes back.</p>
+              <h2 className="text-2xl font-semibold text-foreground mb-2">Objections</h2>
+              <p className="text-muted-foreground">What the agent says when the homeowner pushes back.</p>
             </div>
             <div className="space-y-4">
               {objections.map((o, i) => (
-                <div key={i} className="p-4 border border-gray-200 rounded-lg space-y-2">
+                <div key={i} className="p-4 border border-border rounded-lg space-y-2">
                   <div className="flex items-start gap-2">
                     <input
                       className={inputCls}
@@ -452,7 +452,7 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
                     <button
                       type="button"
                       onClick={() => setObjections((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="px-3 py-3 text-red-600 hover:bg-red-50 rounded"
+                      className="px-3 py-3 text-red-500 hover:bg-red-500/15 rounded"
                       aria-label="Remove objection"
                     >
                       <X className="w-4 h-4" />
@@ -475,7 +475,7 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
             <button
               type="button"
               onClick={() => setObjections((prev) => [...prev, { objection: '', response: '' }])}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-brand-soft border border-primary/30 rounded-lg hover:bg-primary/15"
             >
               <Plus className="w-4 h-4" /> Add objection
             </button>
@@ -496,19 +496,19 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
         {step === 6 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Review the prompt</h2>
-              <p className="text-gray-600">
+              <h2 className="text-2xl font-semibold text-foreground mb-2">Review the prompt</h2>
+              <p className="text-muted-foreground">
                 Generated for {clientCompany}. Read it before saving — edit anything that does not sound
                 like your business.
               </p>
             </div>
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-sm text-amber-500">
               The scheduling section at the bottom is added automatically. Keep the{' '}
               <code className="font-mono">{'{{ }}'}</code> variables and the tool instructions intact — the
               live calendar booking depends on them.
             </div>
             <textarea
-              className="w-full p-4 border border-gray-300 rounded-lg font-mono text-xs"
+              className="w-full p-4 border border-input rounded-lg font-mono text-xs"
               rows={22}
               value={generated?.mainPrompt ?? ''}
               onChange={(e) => setGenerated((g) => (g ? { ...g, mainPrompt: e.target.value } : g))}
@@ -517,7 +517,7 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
               type="button"
               onClick={generate}
               disabled={generating}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground border border-input rounded-lg hover:bg-accent disabled:opacity-50"
             >
               {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               Regenerate
@@ -525,11 +525,11 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-10 pt-6 border-t border-gray-200">
+        <div className="flex items-center justify-between mt-10 pt-6 border-t border-border">
           <button
             onClick={() => setStep((s) => Math.max(1, s - 1))}
             disabled={step === 1 || generating}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 text-muted-foreground disabled:opacity-40"
           >
             <ChevronLeft className="w-4 h-4" /> Back
           </button>
@@ -538,7 +538,7 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
             <button
               onClick={finish}
               disabled={!generated?.mainPrompt?.trim()}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
             >
               Use this prompt
             </button>
@@ -546,7 +546,7 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
             <button
               onClick={next}
               disabled={!canProceed() || generating}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
             >
               {generating ? (
                 <>

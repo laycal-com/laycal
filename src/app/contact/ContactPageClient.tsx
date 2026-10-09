@@ -70,12 +70,12 @@ export default function ContactPageClient() {
   return (
     <>
       <PublicNavbar />
-      <div className="min-h-screen bg-[#f8fafc]" style={{ paddingTop: '100px' }}>
+      <div className="min-h-screen pt-28">
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-[#1f2937] mb-4">Contact Us</h1>
-          <p className="text-xl text-[#64748b] max-w-2xl mx-auto">
+          <h1 className="text-4xl font-semibold text-foreground mb-4">Contact Us</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Have questions about Laycal? We're here to help you scale your sales calls with AI.
           </p>
         </div>
@@ -83,10 +83,10 @@ export default function ContactPageClient() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Contact Form */}
           <div className="lg:col-span-2">
-            <Card className="bg-white shadow-lg border border-[#e2e8f0]">
+            <Card className="bg-card shadow-lg border border-border">
               <CardHeader>
-                <CardTitle className="text-2xl text-[#1f2937] flex items-center gap-2">
-                  <MessageSquare className="h-6 w-6 text-[#3b82f6]" />
+                <CardTitle className="text-2xl text-foreground flex items-center gap-2">
+                  <MessageSquare className="h-6 w-6 text-brand-soft" />
                   Send us a message
                 </CardTitle>
               </CardHeader>
@@ -94,7 +94,7 @@ export default function ContactPageClient() {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-[#1f2937] mb-2">
+                      <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
                         Full Name *
                       </label>
                       <input
@@ -103,13 +103,13 @@ export default function ContactPageClient() {
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+                        className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                         placeholder="Your full name"
                         required
                       />
                     </div>
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-[#1f2937] mb-2">
+                      <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
                         Email Address *
                       </label>
                       <input
@@ -118,7 +118,7 @@ export default function ContactPageClient() {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+                        className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                         placeholder="your@email.com"
                         required
                       />
@@ -127,7 +127,7 @@ export default function ContactPageClient() {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="company" className="block text-sm font-medium text-[#1f2937] mb-2">
+                      <label htmlFor="company" className="block text-sm font-medium text-foreground mb-2">
                         Company
                       </label>
                       <input
@@ -136,12 +136,12 @@ export default function ContactPageClient() {
                         name="company"
                         value={formData.company}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+                        className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                         placeholder="Your company name"
                       />
                     </div>
                     <div>
-                      <label htmlFor="type" className="block text-sm font-medium text-[#1f2937] mb-2">
+                      <label htmlFor="type" className="block text-sm font-medium text-foreground mb-2">
                         Inquiry Type
                       </label>
                       <select
@@ -149,7 +149,7 @@ export default function ContactPageClient() {
                         name="type"
                         value={formData.type}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+                        className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                       >
                         <option value="general">General Question</option>
                         <option value="demo">Demo Request</option>
@@ -162,7 +162,7 @@ export default function ContactPageClient() {
                   </div>
 
                   <div>
-                    <label htmlFor="subject" className="block text-sm font-medium text-[#1f2937] mb-2">
+                    <label htmlFor="subject" className="block text-sm font-medium text-foreground mb-2">
                       Subject *
                     </label>
                     <input
@@ -171,14 +171,14 @@ export default function ContactPageClient() {
                       name="subject"
                       value={formData.subject}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                       placeholder="Brief description of your inquiry"
                       required
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-[#1f2937] mb-2">
+                    <label htmlFor="message" className="block text-sm font-medium text-foreground mb-2">
                       Message *
                     </label>
                     <textarea
@@ -187,7 +187,7 @@ export default function ContactPageClient() {
                       value={formData.message}
                       onChange={handleChange}
                       rows={5}
-                      className="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                       placeholder="Tell us more about your needs, questions, or how we can help..."
                       required
                     />
@@ -196,7 +196,7 @@ export default function ContactPageClient() {
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white py-3 text-lg"
+                    className="w-full bg-primary hover:bg-primary/90 text-white py-3 text-lg"
                   >
                     {submitting ? (
                       'Sending...'
@@ -214,34 +214,34 @@ export default function ContactPageClient() {
 
           {/* Contact Information */}
           <div className="space-y-6">
-            <Card className="bg-white shadow-lg border border-[#e2e8f0]">
+            <Card className="bg-card shadow-lg border border-border">
               <CardHeader>
-                <CardTitle className="text-xl text-[#1f2937]">Get in Touch</CardTitle>
+                <CardTitle className="text-xl text-foreground">Get in Touch</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <Mail className="h-5 w-5 text-[#3b82f6] mt-0.5" />
+                  <Mail className="h-5 w-5 text-brand-soft mt-0.5" />
                   <div>
-                    <div className="font-medium text-[#1f2937]">Email</div>
-                    <div className="text-[#64748b] text-sm">support@laycal.com</div>
-                    <div className="text-[#64748b] text-sm">sales@laycal.com</div>
+                    <div className="font-medium text-foreground">Email</div>
+                    <div className="text-muted-foreground text-sm">support@laycal.com</div>
+                    <div className="text-muted-foreground text-sm">sales@laycal.com</div>
                   </div>
                 </div>
                 
                 <div className="flex items-start gap-3">
-                  <Phone className="h-5 w-5 text-[#3b82f6] mt-0.5" />
+                  <Phone className="h-5 w-5 text-brand-soft mt-0.5" />
                   <div>
-                    <div className="font-medium text-[#1f2937]">Phone</div>
-                    <div className="text-[#64748b] text-sm">+1 (555) 123-4567</div>
-                    <div className="text-[#64748b] text-xs">Monday - Friday, 9 AM - 6 PM PST</div>
+                    <div className="font-medium text-foreground">Phone</div>
+                    <div className="text-muted-foreground text-sm">+1 (555) 123-4567</div>
+                    <div className="text-muted-foreground text-xs">Monday - Friday, 9 AM - 6 PM PST</div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-[#3b82f6] mt-0.5" />
+                  <MapPin className="h-5 w-5 text-brand-soft mt-0.5" />
                   <div>
-                    <div className="font-medium text-[#1f2937]">Office</div>
-                    <div className="text-[#64748b] text-sm">
+                    <div className="font-medium text-foreground">Office</div>
+                    <div className="text-muted-foreground text-sm">
                       123 AI Technology Drive<br />
                       San Francisco, CA 94105<br />
                       United States
@@ -251,29 +251,29 @@ export default function ContactPageClient() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white shadow-lg border border-[#e2e8f0]">
+            <Card className="bg-card shadow-lg border border-border">
               <CardHeader>
-                <CardTitle className="text-xl text-[#1f2937] flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-[#3b82f6]" />
+                <CardTitle className="text-xl text-foreground flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-brand-soft" />
                   Response Times
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex justify-between items-center py-2 border-b border-[#e2e8f0]">
-                  <span className="text-[#64748b] text-sm">Sales Inquiries</span>
-                  <span className="text-[#1f2937] font-medium text-sm">2-4 hours</span>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground text-sm">Sales Inquiries</span>
+                  <span className="text-foreground font-medium text-sm">2-4 hours</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-[#e2e8f0]">
-                  <span className="text-[#64748b] text-sm">Technical Support</span>
-                  <span className="text-[#1f2937] font-medium text-sm">4-12 hours</span>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground text-sm">Technical Support</span>
+                  <span className="text-foreground font-medium text-sm">4-12 hours</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-[#e2e8f0]">
-                  <span className="text-[#64748b] text-sm">General Questions</span>
-                  <span className="text-[#1f2937] font-medium text-sm">24 hours</span>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground text-sm">General Questions</span>
+                  <span className="text-foreground font-medium text-sm">24 hours</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-[#64748b] text-sm">Enterprise</span>
-                  <span className="text-[#1f2937] font-medium text-sm">1-2 hours</span>
+                  <span className="text-muted-foreground text-sm">Enterprise</span>
+                  <span className="text-foreground font-medium text-sm">1-2 hours</span>
                 </div>
               </CardContent>
             </Card>

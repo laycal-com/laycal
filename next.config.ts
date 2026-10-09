@@ -2,6 +2,8 @@ import {withSentryConfig} from '@sentry/nextjs';
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Lets a dev server run beside a production build without sharing .next.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
@@ -30,6 +32,17 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  // Pages removed in the 2026-10 redesign. Their content lives on the landing
+  // page now; these keep old links and search results from hitting a 404.
+  redirects: async () => [
+    { source: '/features', destination: '/#features', permanent: true },
+    { source: '/pricing', destination: '/#pricing', permanent: true },
+    { source: '/about', destination: '/', permanent: true },
+    { source: '/case-studies', destination: '/', permanent: true },
+    { source: '/sdr', destination: '/', permanent: true },
+    { source: '/instant-lead-follow-up', destination: '/', permanent: true },
+    { source: '/speed-to-lead', destination: '/', permanent: true },
+  ],
   headers: async () => {
     return [
       {

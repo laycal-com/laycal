@@ -37,18 +37,18 @@ function CodeBlock({ label, code }: { label: string; code: string }) {
   };
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
-        <span className="text-sm font-medium text-gray-700">{label}</span>
+    <div className="border border-border rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2 bg-muted/40 border-b border-border">
+        <span className="text-sm font-medium text-muted-foreground">{label}</span>
         <button
           onClick={copy}
-          className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800"
+          className="flex items-center gap-1.5 text-sm text-brand-soft hover:text-brand-soft"
         >
           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
-      <pre className="p-4 bg-gray-900 text-gray-100 text-xs overflow-x-auto">
+      <pre className="p-4 bg-black text-neutral-300 text-xs overflow-x-auto">
         <code>{code}</code>
       </pre>
     </div>
@@ -133,8 +133,8 @@ document.querySelector('#lead-form').addEventListener('submit', async (e) => {
 
   return (
     <div className="space-y-6">
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-900">
+      <div className="p-4 bg-primary/10 border border-primary/30 rounded-lg">
+        <p className="text-sm text-brand-soft">
           Every submission to this endpoint creates a lead and calls it immediately with
           {assistantName ? <strong> {assistantName}</strong> : ' this assistant'}. There is no queue and no
           delay — that is the whole point.
@@ -142,13 +142,13 @@ document.querySelector('#lead-form').addEventListener('submit', async (e) => {
       </div>
 
       <div>
-        <h4 className="font-semibold text-gray-900 mb-2">Your endpoint</h4>
+        <h4 className="font-semibold text-foreground mb-2">Your endpoint</h4>
         <div className="flex items-center gap-2">
-          <code className="flex-1 px-3 py-2 bg-gray-100 rounded font-mono text-sm break-all">
+          <code className="flex-1 px-3 py-2 bg-muted rounded font-mono text-sm break-all">
             {endpoint || 'Loading…'}
           </code>
         </div>
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-muted-foreground">
           Accepts <code className="font-mono">POST</code> with a JSON body. Field names are matched loosely,
           so <code className="font-mono">first_name</code>, <code className="font-mono">firstname</code> and{' '}
           <code className="font-mono">First Name</code> all work.
@@ -156,28 +156,28 @@ document.querySelector('#lead-form').addEventListener('submit', async (e) => {
       </div>
 
       <div>
-        <h4 className="font-semibold text-gray-900 mb-3">Fields</h4>
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <h4 className="font-semibold text-foreground mb-3">Fields</h4>
+        <div className="border border-border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50">
+            <thead className="bg-muted/40">
               <tr>
-                <th className="text-left px-4 py-2 font-medium text-gray-700">Field</th>
-                <th className="text-left px-4 py-2 font-medium text-gray-700">Required</th>
-                <th className="text-left px-4 py-2 font-medium text-gray-700">Used for</th>
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground">Field</th>
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground">Required</th>
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground">Used for</th>
               </tr>
             </thead>
             <tbody>
               {FIELDS.map((f) => (
-                <tr key={f.key} className="border-t border-gray-100">
+                <tr key={f.key} className="border-t border-border">
                   <td className="px-4 py-2 font-mono text-xs">{f.key}</td>
                   <td className="px-4 py-2">
                     {f.required ? (
-                      <span className="text-red-600 font-medium">Required</span>
+                      <span className="text-red-500 font-medium">Required</span>
                     ) : (
-                      <span className="text-gray-400">Optional</span>
+                      <span className="text-muted-foreground">Optional</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-gray-600">{f.note}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{f.note}</td>
                 </tr>
               ))}
             </tbody>
@@ -187,8 +187,8 @@ document.querySelector('#lead-form').addEventListener('submit', async (e) => {
 
       <div className="space-y-4">
         <div>
-          <h4 className="font-semibold text-gray-900 mb-2">Option 1 — Google Forms</h4>
-          <ol className="text-sm text-gray-600 space-y-1 mb-3 list-decimal list-inside">
+          <h4 className="font-semibold text-foreground mb-2">Option 1 — Google Forms</h4>
+          <ol className="text-sm text-muted-foreground space-y-1 mb-3 list-decimal list-inside">
             <li>Open your form&apos;s linked spreadsheet → Extensions → Apps Script</li>
             <li>Paste the script below and save</li>
             <li>Triggers → Add Trigger → <code className="font-mono">onFormSubmit</code> → On form submit</li>
@@ -197,27 +197,27 @@ document.querySelector('#lead-form').addEventListener('submit', async (e) => {
         </div>
 
         <div>
-          <h4 className="font-semibold text-gray-900 mb-2">Option 2 — your own website form</h4>
+          <h4 className="font-semibold text-foreground mb-2">Option 2 — your own website form</h4>
           <CodeBlock label="HTML / JavaScript" code={htmlSnippet} />
         </div>
 
         <div>
-          <h4 className="font-semibold text-gray-900 mb-2">Test it</h4>
+          <h4 className="font-semibold text-foreground mb-2">Test it</h4>
           <CodeBlock label="curl" code={curl} />
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-muted-foreground">
             Use a real number you can answer — this places an actual call and consumes credits.
           </p>
         </div>
       </div>
 
-      <div className="p-4 border border-amber-200 bg-amber-50 rounded-lg">
-        <p className="text-sm text-amber-900">
+      <div className="p-4 border border-amber-500/30 bg-amber-500/10 rounded-lg">
+        <p className="text-sm text-amber-500">
           <strong>Connect Google Calendar</strong> before going live, or the agent can qualify the lead but
           cannot check availability or book the visit.
         </p>
         <a
           href="/settings"
-          className="mt-2 inline-flex items-center gap-1 text-sm text-amber-900 underline"
+          className="mt-2 inline-flex items-center gap-1 text-sm text-amber-500 underline"
         >
           Open Settings <ExternalLink className="w-3 h-3" />
         </a>

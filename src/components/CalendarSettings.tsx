@@ -124,11 +124,11 @@ export default function CalendarSettings() {
 
   const getStatusColor = (provider: CalendarProvider) => {
     if (provider.connected && provider.authenticated) {
-      return 'text-green-600 bg-green-100';
+      return 'text-green-500 bg-green-500/10';
     } else if (provider.connected && !provider.authenticated) {
-      return 'text-yellow-600 bg-yellow-100';
+      return 'text-amber-500 bg-amber-500/10';
     } else {
-      return 'text-gray-600 bg-gray-100';
+      return 'text-muted-foreground bg-muted';
     }
   };
 
@@ -147,8 +147,8 @@ export default function CalendarSettings() {
       <div>
         <div className="animate-pulse">
           <div className="space-y-3">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div className="h-4 bg-muted rounded w-3/4"></div>
+            <div className="h-4 bg-muted rounded w-1/2"></div>
           </div>
         </div>
       </div>
@@ -158,19 +158,19 @@ export default function CalendarSettings() {
   return (
     <div>
       <div className="mb-6">
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Connect your calendar to automatically create appointments when calls confirm bookings
         </p>
       </div>
 
       <div className="space-y-4">
         {providers.map((provider) => (
-          <div key={provider.name} className="border border-gray-200 rounded-lg p-4">
+          <div key={provider.name} className="border border-border rounded-lg p-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{getProviderIcon(provider.name)}</span>
                 <div>
-                  <h3 className="font-medium text-gray-900">
+                  <h3 className="font-medium text-foreground">
                     {getProviderDisplayName(provider.name)}
                   </h3>
                   <div className="flex items-center gap-2 mt-1">
@@ -188,7 +188,7 @@ export default function CalendarSettings() {
                   <button
                     onClick={() => handleConnect(provider.name)}
                     disabled={connecting === provider.name}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {connecting === provider.name ? 'Connecting...' : 'Connect'}
                   </button>
@@ -196,14 +196,14 @@ export default function CalendarSettings() {
                   <button
                     onClick={() => handleConnect(provider.name)}
                     disabled={connecting === provider.name}
-                    className="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors disabled:opacity-50"
+                    className="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-500/90 transition-colors disabled:opacity-50"
                   >
                     {connecting === provider.name ? 'Reconnecting...' : 'Reconnect'}
                   </button>
                 ) : (
                   <button
                     onClick={() => handleDisconnect(provider.name)}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+                    className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-500/90 transition-colors"
                   >
                     Disconnect
                   </button>
@@ -212,8 +212,8 @@ export default function CalendarSettings() {
             </div>
 
             {provider.connected && provider.authenticated && provider.needsReconnect && (
-              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm text-amber-900">
+              <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                <p className="text-sm text-amber-500">
                   <strong>Reconnect required.</strong> This connection was authorised before availability
                   checking was added, so the agent can book visits but cannot see which slots are free.
                   Reconnecting takes one click and keeps your existing permissions.
@@ -222,7 +222,7 @@ export default function CalendarSettings() {
             )}
 
             {provider.name === 'google' && (
-              <div className="mt-3 text-sm text-gray-600">
+              <div className="mt-3 text-sm text-muted-foreground">
                 <p>• Automatically creates calendar events for confirmed appointments</p>
                 <p>• Includes customer details and call notes</p>
                 <p>• Sets up email and popup reminders</p>
@@ -232,9 +232,9 @@ export default function CalendarSettings() {
         ))}
       </div>
 
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-        <h4 className="text-sm font-medium text-blue-900 mb-2">How it works:</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
+      <div className="mt-6 p-4 bg-primary/10 rounded-lg">
+        <h4 className="text-sm font-medium text-brand-soft mb-2">How it works:</h4>
+        <ul className="text-sm text-brand-soft space-y-1">
           <li>1. Connect your preferred calendar provider above</li>
           <li>2. When a call successfully confirms an appointment, we'll automatically create a calendar event</li>
           <li>3. The event will include customer details, appointment time, and any notes from the call</li>

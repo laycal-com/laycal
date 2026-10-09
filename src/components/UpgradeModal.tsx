@@ -111,7 +111,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <Card className="max-w-md w-full">
           <CardContent className="p-6 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
             <p>Loading...</p>
           </CardContent>
         </Card>
@@ -126,7 +126,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-xl">Add Credits</CardTitle>
-              <p className="text-gray-600 mt-1">Top up your account to continue making calls</p>
+              <p className="text-muted-foreground mt-1">Top up your account to continue making calls</p>
             </div>
             <Button variant="outline" size="sm" onClick={onClose}>
               <X className="w-4 h-4" />
@@ -138,7 +138,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Amount</span>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 Min: ${pricing?.minimum_topup_amount || 5}
               </span>
             </div>
@@ -161,7 +161,7 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
                   onChange={(e) => handleCustomAmountChange(Number(e.target.value))}
                   min={pricing?.minimum_topup_amount || 5}
                   step={pricing?.minimum_topup_amount || 5}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-center font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-input rounded-md text-center font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 />
               </div>
               
@@ -176,17 +176,17 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
             </div>
           </div>
 
-          <div className="bg-blue-50 p-3 rounded-lg">
-            <div className="text-sm text-blue-800">
+          <div className="bg-primary/10 p-3 rounded-lg">
+            <div className="text-sm text-brand-soft">
               <strong>What you'll get:</strong>
             </div>
-            <div className="text-sm text-blue-700 mt-1">
+            <div className="text-sm text-brand-soft mt-1">
               • Unlimited AI assistants
             </div>
-            <div className="text-sm text-blue-700">
+            <div className="text-sm text-brand-soft">
               • Pay-per-minute calling (${pricing?.cost_per_minute_payg || 0.07}/min)
             </div>
-            <div className="text-sm text-blue-700">
+            <div className="text-sm text-brand-soft">
               • All premium features included
             </div>
           </div>
@@ -194,12 +194,12 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
           <Button
             onClick={() => handleTopup(customAmount)}
             disabled={toppingUp}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11"
+            className="w-full bg-primary hover:bg-primary/90 text-white h-11"
           >
             {toppingUp ? 'Processing...' : `Add $${customAmount} Credits`}
           </Button>
 
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-muted-foreground text-center">
             Secure payment processed by PayPal
           </p>
         </CardContent>

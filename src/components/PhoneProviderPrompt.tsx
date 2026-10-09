@@ -51,40 +51,44 @@ export default function PhoneProviderPrompt() {
 
   if (hasOwnProvider) return null;
 
+  const benefits = [
+    { icon: DollarSign, title: 'Better rates', copy: 'Pay only for what you use with your own Twilio or Plivo account.' },
+    { icon: Shield, title: 'Full control', copy: 'Manage your own phone numbers and call settings.' },
+    { icon: Zap, title: 'Reliability', copy: 'No shared capacity at peak hours, so your calls go through.' },
+  ];
+
   return (
     <>
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {showBanner && (
           <motion.div
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -100, opacity: 0 }}
-            transition={{ type: 'spring', damping: 20 }}
-            className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
           >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Phone className="w-5 h-5" />
-                  <p className="text-sm font-medium">
-                    <span className="font-bold">Default provider: US numbers only!</span> During high demand, calls may fail. Connect your own provider for 100% reliability.
-                  </p>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={handleSetupProvider}
-                    className="px-4 py-1.5 bg-white text-blue-600 rounded-full text-sm font-semibold hover:bg-blue-50 transition-colors flex items-center space-x-1"
-                  >
-                    <span>Set Up Now</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleBannerDismiss}
-                    className="p-1 hover:bg-white/20 rounded-full transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
+            <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border border-border bg-card px-4 py-3">
+              <Phone className="h-4 w-4 flex-none text-muted-foreground" />
+              <p className="min-w-0 flex-1 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">You are on the shared US number.</span> During high
+                demand, calls may fail. Connect your own provider for dependable delivery.
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={handleSetupProvider}
+                  className="flex h-8 items-center gap-1.5 rounded-full bg-foreground px-3.5 text-xs font-medium text-background outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  Set up now
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={handleBannerDismiss}
+                  aria-label="Dismiss"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             </div>
           </motion.div>
@@ -98,89 +102,72 @@ export default function PhoneProviderPrompt() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
               onClick={handlePopupDismiss}
             />
-            
+
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{ scale: 0.96, opacity: 0, y: 12 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{ type: 'spring', damping: 20 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+              exit={{ scale: 0.96, opacity: 0, y: 12 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-4"
             >
-              <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full pointer-events-auto overflow-hidden">
-                <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 p-8 text-white">
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="provider-prompt-title"
+                className="pointer-events-auto relative w-full max-w-md overflow-hidden rounded-2xl border border-border bg-popover p-7 text-popover-foreground shadow-2xl"
+              >
+                <button
+                  onClick={handlePopupDismiss}
+                  aria-label="Close"
+                  className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/40 bg-primary/10">
+                  <Phone className="h-5 w-5 text-brand-soft" />
+                </span>
+                <h2 id="provider-prompt-title" className="mt-5 text-xl font-semibold tracking-[-0.02em] text-foreground">
+                  Connect your own phone provider
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  The shared number is US-only and can run out of capacity at peak hours.
+                </p>
+
+                <ul className="mt-6 space-y-4">
+                  {benefits.map((b) => (
+                    <li key={b.title} className="flex items-start gap-3">
+                      <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground">
+                        <b.icon className="h-4 w-4" />
+                      </span>
+                      <div>
+                        <h3 className="text-sm font-medium text-foreground">{b.title}</h3>
+                        <p className="text-sm leading-5 text-muted-foreground">{b.copy}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mt-7 flex gap-3">
+                  <button
+                    onClick={handleSetupProvider}
+                    className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-primary-foreground outline-none transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  >
+                    Set up provider
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
                   <button
                     onClick={handlePopupDismiss}
-                    className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full transition-colors"
+                    className="h-10 rounded-full border border-border px-5 text-sm font-medium text-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <X className="w-5 h-5" />
+                    Later
                   </button>
-                  
-                  <div className="flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
-                    <Phone className="w-8 h-8" />
-                  </div>
-                  
-                  <h2 className="text-2xl font-bold mb-2">Upgrade Your Phone Provider</h2>
-                  <p className="text-blue-100">
-                    Default provider is US-only and may experience downtime during peak hours. Get guaranteed reliability with your own provider!
-                  </p>
                 </div>
 
-                <div className="p-8">
-                  <div className="space-y-4 mb-6">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                        <DollarSign className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">Better Rates</h3>
-                        <p className="text-sm text-gray-600">Pay only for what you use with your own Twilio/Plivo account</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Shield className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">Full Control</h3>
-                        <p className="text-sm text-gray-600">Manage your own phone numbers and call settings</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                        <Zap className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">100% Reliability</h3>
-                        <p className="text-sm text-gray-600">No downtime during peak hours - your calls always go through</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={handleSetupProvider}
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all flex items-center justify-center space-x-2"
-                    >
-                      <span>Set Up Provider</span>
-                      <ArrowRight className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={handlePopupDismiss}
-                      className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-                    >
-                      Later
-                    </button>
-                  </div>
-
-                  <p className="text-xs text-gray-500 text-center mt-4">
-                    Supports Twilio, Plivo, and Vonage/Nexmo
-                  </p>
-                </div>
+                <p className="mt-4 text-center text-xs text-muted-foreground">Supports Twilio, Plivo and Vonage.</p>
               </div>
             </motion.div>
           </>

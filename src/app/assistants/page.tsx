@@ -273,39 +273,39 @@ export default function AssistantsPage() {
 
   return (
     <PaymentGateWrapper>
-      <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', color: '#000000', paddingTop: '80px' }}>
-        <div className="container mx-auto py-8 px-4">
-          <div className="flex justify-between items-center mb-8">
+      <div>
+        <div className="mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>AI Assistants</h1>
-              <p className="text-gray-600 mt-2">
-                Manage your AI voice assistants for outbound calling campaigns
+              <h1 className="text-2xl font-semibold tracking-[-0.02em] text-foreground">Assistants</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                The AI voice agents that call your leads and book visits
               </p>
             </div>
             <Button 
               onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-primary hover:bg-primary/90 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
-              New Assistant
+              New assistant
             </Button>
           </div>
 
       {loading ? (
         <div className="flex justify-center p-8">
-          <div className="text-gray-500">Loading assistants...</div>
+          <div className="text-muted-foreground">Loading assistants...</div>
         </div>
       ) : assistants.length === 0 ? (
-        <Card className="text-center p-8" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-          <CardContent className="pt-6" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-            <Bot className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold mb-2" style={{ color: '#000000' }}>No Assistants Yet</h3>
-            <p className="text-gray-600 mb-4">
+        <Card className="text-center p-8">
+          <CardContent className="pt-6">
+            <Bot className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Assistants Yet</h3>
+            <p className="text-muted-foreground mb-4">
               Create your first AI assistant to start making outbound calls
             </p>
             <Button 
               onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-primary hover:bg-primary/90 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create First Assistant
@@ -315,12 +315,13 @@ export default function AssistantsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {assistants.map((assistant) => (
-            <Card key={assistant._id} className="relative" style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb' }}>
-              <CardHeader className="pb-3" style={{ backgroundColor: '#ffffff' }}>
+            <Card key={assistant._id} className="relative">
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg" style={{ color: '#000000' }}>{assistant.name}</CardTitle>
+                  <CardTitle className="text-lg">{assistant.name}</CardTitle>
                   <div className="flex items-center space-x-1">
-                    <Badge variant={assistant.isActive ? "default" : "secondary"}>
+                    <Badge variant="outline" className="gap-1.5 border-border font-normal text-foreground">
+                      <span className={`size-1.5 rounded-full ${assistant.isActive ? 'bg-green-500' : 'bg-muted-foreground/50'}`} />
                       {assistant.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
@@ -331,39 +332,39 @@ export default function AssistantsPage() {
                 </CardDescription>
               </CardHeader>
 
-              <CardContent className="space-y-4" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2 text-sm">
-                    <Mic className="w-4 h-4 text-gray-500" />
+                    <Mic className="w-4 h-4 text-muted-foreground" />
                     <span className="capitalize">{assistant.voice.gender}</span>
-                    <span className="text-gray-500">•</span>
-                    <span className="text-gray-500">{assistant.voice.provider}</span>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="text-muted-foreground">{assistant.voice.provider}</span>
                   </div>
                   
                   <div className="flex items-center space-x-2 text-sm">
-                    <Languages className="w-4 h-4 text-gray-500" />
+                    <Languages className="w-4 h-4 text-muted-foreground" />
                     <span>{formatLanguage(assistant.language)}</span>
                   </div>
 
                   <div className="flex items-center space-x-2 text-sm">
-                    <Phone className="w-4 h-4 text-gray-500" />
+                    <Phone className="w-4 h-4 text-muted-foreground" />
                     <span>US numbers: Default provider</span>
                   </div>
-                  <div className="text-xs text-gray-500 pl-6">
+                  <div className="text-xs text-muted-foreground pl-6">
                     International: Custom providers required
                   </div>
                 </div>
 
                 <div className="border rounded p-2">
-                  <p className="text-xs text-gray-600 mb-1">Main Prompt:</p>
-                  <p className="text-sm text-gray-800 line-clamp-3">
+                  <p className="text-xs text-muted-foreground mb-1">Main Prompt:</p>
+                  <p className="text-sm text-foreground line-clamp-3">
                     {assistant.mainPrompt}
                   </p>
                 </div>
 
 
                 {assistant.lastUsed && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Last used: {new Date(assistant.lastUsed).toLocaleDateString()}
                   </p>
                 )}
@@ -376,7 +377,7 @@ export default function AssistantsPage() {
                       setEditingAssistant(assistant);
                       setShowForm(true);
                     }}
-                    className="flex-1 bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                    className="flex-1 bg-card border-input text-muted-foreground hover:bg-accent border border-border"
                   >
                     <Edit className="w-4 h-4 mr-1" />
                     Edit
@@ -389,7 +390,7 @@ export default function AssistantsPage() {
                       size="sm"
                       onClick={() => handleTest(assistant)}
                       disabled={testingId === assistant._id || !assistant.isActive}
-                      className="flex-1 bg-white border-gray-300 text-gray-700 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400"
+                      className="flex-1 bg-card border-input text-muted-foreground hover:bg-accent disabled:bg-muted disabled:text-muted-foreground border border-border"
                     >
                       <TestTube className="w-4 h-4 mr-1" />
                       {testingId === assistant._id ? 'Testing...' : 'Test'}
@@ -400,7 +401,7 @@ export default function AssistantsPage() {
                     variant="destructive"
                     size="sm"
                     onClick={() => handleDelete(assistant)}
-                    className="bg-red-600 hover:bg-red-700 text-white"
+                    className="border border-input bg-transparent text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -414,7 +415,7 @@ export default function AssistantsPage() {
                     size="sm"
                     onClick={() => setWebTestAssistant(assistant)}
                     disabled={!assistant.isActive}
-                    className="flex-1 bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                    className="flex-1 bg-card border-input text-muted-foreground hover:bg-accent border border-border"
                   >
                     <Mic className="w-4 h-4 mr-1" />
                     Talk in browser
@@ -426,7 +427,7 @@ export default function AssistantsPage() {
                     onClick={() => handleResync(assistant)}
                     disabled={resyncingId === assistant._id}
                     title="Re-push tool and webhook URLs to Vapi (needed after an ngrok restart)"
-                    className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                    className="bg-card border-input text-muted-foreground hover:bg-accent border border-border"
                   >
                     <RefreshCw className={`w-4 h-4 ${resyncingId === assistant._id ? 'animate-spin' : ''}`} />
                   </Button>
@@ -463,10 +464,10 @@ export default function AssistantsPage() {
       {/* Test Assistant Modal */}
       {showTestModal && selectedAssistantForTest && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+          <div className="bg-card rounded-lg shadow-xl max-w-md w-full border border-border">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-foreground">
                   Test Assistant: {selectedAssistantForTest.name}
                 </h3>
                 <button
@@ -475,7 +476,7 @@ export default function AssistantsPage() {
                     setSelectedAssistantForTest(null);
                     setTestPhoneNumber('');
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -485,17 +486,17 @@ export default function AssistantsPage() {
 
               <div className="space-y-4">
                 {/* Phone Provider Info */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <h4 className="text-sm font-medium text-blue-900 mb-2">Phone Provider Information</h4>
-                  <div className="space-y-2 text-xs text-blue-800">
+                <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
+                  <h4 className="text-sm font-medium text-brand-soft mb-2">Phone Provider Information</h4>
+                  <div className="space-y-2 text-xs text-brand-soft">
                     <div className="flex items-center space-x-2">
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                      <span className="bg-green-500/10 text-green-500 px-2 py-1 rounded-full font-medium">
                         US Numbers (+1)
                       </span>
                       <span>Default provider (no setup required)</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium">
+                      <span className="bg-amber-500/10 text-amber-500 px-2 py-1 rounded-full font-medium">
                         International
                       </span>
                       <span>Requires custom phone provider in Settings</span>
@@ -505,7 +506,7 @@ export default function AssistantsPage() {
 
                 {/* Phone Number Input */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Test Phone Number
                   </label>
                   <input
@@ -513,9 +514,9 @@ export default function AssistantsPage() {
                     value={testPhoneNumber}
                     onChange={(e) => setTestPhoneNumber(e.target.value)}
                     placeholder="+1234567890"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-input rounded-lg focus:ring-ring focus:border-primary"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Enter phone number in E.164 format (e.g., +1234567890)
                   </p>
                   
@@ -523,21 +524,21 @@ export default function AssistantsPage() {
                   {testPhoneNumber && (
                     <div className="mt-2">
                       {isUSPhoneNumber(testPhoneNumber) ? (
-                        <div className="flex items-center space-x-2 text-green-700">
+                        <div className="flex items-center space-x-2 text-green-500">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                           <span className="text-sm">US number - will use default provider</span>
                         </div>
                       ) : testPhoneNumber.startsWith('+') ? (
-                        <div className="flex items-center space-x-2 text-yellow-700">
+                        <div className="flex items-center space-x-2 text-amber-500">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                           </svg>
                           <span className="text-sm">International number - requires custom provider</span>
                         </div>
                       ) : (
-                        <div className="flex items-center space-x-2 text-red-700">
+                        <div className="flex items-center space-x-2 text-red-500">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
@@ -553,7 +554,7 @@ export default function AssistantsPage() {
                   <button
                     onClick={handleTestSubmit}
                     disabled={!testPhoneNumber.trim() || testingId === selectedAssistantForTest._id}
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {testingId === selectedAssistantForTest._id ? 'Testing...' : 'Start Test Call'}
                   </button>
@@ -563,7 +564,7 @@ export default function AssistantsPage() {
                       setSelectedAssistantForTest(null);
                       setTestPhoneNumber('');
                     }}
-                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors"
+                    className="flex-1 bg-muted text-muted-foreground py-2 px-4 rounded-lg font-medium hover:bg-muted transition-colors"
                   >
                     Cancel
                   </button>

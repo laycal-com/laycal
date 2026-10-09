@@ -5,8 +5,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Laycal - AI Voice Agent for Automated Sales Calls | Increase Sales Efficiency",
-  description: "Boost sales efficiency with AI powered phone calls. Our AI appointment setter handles automated sales calls, AI outbound calls, and AI lead generation. Advanced AI voice agent and AI sales assistant for cold calling automation.",
+  title: "Laycal - Call Every New Lead in Under a Minute | AI Speed to Lead",
+  description: "Laycal calls every new lead within a minute of the form being submitted. An AI voice agent qualifies them, handles objections and books the meeting straight into your calendar.",
   keywords: "increase sales efficiency, ai powered phone calls, ai appointment setter, ai outbound calls, automated sales calls, ai lead generation, ai for cold calling, ai voice agent, ai sales assistant, automated calling system, JustCall alternative, Nooks alternative",
   authors: [{ name: "Laycal" }],
   creator: "Laycal",
@@ -21,8 +21,8 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "Laycal - AI Voice Agent for Automated Sales Calls | Increase Sales Efficiency",
-    description: "Boost sales efficiency with AI powered phone calls. Our AI appointment setter handles automated sales calls, AI outbound calls, and AI lead generation. Advanced AI voice agent and AI sales assistant for cold calling automation.",
+    title: "Laycal - Call Every New Lead in Under a Minute | AI Speed to Lead",
+    description: "Laycal calls every new lead within a minute of the form being submitted. An AI voice agent qualifies them, handles objections and books the meeting straight into your calendar.",
     url: "https://laycal.com",
     siteName: "Laycal",
     locale: "en_US",
@@ -30,8 +30,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Laycal - AI Voice Agent for Automated Sales Calls | Increase Sales Efficiency",
-    description: "Boost sales efficiency with AI powered phone calls. Our AI appointment setter handles automated sales calls, AI outbound calls, and AI lead generation.",
+    title: "Laycal - Call Every New Lead in Under a Minute | AI Speed to Lead",
+    description: "Laycal calls every new lead within a minute of the form being submitted. An AI voice agent qualifies them, handles objections and books the meeting straight into your calendar.",
   },
   robots: {
     index: true,
@@ -89,7 +89,9 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      {/* Browser extensions add their own classes to <body> before React
+          hydrates (ClickUp's does); this stops that from reading as a mismatch. */}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
         <noscript>
           <iframe 
             src={`https://www.googletagmanager.com/ns.html?id=${process.env.NEXT_PUBLIC_GTM_ID || 'GTM-TXJ2387M'}`}

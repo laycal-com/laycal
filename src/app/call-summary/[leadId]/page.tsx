@@ -100,10 +100,10 @@ function formatDuration(seconds?: number): string {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  failed: 'bg-rose-50 text-rose-700 border-rose-200',
-  'no-answer': 'bg-slate-100 text-slate-600 border-slate-200',
-  busy: 'bg-amber-50 text-amber-700 border-amber-200',
+  completed: 'bg-green-500/10 text-green-500 border-green-500/30',
+  failed: 'bg-red-500/10 text-red-500 border-red-500/30',
+  'no-answer': 'bg-muted text-muted-foreground border-border',
+  busy: 'bg-amber-500/10 text-amber-500 border-amber-500/30',
 };
 
 /** Turns `problem_symptom` into `Problem symptom`. */
@@ -148,10 +148,10 @@ function Stat({
 }) {
   return (
     <div className="flex items-center gap-2.5">
-      <Icon className="h-4 w-4 flex-none text-slate-400" />
+      <Icon className="h-4 w-4 flex-none text-muted-foreground" />
       <div className="min-w-0">
-        <p className="text-xs text-slate-500">{label}</p>
-        <p className="truncate text-sm font-medium text-slate-900">{value}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="truncate text-sm font-medium text-foreground">{value}</p>
       </div>
     </div>
   );
@@ -219,11 +219,11 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50" style={{ paddingTop: '80px' }}>
-        <div className="container mx-auto max-w-6xl px-6 py-8">
+      <div>
+        <div className="mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Panel className="h-[520px] animate-pulse bg-slate-100/60 lg:col-span-2" />
-            <Panel className="h-[520px] animate-pulse bg-slate-100/60" />
+            <Panel className="h-[520px] animate-pulse bg-muted/40 lg:col-span-2" />
+            <Panel className="h-[520px] animate-pulse bg-muted/40" />
           </div>
         </div>
       </div>
@@ -234,11 +234,11 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
   // this page used to call notFound() and dead-end the user.
   if (!summary) {
     return (
-      <div className="min-h-screen bg-slate-50" style={{ paddingTop: '80px' }}>
-        <div className="container mx-auto max-w-6xl px-6 py-8">
+      <div>
+        <div className="mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
           <button
             onClick={() => router.back()}
-            className="mb-6 inline-flex items-center gap-1.5 text-sm text-slate-600 transition-colors hover:text-slate-900"
+            className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
@@ -248,7 +248,7 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
               title="No call recorded yet"
               body="Once this lead has been called, the transcript, recording and everything the agent captured will appear here."
               action={
-                <Link href="/leads" className="text-xs font-medium text-blue-600 hover:text-blue-700">
+                <Link href="/leads" className="text-xs font-medium text-foreground underline-offset-4 hover:underline">
                   Back to leads →
                 </Link>
               }
@@ -263,19 +263,19 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
   const statusClass = STATUS_STYLES[callData.status] ?? STATUS_STYLES['no-answer'];
 
   return (
-    <div className="min-h-screen bg-slate-50" style={{ paddingTop: '80px' }}>
-      <div className="container mx-auto max-w-6xl px-6 py-8">
+    <div>
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
         <button
           onClick={() => router.back()}
-          className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-600 transition-colors hover:text-slate-900"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
 
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Call summary</h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Call summary</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               {callData.startTime
                 ? new Date(callData.startTime).toLocaleString()
                 : new Date(summary.createdAt).toLocaleString()}
@@ -325,7 +325,7 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
                     >
                       <span
                         className={`mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-full text-[10px] font-semibold ${
-                          isCustomer ? 'bg-slate-200 text-slate-700' : 'bg-blue-600 text-white'
+                          isCustomer ? 'bg-muted text-muted-foreground' : 'bg-primary text-white'
                         }`}
                       >
                         {isCustomer ? 'C' : 'AI'}
@@ -333,8 +333,8 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
                       <div
                         className={`max-w-[75%] rounded-xl px-3.5 py-2.5 text-sm ${
                           isCustomer
-                            ? 'bg-slate-100 text-slate-800'
-                            : 'bg-blue-50 text-slate-800'
+                            ? 'bg-muted text-foreground'
+                            : 'bg-primary/15 text-foreground'
                         }`}
                       >
                         {line.text}
@@ -352,9 +352,9 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
                 <PanelHeader title="Summary" />
                 <div className="p-5">
                   {summary.summary ? (
-                    <p className="text-sm leading-relaxed text-slate-700">{summary.summary}</p>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{summary.summary}</p>
                   ) : (
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                       No summary for this call. Calls made before the analysis plan was enabled
                       don&apos;t have one, and it can&apos;t be generated after the fact.
                     </p>
@@ -369,9 +369,9 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
                   <PanelHeader title="Visit booked" />
                   <div className="space-y-2 p-5">
                     <div className="flex items-start gap-2.5">
-                      <CalendarCheck className="mt-0.5 h-4 w-4 flex-none text-emerald-600" />
+                      <CalendarCheck className="mt-0.5 h-4 w-4 flex-none text-green-500" />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-900">
+                        <p className="text-sm font-medium text-foreground">
                           {formatVisit(summary.appointmentData.startTime, summary.appointmentData.timezone, {
                             weekday: 'long',
                             month: 'long',
@@ -380,13 +380,13 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
                             minute: '2-digit',
                           })}
                           {zoneLabel(summary.appointmentData.startTime, summary.appointmentData.timezone) && (
-                            <span className="ml-1.5 text-xs font-normal text-slate-400">
+                            <span className="ml-1.5 text-xs font-normal text-muted-foreground">
                               {zoneLabel(summary.appointmentData.startTime, summary.appointmentData.timezone)}
                             </span>
                           )}
                         </p>
                         {summary.appointmentData.title && (
-                          <p className="mt-0.5 text-xs text-slate-500">
+                          <p className="mt-0.5 text-xs text-muted-foreground">
                             {summary.appointmentData.title}
                           </p>
                         )}
@@ -394,7 +394,7 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
                     </div>
                     <Link
                       href="/appointments"
-                      className="inline-block text-xs font-medium text-blue-600 hover:text-blue-700"
+                      className="inline-block text-xs font-medium text-foreground underline-offset-4 hover:underline"
                     >
                       Manage this visit →
                     </Link>
@@ -408,23 +408,23 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
                 <PanelHeader title="Recording" />
                 <div className="p-5">
                   {!summary.stereoRecordingUrl ? (
-                    <p className="flex items-center gap-2 text-sm text-slate-500">
-                      <Mic className="h-4 w-4 text-slate-300" /> No recording available.
+                    <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mic className="h-4 w-4 text-muted-foreground/50" /> No recording available.
                     </p>
                   ) : recording === null ? (
-                    <p className="text-sm text-slate-400">Checking recording…</p>
+                    <p className="text-sm text-muted-foreground">Checking recording…</p>
                   ) : recording.playable && recording.url ? (
                     <>
                       {/* Signed URL minted per view — the stored one is a raw
                           bucket path and never plays. */}
-                      <audio controls src={recording.url} className="w-full" />
-                      <p className="mt-2 text-xs text-slate-400">
+                      <audio controls src={recording.url} className="w-full [color-scheme:dark]" />
+                      <p className="mt-2 text-xs text-muted-foreground">
                         Vapi keeps recordings for 15 days.
                       </p>
                     </>
                   ) : (
                     <div className="space-y-2">
-                      <p className="flex items-start gap-2 text-sm text-slate-600">
+                      <p className="flex items-start gap-2 text-sm text-muted-foreground">
                         <AlertTriangle className="mt-0.5 h-4 w-4 flex-none text-amber-500" />
                         <span>
                           {recording.reason === 'missing'
@@ -448,10 +448,10 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
                     <dl className="space-y-3">
                       {facts.map(([key, value]) => (
                         <div key={key}>
-                          <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                             {humanise(key)}
                           </dt>
-                          <dd className="mt-0.5 text-sm text-slate-800">
+                          <dd className="mt-0.5 text-sm text-foreground">
                             {renderValue(key, value, summary.appointmentData?.timezone)}
                           </dd>
                         </div>
@@ -474,7 +474,7 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
                   <a
                     href={`data:text/plain;charset=utf-8,${encodeURIComponent(summary.transcript)}`}
                     download={`call-${summary.vapiCallId.slice(0, 8)}.txt`}
-                    className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-foreground underline-offset-4 hover:underline"
                   >
                     <FileText className="h-4 w-4" /> Download transcript
                   </a>
