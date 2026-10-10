@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 
 // Import models and utilities dynamically to avoid import issues
@@ -25,10 +26,10 @@ export async function POST(
 ) {
   try {
     console.log('POST /api/support/[ticketId]/reply - Adding reply to ticket:', params.ticketId);
-    const { userId } = await auth();
-    console.log('User ID from auth:', userId);
+    const { accountId } = await getAccountAuth();
+    console.log('User ID from auth:', accountId);
     
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -51,7 +52,7 @@ export async function POST(
     // Find the ticket by ticketId and ensure it belongs to the current user
     const ticket = await SupportTicket.findOne({ 
       ticketId: params.ticketId,
-      userId: userId 
+      accountId: accountId 
     });
 
     if (!ticket) {
@@ -71,7 +72,7 @@ export async function POST(
     const newMessage = {
       id: new Date().getTime().toString(),
       from: 'user' as const,
-      authorId: userId,
+      authorId: accountId,
       authorName: userName || 'User',
       message: message.trim(),
       isInternal: false,
@@ -97,7 +98,7 @@ export async function POST(
 
     logger.info('SUPPORT_TICKET_REPLY_ADDED', 'User added reply to support ticket', {
       ticketId: ticket.ticketId,
-      userId,
+      accountId,
       messageId: newMessage.id,
       newStatus: ticket.status
     });

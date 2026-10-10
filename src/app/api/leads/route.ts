@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Lead from '@/models/Lead';
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
 
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
 
     // Build query
-    const query: any = { userId };
+    const query: any = { accountId };
 
     if (status && status !== 'all') {
       query.status = status;
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     // Get status counts for dashboard
     const statusCounts = await Lead.aggregate([
-      { $match: { userId } },
+      { $match: { accountId } },
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
 

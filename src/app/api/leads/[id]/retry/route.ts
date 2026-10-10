@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Lead from '@/models/Lead';
@@ -13,9 +14,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
 
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -25,7 +26,7 @@ export async function POST(
     await connectToDatabase();
 
     // Find the lead
-    const lead = await Lead.findOne({ _id: leadId, userId });
+    const lead = await Lead.findOne({ _id: leadId, accountId });
 
     if (!lead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
@@ -46,7 +47,7 @@ export async function POST(
       
       // Check if user has a configured phone provider
       const phoneProvider = await PhoneProvider.findOne({
-        userId,
+        accountId,
         isActive: true,
         isDefault: true
       });
@@ -61,7 +62,7 @@ export async function POST(
           : null;
 
         vapiResponse = await tenantVapiService.initiateCall({
-          userId,
+          accountId,
           phoneNumber: lead.phoneNumber,
           ...(retryAssistant?.vapiAssistantId && { assistantId: retryAssistant.vapiAssistantId }),
           customer: {
@@ -73,7 +74,7 @@ export async function POST(
           variableValues: buildCallVariables(retryAssistant, lead),
           metadata: {
             leadId: lead._id.toString(),
-            userId: userId,
+            accountId: accountId,
             company: lead.company,
             retry: true,
           }
@@ -88,7 +89,7 @@ export async function POST(
           },
           metadata: {
             leadId: lead._id.toString(),
-            userId: userId,
+            accountId: accountId,
             company: lead.company,
             retry: true,
           }

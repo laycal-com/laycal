@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 import crypto from 'crypto';
 
 export interface IPhoneProvider extends Document {
-  userId: string;
+  accountId: string;
   providerName: 'twilio' | 'plivo' | 'nexmo';
   displayName: string;
   phoneNumber: string;
@@ -24,7 +24,7 @@ export interface IPhoneProvider extends Document {
 }
 
 const PhoneProviderSchema = new Schema<IPhoneProvider>({
-  userId: {
+  accountId: {
     type: String,
     required: true,
     index: true
@@ -156,7 +156,7 @@ PhoneProviderSchema.pre('save', function(next) {
 PhoneProviderSchema.pre('save', async function(next) {
   if (this.isDefault && this.isModified('isDefault')) {
     await mongoose.model('PhoneProvider').updateMany(
-      { userId: this.userId, _id: { $ne: this._id } },
+      { accountId: this.accountId, _id: { $ne: this._id } },
       { isDefault: false }
     );
   }
@@ -164,9 +164,9 @@ PhoneProviderSchema.pre('save', async function(next) {
 });
 
 // Indexes
-PhoneProviderSchema.index({ userId: 1, isDefault: 1 });
-PhoneProviderSchema.index({ userId: 1, isActive: 1 });
-PhoneProviderSchema.index({ userId: 1, providerName: 1 });
+PhoneProviderSchema.index({ accountId: 1, isDefault: 1 });
+PhoneProviderSchema.index({ accountId: 1, isActive: 1 });
+PhoneProviderSchema.index({ accountId: 1, providerName: 1 });
 
 // Ensure toJSON includes getters (for decryption)
 PhoneProviderSchema.set('toJSON', { getters: true });

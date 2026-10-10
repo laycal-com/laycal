@@ -14,7 +14,7 @@ import {
   RefreshCw,
   Users,
 } from 'lucide-react';
-import { UpgradeModal } from './UpgradeModal';
+import { useAccount } from './portal/account-context';
 import PhoneProviderPrompt from './PhoneProviderPrompt';
 import { ActivityChart, ActivityLegend, AssistantBars, OutcomesDonut } from './dashboard/portal-charts';
 import { EmptyState, Panel, PanelHeader, Reveal, StatCard } from './dashboard/panels';
@@ -23,11 +23,10 @@ import { cn } from '@/lib/utils';
 import {
   BalancePanel,
   NumbersPanel,
-  PlanPanel,
+  RatePanel,
   type CreditData,
   type PricingData,
   type ProviderData,
-  type UsageData,
 } from './dashboard/account';
 
 /**
@@ -106,13 +105,12 @@ function formatDuration(seconds: number): string {
 }
 
 export function DashboardClient() {
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { data: accountData, refresh: refreshAccount } = useAccount();
   const [activatingPayg, setActivatingPayg] = useState(false);
 
   const [days, setDays] = useState(30);
   const [stats, setStats] = useState<Stats | null>(null);
   const [credits, setCredits] = useState<CreditData | null>(null);
-  const [usage, setUsage] = useState<UsageData | null>(null);
   const [providers, setProviders] = useState<ProviderData[]>([]);
   const [pricing, setPricing] = useState<PricingData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -216,10 +214,9 @@ export function DashboardClient() {
   const loadAll = useCallback(
     async (range: number) => {
       // One failure shouldn't blank the page, so each source settles on its own.
-      const [statsRes, creditsRes, subRes, provRes, priceRes] = await Promise.allSettled([
+      const [statsRes, creditsRes, provRes, priceRes] = await Promise.allSettled([
         loadStats(range),
         fetch('/api/credits', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)),
-        fetch('/api/subscription').then((r) => (r.ok ? r.json() : null)),
         fetch('/api/phone-providers').then((r) => (r.ok ? r.json() : null)),
         fetch('/api/pricing').then((r) => (r.ok ? r.json() : null)),
       ]);
@@ -228,9 +225,7 @@ export function DashboardClient() {
       else toast.error('Could not load your call stats');
 
       if (creditsRes.status === 'fulfilled' && creditsRes.value) setCredits(creditsRes.value);
-      if (subRes.status === 'fulfilled' && subRes.value?.subscription) {
-        setUsage(subRes.value.subscription);
-      }
+      refreshAccount();
       if (provRes.status === 'fulfilled' && provRes.value) {
         setProviders(provRes.value.providers || []);
       }
@@ -668,13 +663,12 @@ export function DashboardClient() {
               <BalancePanel credits={credits} pricing={pricing} />
             </Reveal>
             <Reveal delay={0.1}>
-              <PlanPanel usage={usage} pricing={pricing} onUpgrade={() => setShowUpgradeModal(true)} />
+              <RatePanel billing={accountData?.billing ?? null} assistants={stats?.assistants.length ?? 0} />
             </Reveal>
           </div>
         </div>
       )}
 
-      {showUpgradeModal && <UpgradeModal onClose={() => setShowUpgradeModal(false)} />}
     </div>
   );
 }

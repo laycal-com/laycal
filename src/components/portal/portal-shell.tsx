@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
 import { MotionConfig } from 'motion/react';
 import {
@@ -28,6 +28,9 @@ import {
 } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { AccountProvider, useAccount } from './account-context';
+import { SetupGuide } from './setup-guide';
+import { LogoMark } from '@/components/brand/logo-mark';
 
 type NavItem = {
   label: string;
@@ -129,9 +132,7 @@ function SidebarContent({ pathname, unread }: { pathname: string; unread: number
     <>
       <div className="flex h-14 shrink-0 items-center border-b border-border px-5">
         <Link href="/dashboard" aria-label="Laycal dashboard" className="flex items-center gap-2.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary">
-            <span className="size-2 rounded-full bg-white" />
-          </span>
+          <LogoMark />
           <SidebarLabel className="text-[17px] font-semibold tracking-tight text-foreground">Laycal</SidebarLabel>
         </Link>
       </div>
@@ -259,6 +260,45 @@ function TopBar({ pathname }: { pathname: string }) {
   );
 }
 
+/* ---------------------------------- gate ---------------------------------- */
+
+/**
+ * Decides what a signed-in person sees: the onboarding form if their account
+ * details are missing, a notice if the account is suspended, the page otherwise.
+ */
+function AccountGate({ children }: { children: React.ReactNode }) {
+  const { status, data } = useAccount();
+  const router = useRouter();
+  const needsOnboarding = status === 'ready' && !data.account.onboarded;
+
+  useEffect(() => {
+    if (needsOnboarding) router.replace('/onboarding');
+  }, [needsOnboarding, router]);
+
+  if (status === 'suspended') {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center px-6 text-center">
+        <div className="max-w-sm">
+          <h1 className="text-xl font-semibold tracking-[-0.02em]">This account is suspended</h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Calls and access are paused. Contact us at contact@laycal.com and we will sort it out.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'loading' || needsOnboarding) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center" role="status" aria-label="Loading your account">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 /* ---------------------------------- shell --------------------------------- */
 
 export function PortalShell({ children, forceDark = false }: { children: React.ReactNode; forceDark?: boolean }) {
@@ -287,6 +327,7 @@ export function PortalShell({ children, forceDark = false }: { children: React.R
   const dark = forceDark || DARK_ROUTES.some((p) => matches(pathname, p));
 
   return (
+    <AccountProvider>
     <MotionConfig reducedMotion="user">
       <TooltipProvider delayDuration={150}>
         <SidebarProvider open={open} setOpen={setOpen}>
@@ -301,12 +342,16 @@ export function PortalShell({ children, forceDark = false }: { children: React.R
                 dark ? 'dark bg-background text-foreground' : 'bg-white text-black'
               )}
             >
+              <SetupGuide />
               <TopBar pathname={pathname} />
-              <main className="flex-1">{children}</main>
+              <main className="flex-1">
+                <AccountGate>{children}</AccountGate>
+              </main>
             </div>
           </div>
         </SidebarProvider>
       </TooltipProvider>
     </MotionConfig>
+    </AccountProvider>
   );
 }

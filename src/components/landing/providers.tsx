@@ -4,24 +4,28 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { MotionConfig } from 'motion/react';
 
 const DEFAULT_RATE = 0.07;
+const DEFAULT_ASSISTANT_FEE = 10;
 
-const RateContext = createContext(DEFAULT_RATE);
+const RateContext = createContext({ rate: DEFAULT_RATE, assistantFee: DEFAULT_ASSISTANT_FEE });
 
 /** Per-minute rate from /api/pricing, falling back to the default until it loads. */
 export function useRate() {
-  const rate = useContext(RateContext);
-  return { rate, rateLabel: `$${rate.toFixed(2)}` };
+  const { rate, assistantFee } = useContext(RateContext);
+  return { rate, rateLabel: `$${rate.toFixed(2)}`, assistantFee };
 }
 
 export function LandingProviders({ children }: { children: React.ReactNode }) {
   const [rate, setRate] = useState(DEFAULT_RATE);
+  const [assistantFee, setAssistantFee] = useState(DEFAULT_ASSISTANT_FEE);
 
   useEffect(() => {
     let alive = true;
     fetch('/api/pricing')
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (alive && d?.cost_per_minute_payg) setRate(Number(d.cost_per_minute_payg));
+        if (!alive || !d) return;
+        if (d.cost_per_minute_payg) setRate(Number(d.cost_per_minute_payg));
+        if (d.assistant_base_cost) setAssistantFee(Number(d.assistant_base_cost));
       })
       .catch(() => {
         /* keep the default rate */
@@ -33,7 +37,7 @@ export function LandingProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <RateContext.Provider value={rate}>{children}</RateContext.Provider>
+      <RateContext.Provider value={{ rate, assistantFee }}>{children}</RateContext.Provider>
     </MotionConfig>
   );
 }

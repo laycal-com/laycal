@@ -9,22 +9,20 @@ import PhoneProvider from '@/models/PhoneProvider';
 import { tenantVapiService } from '@/lib/tenantVapi';
 import { usageValidator } from '@/lib/usageValidator';
 import { logger } from '@/lib/logger';
-import { ensureUserExists } from '@/lib/userRegistration';
+import { chargeAssistant } from '@/lib/billing';
+import { getAccountAuth } from '@/lib/account';
 import { PricingService } from '@/lib/pricing';
 
 export async function GET() {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { accountId } = await getAccountAuth();
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await connectToDatabase();
-    
-    // Ensure user exists in database (fallback mechanism)
-    await ensureUserExists(userId);
 
-    const assistants = await Assistant.find({ userId })
+    const assistants = await Assistant.find({ accountId })
       .populate('phoneNumbers.phoneProviderId', 'displayName phoneNumber')
       .sort({ createdAt: -1 });
 
@@ -42,8 +40,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { accountId } = await getAccountAuth();
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -58,23 +56,15 @@ export async function POST(request: NextRequest) {
     }
 
     await connectToDatabase();
-    
-    // Ensure user exists in database (fallback mechanism)
-    await ensureUserExists(userId);
 
-    // CRITICAL: Check assistant limits before creation
-    const canCreate = await usageValidator.canCreateAssistant(userId);
+    // The first assistant is free; each one after it has a one-time fee paid from credits.
+    const canCreate = await usageValidator.canCreateAssistant(accountId);
     if (!canCreate.canCreate) {
-      const upgradeOptions = await usageValidator.getUpgradeOptions(userId);
-      return NextResponse.json({
-        error: canCreate.reason,
-        upgradeRequired: true,
-        upgradeOptions
-      }, { status: 403 });
+      return NextResponse.json({ error: canCreate.reason, fee: canCreate.fee, needsCredits: true }, { status: 402 });
     }
 
     // Check for duplicate assistant name
-    const existingAssistant = await Assistant.findOne({ userId, name });
+    const existingAssistant = await Assistant.findOne({ accountId, name });
     if (existingAssistant) {
       return NextResponse.json(
         { error: 'Assistant name already exists' },
@@ -83,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     logger.info('ASSISTANT_CREATE_START', `Creating assistant: ${name}`, {
-      userId,
+      accountId,
       data: { name, language, voice: voice.gender }
     });
 
@@ -127,7 +117,7 @@ export async function POST(request: NextRequest) {
     // Create local assistant record (no phone numbers - they're handled separately)
     const assistant = new Assistant({
       _id: assistantObjectId,
-      userId,
+      accountId,
       name,
       vapiAssistantId: vapiAssistant.id,
       voice,
@@ -140,56 +130,19 @@ export async function POST(request: NextRequest) {
 
     await assistant.save();
 
-    // Deduct credits/update usage after successful creation
-    const Subscription = require('@/models/Subscription').default;
-    const subscription = await Subscription.findOne({ userId, isActive: true });
-    if (subscription) {
-      // Get dynamic assistant cost from system settings
-      const assistantCost = await PricingService.getAssistantCost();
-      const affordability = subscription.canAffordAssistant();
-      
-      if (affordability.useCredits) {
-        if (subscription.creditBalance >= assistantCost) {
-          // Deduct credits
-          const oldBalance = subscription.creditBalance;
-          subscription.creditBalance -= assistantCost;
-          
-          // Create credit transaction record for Recent Activity
-          try {
-            const Credit = require('@/models/Credit').default;
-            await Credit.createAssistantPurchase(
-              userId,
-              assistant._id,
-              name,
-              oldBalance,
-              assistantCost
-            );
-          } catch (creditError) {
-            logger.error('CREDIT_LOG_ERROR', 'Failed to log assistant purchase transaction', { creditError });
-          }
-          
-          logger.info('ASSISTANT_PAYMENT_DEDUCTED', 'Credits deducted for assistant creation', {
-            userId,
-            assistantId: assistant._id.toString(),
-            amountDeducted: assistantCost,
-            remainingBalance: subscription.creditBalance
-          });
-        } else {
-          logger.warn('ASSISTANT_INSUFFICIENT_CREDITS', 'Insufficient credits for assistant purchase', {
-            userId,
-            assistantId: assistant._id.toString(),
-            required: assistantCost,
-            available: subscription.creditBalance
-          });
-        }
-      }
-      // Always increment assistant count
-      subscription.assistantsCreated = (subscription.assistantsCreated || 0) + 1;
-      await subscription.save();
+    // Count it and charge the fee, if any. A failure here must not undo a working assistant.
+    try {
+      await chargeAssistant({ accountId, assistantId: assistant._id.toString(), name });
+    } catch (billingError) {
+      logger.error('ASSISTANT_FEE_ERROR', 'Failed to charge the assistant fee', {
+        accountId,
+        data: { assistantId: assistant._id.toString() },
+        error: billingError,
+      });
     }
 
     logger.info('ASSISTANT_CREATE_SUCCESS', `Assistant created successfully: ${name}`, {
-      userId,
+      accountId,
       data: { 
         assistantId: assistant._id.toString(),
         vapiAssistantId: vapiAssistant.id,

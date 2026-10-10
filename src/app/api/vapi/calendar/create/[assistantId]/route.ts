@@ -98,12 +98,12 @@ async function handle(req: NextRequest, assistantId: string) {
   // Cheap ceiling on a leaked assistant id being used to spam a real calendar.
   const since = new Date(now - 86_400_000);
   const todaysBookings = await Appointment.countDocuments({
-    userId: assistant.userId,
+    accountId: assistant.accountId,
     createdAt: { $gte: since },
   });
   if (todaysBookings >= DAILY_BOOKING_CAP) {
     logger.warn('VAPI_BOOK_DAILY_CAP', 'Daily booking cap reached', {
-      userId: assistant.userId,
+      accountId: assistant.accountId,
       data: { assistantId, todaysBookings },
     });
     return toolResult(toolCallId, {
@@ -122,7 +122,7 @@ async function handle(req: NextRequest, assistantId: string) {
 
   // Re-check immediately before writing: the agent may have talked for a while
   // since checkAvailability, and something else could have taken the slot.
-  const availability = await calendarManager.findAvailability(assistant.userId, {
+  const availability = await calendarManager.findAvailability(assistant.accountId, {
     start: start.toISOString(),
     end: end.toISOString(),
     durationMins,
@@ -175,16 +175,16 @@ async function handle(req: NextRequest, assistantId: string) {
   let result: { success: boolean; eventId?: string; error?: string };
 
   if (existing?.calendarEventId) {
-    const providers = await calendarManager.getUserActiveProviders(assistant.userId);
+    const providers = await calendarManager.getUserActiveProviders(assistant.accountId);
     const provider = providers[0] ? calendarManager.getProvider(providers[0]) : undefined;
 
     result = provider
-      ? await provider.updateEvent(assistant.userId, existing.calendarEventId, eventPayload)
+      ? await provider.updateEvent(assistant.accountId, existing.calendarEventId, eventPayload)
       : { success: false, error: 'No active calendar provider' };
 
     if (result.success) result.eventId = existing.calendarEventId;
   } else {
-    result = await calendarManager.createEventOn(assistant.userId, eventPayload);
+    result = await calendarManager.createEventOn(assistant.accountId, eventPayload);
   }
 
   if (result.success) {
@@ -213,7 +213,7 @@ async function handle(req: NextRequest, assistantId: string) {
         await Appointment.create({
           vapiCallId: callId || `direct-${assistantId}-${start.getTime()}`,
           phoneNumberId: phoneNumberId || 'speed-to-lead',
-          userId: assistant.userId,
+          accountId: assistant.accountId,
           assistantId: assistant._id,
           leadId: lead?._id ?? null,
           source: 'speed_to_lead_in_call',
@@ -227,7 +227,7 @@ async function handle(req: NextRequest, assistantId: string) {
       }
     } catch (auditError) {
       logger.error('VAPI_BOOK_AUDIT_FAILED', 'Could not write appointment record', {
-        userId: assistant.userId,
+        accountId: assistant.accountId,
         error: auditError,
         data: { assistantId },
       });
@@ -246,7 +246,7 @@ async function handle(req: NextRequest, assistantId: string) {
         await lead.save();
       } catch (leadError) {
         logger.error('VAPI_BOOK_LEAD_UPDATE_FAILED', 'Could not write booking back to lead', {
-          userId: assistant.userId,
+          accountId: assistant.accountId,
           leadId: String(lead._id),
           error: leadError,
         });
@@ -256,7 +256,7 @@ async function handle(req: NextRequest, assistantId: string) {
 
   if (!result.success) {
     logger.error('VAPI_BOOK_FAILED', 'Calendar write failed during call', {
-      userId: assistant.userId,
+      accountId: assistant.accountId,
       data: { assistantId, error: result.error },
     });
     return toolResult(toolCallId, {
@@ -267,7 +267,7 @@ async function handle(req: NextRequest, assistantId: string) {
   }
 
   logger.info('VAPI_BOOK_SUCCESS', 'Appointment booked during call', {
-    userId: assistant.userId,
+    accountId: assistant.accountId,
     data: {
       assistantId,
       startTime: start.toISOString(),

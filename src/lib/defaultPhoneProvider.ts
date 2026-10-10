@@ -18,19 +18,19 @@ export function isUSPhoneNumber(phoneNumber: string): boolean {
 /**
  * Gets a phone provider for a user, falling back to default US provider if none exists
  * IMPORTANT: Default provider is only available for US phone numbers
- * @param userId User ID to find phone provider for
+ * @param accountId User ID to find phone provider for
  * @param targetPhoneNumber The phone number being called (used to determine if US default should be used)
  * @returns Phone provider object with vapiPhoneNumberId, or null if no provider available
  */
 export async function getPhoneProviderOrDefault(
-  userId: string,
+  accountId: string,
   targetPhoneNumber?: string
 ): Promise<{ vapiPhoneNumberId: string | null; isDefault: boolean; providerId?: string } | null> {
   await connectToDatabase();
 
   // First, try to find user's own phone provider
   const userPhoneProvider = await PhoneProvider.findOne({
-    userId: userId,
+    accountId: accountId,
     isActive: true,
     isDefault: true
   });
@@ -41,7 +41,7 @@ export async function getPhoneProviderOrDefault(
   // the real failure, which is usually bad credentials.
   if (userPhoneProvider) {
     logger.info('PHONE_PROVIDER_FOUND', 'Using user phone provider', {
-      userId,
+      accountId,
       data: {
         phoneProviderId: userPhoneProvider._id?.toString(),
         vapiPhoneNumberId: userPhoneProvider.vapiPhoneNumberId ?? null,
@@ -61,7 +61,7 @@ export async function getPhoneProviderOrDefault(
   // If no user provider and we have a target phone number, check if it's US
   if (targetPhoneNumber && isUSPhoneNumber(targetPhoneNumber)) {
     logger.info('DEFAULT_US_PROVIDER_USED', 'Using default US phone provider (no user provider found)', {
-      userId,
+      accountId,
       data: { targetPhoneNumber, defaultVapiPhoneNumberId: DEFAULT_US_VAPI_PHONE_NUMBER_ID }
     });
     
@@ -74,7 +74,7 @@ export async function getPhoneProviderOrDefault(
   // If target phone number is not US, cannot use default provider
   if (targetPhoneNumber && !isUSPhoneNumber(targetPhoneNumber)) {
     logger.warn('NON_US_NUMBER_NO_PROVIDER', 'Cannot use default provider for non-US number', {
-      userId,
+      accountId,
       data: { targetPhoneNumber }
     });
     
@@ -83,7 +83,7 @@ export async function getPhoneProviderOrDefault(
 
   // No target phone number provided and no user provider
   logger.warn('NO_PHONE_PROVIDER_AVAILABLE', 'No phone provider configured and no target number to check', {
-    userId
+    accountId
   });
   
   return null;

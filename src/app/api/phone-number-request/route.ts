@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 
 // Import models and utilities only when needed to identify the failing import
@@ -6,13 +7,11 @@ async function getRequiredModules() {
   try {
     const { connectToDatabase } = await import('@/lib/mongodb');
     const SupportTicketModule = await import('@/models/SupportTicket');
-    const SubscriptionModule = await import('@/models/Subscription');
     const { logger } = await import('@/lib/logger');
     
     return {
       connectToDatabase,
       SupportTicket: SupportTicketModule.default,
-      Subscription: SubscriptionModule.default,
       logger
     };
   } catch (error) {
@@ -24,8 +23,8 @@ async function getRequiredModules() {
 export async function POST(request: NextRequest) {
   try {
     console.log('POST /api/phone-number-request - Starting request');
-    const { userId } = await auth();
-    console.log('User ID from auth:', userId);
+    const { accountId } = await getAccountAuth();
+    console.log('User ID from auth:', accountId);
     
     const requestBody = await request.json();
     console.log('Request body:', requestBody);
@@ -52,8 +51,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!userId) {
-      console.log('Validation failed: no userId');
+    if (!accountId) {
+      console.log('Validation failed: no accountId');
       return NextResponse.json(
         { error: 'User authentication is required' },
         { status: 400 }
@@ -63,7 +62,7 @@ export async function POST(request: NextRequest) {
     console.log('Validation passed, importing modules...');
 
     // Import modules dynamically to catch import errors
-    const { connectToDatabase, SupportTicket, Subscription, logger } = await getRequiredModules();
+    const { connectToDatabase, SupportTicket, logger } = await getRequiredModules();
     console.log('Modules imported successfully, connecting to database...');
 
     await connectToDatabase();
@@ -75,9 +74,9 @@ export async function POST(request: NextRequest) {
     let finalUserEmail = undefined;
     let finalUserName = undefined;
 
-    if (userId) {
-      console.log('Looking up subscription for user:', userId);
-      const subscription = await Subscription.findOne({ userId, isActive: true });
+    if (accountId) {
+      console.log('Looking up subscription for user:', accountId);
+      const subscription: any = null; // plans no longer exist
       console.log('Subscription found:', !!subscription);
       if (subscription) {
         userSubscriptionType = subscription.planType;
@@ -101,7 +100,7 @@ export async function POST(request: NextRequest) {
     // Create support ticket - exact same pattern as working support API
     const ticket = new SupportTicket({
       ticketId, // Set ticketId manually
-      userId,
+      accountId,
       userEmail: finalUserEmail || 'unknown@email.com',
       userName: finalUserName || 'Unknown User',
       subject: 'Phone Number Request',
@@ -113,7 +112,7 @@ export async function POST(request: NextRequest) {
       messages: [{
         id: new Date().getTime().toString(),
         from: 'user',
-        authorId: userId || 'anonymous',
+        authorId: accountId || 'anonymous',
         authorName: finalUserName || 'Anonymous User',
         message: requestMessage.trim(),
         isInternal: false,
@@ -129,7 +128,7 @@ export async function POST(request: NextRequest) {
 
     logger.info('PHONE_NUMBER_REQUEST_CREATED', 'Phone number request ticket created', {
       ticketId: ticket.ticketId,
-      userId,
+      accountId,
       userEmail: finalUserEmail,
       category: 'general',
       priority: 'medium'

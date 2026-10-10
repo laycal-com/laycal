@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import mongoose from 'mongoose';
 import { connectToDatabase } from '@/lib/mongodb';
@@ -26,8 +27,8 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
   const { id } = await ctx.params;
 
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { accountId } = await getAccountAuth();
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     }
 
     await connectToDatabase();
-    const summary = await CallSummary.findOne({ _id: id, userId })
+    const summary = await CallSummary.findOne({ _id: id, accountId })
       .select('vapiCallId stereoRecordingUrl')
       .lean();
 
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
         }
       } catch (vapiError) {
         logger.warn('RECORDING_PRESIGN_FAILED', 'Could not mint a presigned recording URL', {
-          userId,
+          accountId,
           vapiCallId,
           data: { error: vapiError instanceof Error ? vapiError.message : String(vapiError) },
         });

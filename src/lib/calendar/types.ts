@@ -57,13 +57,13 @@ export interface AvailabilityResult {
 
 export interface CalendarProvider {
   name: string;
-  isAuthenticated(userId: string): Promise<boolean>;
-  authenticate(userId: string, authData: any): Promise<void>;
-  createEvent(userId: string, event: CalendarEvent): Promise<CalendarEventResult>;
-  updateEvent(userId: string, eventId: string, event: CalendarEvent): Promise<CalendarEventResult>;
-  deleteEvent(userId: string, eventId: string): Promise<CalendarEventResult>;
-  refreshAuth(userId: string): Promise<boolean>;
-  findAvailability(userId: string, options: FindAvailabilityOptions): Promise<AvailabilityResult>;
+  isAuthenticated(accountId: string): Promise<boolean>;
+  authenticate(accountId: string, authData: any): Promise<void>;
+  createEvent(accountId: string, event: CalendarEvent): Promise<CalendarEventResult>;
+  updateEvent(accountId: string, eventId: string, event: CalendarEvent): Promise<CalendarEventResult>;
+  deleteEvent(accountId: string, eventId: string): Promise<CalendarEventResult>;
+  refreshAuth(accountId: string): Promise<boolean>;
+  findAvailability(accountId: string, options: FindAvailabilityOptions): Promise<AvailabilityResult>;
 }
 
 export interface AppointmentData {
@@ -84,7 +84,7 @@ export interface AppointmentData {
 }
 
 export interface CalendarConnection {
-  userId: string;
+  accountId: string;
   provider: 'google' | 'outlook' | 'ical';
   isActive: boolean;
   accessToken?: string;

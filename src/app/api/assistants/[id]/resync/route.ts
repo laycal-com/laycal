@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Assistant from '@/models/Assistant';
@@ -21,13 +22,13 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ id: st
   const { id } = await ctx.params;
 
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { accountId } = await getAccountAuth();
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await connectToDatabase();
-    const assistant = await Assistant.findOne({ _id: id, userId });
+    const assistant = await Assistant.findOne({ _id: id, accountId });
 
     if (!assistant) {
       return NextResponse.json({ error: 'Assistant not found' }, { status: 404 });
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ id: st
     });
 
     logger.info('ASSISTANT_RESYNC', 'Assistant re-pushed to Vapi', {
-      userId,
+      accountId,
       data: { assistantId: id, appUrl, webhookUrl, tools: isSpeedToLead },
     });
 

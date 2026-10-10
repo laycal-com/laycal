@@ -73,7 +73,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ assistantI
     }
     if (!validatePhoneNumber(phone)) {
       logger.error('INTAKE_BAD_PHONE', 'Invalid phone on intake', {
-        userId: assistant.userId,
+        accountId: assistant.accountId,
         data: { assistantId, phone },
       });
       return NextResponse.json({ error: 'Invalid phone number format' }, { status: 400 });
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ assistantI
       serviceType || (cfg?.vertical ? getVertical(cfg.vertical).label : '') || 'service';
 
     const lead = new Lead({
-      userId: assistant.userId,
+      accountId: assistant.accountId,
       name: fullName,
       phoneNumber: normalizedPhone,
       email: email || null,
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ assistantI
     await lead.save();
 
     logger.info('INTAKE_LEAD_CREATED', 'Speed-to-lead intake received', {
-      userId: assistant.userId,
+      accountId: assistant.accountId,
       leadId: lead._id.toString(),
       data: { assistantId, service: resolvedService, hasAddress: !!address },
     });
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ assistantI
       try {
         const vapi = new TenantVapiService();
         const call = await vapi.initiateCall({
-          userId: assistant.userId,
+          accountId: assistant.accountId,
           phoneNumber: normalizedPhone,
           assistantId: assistant.vapiAssistantId,
           customer: { name: fullName, ...(email && { email }) },
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ assistantI
         await assistant.save();
 
         logger.info('INTAKE_CALL_STARTED', 'Speed-to-lead call initiated', {
-          userId: assistant.userId,
+          accountId: assistant.accountId,
           leadId: lead._id.toString(),
           vapiCallId: call.id,
           data: { attempt },
@@ -155,7 +155,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ assistantI
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
         logger.error('INTAKE_CALL_ERROR', `Call attempt ${attempt}/${MAX_RETRIES} failed`, {
-          userId: assistant.userId,
+          accountId: assistant.accountId,
           leadId: lead._id.toString(),
           error: lastError,
         });

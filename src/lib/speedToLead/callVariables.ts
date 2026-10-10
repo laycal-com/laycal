@@ -1,4 +1,4 @@
-import { getVertical } from './verticals';
+import { tradeLabel } from './verticals';
 
 /**
  * A spelled-out calendar for the next week, in the assistant's timezone.
@@ -59,7 +59,7 @@ export function buildCallVariables(
 
   const serviceType =
     lead?.serviceType ||
-    (cfg?.vertical ? getVertical(cfg.vertical).label : '') ||
+    tradeLabel(cfg?.vertical, cfg?.customTrade) ||
     'service';
 
   return {

@@ -2,13 +2,13 @@ import { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Laycal - AI-Powered Sales Calling Platform',
+    name: 'Laycal - AI Speed to Lead',
     short_name: 'Laycal',
-    description: 'Scale your sales calls with AI agents that work 24/7',
+    description: 'Call every new lead in under a minute',
     start_url: '/',
     display: 'standalone',
-    background_color: '#1e40af',
-    theme_color: '#3b82f6',
+    background_color: '#000000',
+    theme_color: '#000000',
     icons: [
       {
         src: '/icon-192.png',

@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { logger } from '@/lib/logger';
 import { generateSpeedToLeadPrompt, type SpeedToLeadConfig } from '@/lib/speedToLead/promptGenerator';
-import { getVertical, DEFAULT_BUSINESS_HOURS } from '@/lib/speedToLead/verticals';
+import { getVertical, DEFAULT_BUSINESS_HOURS, OTHER_VERTICAL_ID } from '@/lib/speedToLead/verticals';
 import { OpenRouterError } from '@/lib/openrouter';
 
 /** Generates a speed-to-lead system prompt from the wizard's answers. */
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { accountId } = await getAccountAuth();
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -25,6 +26,23 @@ export async function POST(req: NextRequest) {
     }
 
     const vertical = getVertical(String(body.vertical || ''));
+
+    // A custom trade has no preset behind it, so its three answers are required.
+    const cut = (v: unknown, max: number) => String(v || '').trim().slice(0, max);
+    const customTrade =
+      vertical.id === OTHER_VERTICAL_ID
+        ? {
+            label: cut(body.customTrade?.label, 80),
+            description: cut(body.customTrade?.description, 400),
+            booking: cut(body.customTrade?.booking, 120),
+          }
+        : undefined;
+    if (customTrade && (!customTrade.label || !customTrade.description || !customTrade.booking)) {
+      return NextResponse.json(
+        { error: 'Tell us your industry, what you do and what the call should book' },
+        { status: 400 }
+      );
+    }
 
     const questions: string[] = Array.isArray(body.qualifyingQuestions)
       ? body.qualifyingQuestions.map((q: unknown) => String(q).trim()).filter(Boolean)
@@ -43,6 +61,7 @@ export async function POST(req: NextRequest) {
       agentName,
       clientCompany,
       vertical: vertical.id,
+      customTrade,
       serviceArea: body.serviceArea ? String(body.serviceArea).trim() : undefined,
       timezone: String(body.timezone || 'America/New_York'),
       businessHours: body.businessHours || DEFAULT_BUSINESS_HOURS,
@@ -55,14 +74,14 @@ export async function POST(req: NextRequest) {
     };
 
     logger.info('PROMPT_GEN_START', 'Generating speed-to-lead prompt', {
-      userId,
+      accountId,
       data: { vertical: config.vertical, company: config.clientCompany },
     });
 
     const generated = await generateSpeedToLeadPrompt(config);
 
     logger.info('PROMPT_GEN_SUCCESS', 'Speed-to-lead prompt generated', {
-      userId,
+      accountId,
       data: { vertical: config.vertical, length: generated.mainPrompt.length, model: generated.model },
     });
 

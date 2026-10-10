@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, ObjectId } from 'mongoose';
 
 export interface IAssistant extends Document {
   _id: ObjectId;
-  userId: string;
+  accountId: string;
   name: string;
   vapiAssistantId: string;
   
@@ -21,6 +21,8 @@ export interface IAssistant extends Document {
    */
   serviceConfig?: {
     vertical: string;
+    /** Set when vertical is 'other': the customer's own description of their trade. */
+    customTrade?: { label: string; description: string; booking: string };
     clientCompany: string;
     serviceArea?: string;
     timezone: string;
@@ -43,7 +45,7 @@ export interface IAssistant extends Document {
 }
 
 const AssistantSchema = new Schema<IAssistant>({
-  userId: {
+  accountId: {
     type: String,
     required: true,
     index: true
@@ -89,6 +91,16 @@ const AssistantSchema = new Schema<IAssistant>({
   serviceConfig: {
     type: {
       vertical: { type: String, trim: true },
+      customTrade: {
+        type: new Schema(
+          {
+            label: { type: String, trim: true, maxlength: 80 },
+            description: { type: String, trim: true, maxlength: 400 },
+            booking: { type: String, trim: true, maxlength: 120 },
+          },
+          { _id: false }
+        ),
+      },
       clientCompany: { type: String, trim: true, maxlength: 120 },
       serviceArea: { type: String, trim: true, maxlength: 200 },
       timezone: { type: String, default: 'America/New_York' },
@@ -135,8 +147,8 @@ const AssistantSchema = new Schema<IAssistant>({
   }
 });
 
-AssistantSchema.index({ userId: 1, name: 1 }, { unique: true });
-AssistantSchema.index({ userId: 1, isActive: 1 });
+AssistantSchema.index({ accountId: 1, name: 1 }, { unique: true });
+AssistantSchema.index({ accountId: 1, isActive: 1 });
 AssistantSchema.index({ 'phoneNumbers.phoneNumber': 1 });
 
 AssistantSchema.pre('save', function(next) {

@@ -6,6 +6,7 @@ import { ContainerScroll } from '@/components/ui/container-scroll-animation';
 import { cn } from '@/lib/utils';
 import { Dot, Eyebrow } from './primitives';
 import { LiveFeed } from './product-tiles';
+import { LogoMark } from '@/components/brand/logo-mark';
 
 const KPIS: [string, string, string][] = [
   ['Leads in', '1,412', '+12.4%'],
@@ -28,9 +29,7 @@ function DashboardPreview() {
   return (
     <div className="flex h-full text-left">
       <div className="hidden w-14 shrink-0 flex-col items-center gap-1 border-r border-white/[0.06] py-4 md:flex">
-        <span className="mb-4 flex size-7 items-center justify-center rounded-md bg-primary">
-          <span className="size-2 rounded-full bg-white" />
-        </span>
+        <LogoMark className="mb-4 h-6" />
         {RAIL.map((Icon, i) => (
           <span
             key={i}

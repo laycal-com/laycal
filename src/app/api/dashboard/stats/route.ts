@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Lead from '@/models/Lead';
@@ -62,8 +63,8 @@ function delta(current: number, previous: number): number | null {
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { accountId } = await getAccountAuth();
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -88,27 +89,27 @@ export async function GET(request: NextRequest) {
 
     const [current, previous, assistantRows, bookingDocs, upcomingDocs, recentDocs] =
       await Promise.all([
-        Lead.find({ userId, createdAt: { $gte: from } })
+        Lead.find({ accountId, createdAt: { $gte: from } })
           .select('status createdAt calledAt callResults assignedAssistantId')
           .lean(),
-        Lead.find({ userId, createdAt: { $gte: prevFrom, $lt: from } })
+        Lead.find({ accountId, createdAt: { $gte: prevFrom, $lt: from } })
           .select('status callResults')
           .lean(),
-        Assistant.find({ userId }).select('name serviceConfig isActive').lean(),
+        Assistant.find({ accountId }).select('name serviceConfig isActive').lean(),
         // Bookings come from here, not from Lead.callResults — the appointment
         // is the ledger and the lead flag is a denormalized copy that drifts.
         // Both windows in one pass so the delta has something to compare to.
-        Appointment.find({ userId, status: 'booked', createdAt: { $gte: prevFrom } })
+        Appointment.find({ accountId, status: 'booked', createdAt: { $gte: prevFrom } })
           .select('createdAt assistantId leadId')
           .lean(),
         // Upcoming is not window-bound: a visit booked last month can still be
         // in the future, so this is a separate, recency-capped read.
-        Appointment.find({ userId, status: 'booked' })
+        Appointment.find({ accountId, status: 'booked' })
           .select('appointmentData createdAt timezone')
           .sort({ createdAt: -1 })
           .limit(300)
           .lean(),
-        Lead.find({ userId, calledAt: { $ne: null } })
+        Lead.find({ accountId, calledAt: { $ne: null } })
           .select('name status calledAt callResults assignedAssistantId')
           .sort({ calledAt: -1 })
           .limit(8)

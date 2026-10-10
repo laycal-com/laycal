@@ -155,8 +155,62 @@ export const VERTICALS: Vertical[] = [
 
 export const DEFAULT_VERTICAL_ID = 'hvac';
 
+export const OTHER_VERTICAL_ID = 'other';
+
+/**
+ * What a business outside the presets tells us about itself. With no preset to
+ * lean on, these three answers are all the prompt generator knows about the
+ * trade, so each one is required.
+ */
+export interface CustomTrade {
+  /** e.g. "Solar installation", "B2B software". */
+  label: string;
+  /** One or two sentences on what the business sells or does. */
+  description: string;
+  /** What the call should end with, e.g. "a 30-minute demo", "a free consultation". */
+  booking: string;
+}
+
+/**
+ * Starting point for any business that is not one of the home-service presets.
+ * The questions are deliberately generic: the wizard asks the customer to
+ * replace them with their own in step 4.
+ */
+export const OTHER_VERTICAL: Vertical = {
+  id: OTHER_VERTICAL_ID,
+  label: 'Other',
+  descriptor: 'business',
+  defaultDurationMins: 30,
+  qualifyingQuestions: [
+    'What are you looking for help with?',
+    'How soon are you hoping to get this sorted?',
+    'Is there anything we should know before we speak?',
+  ],
+  objections: [
+    {
+      objection: 'How much will it cost?',
+      response: 'It depends on what you need, which is exactly what the appointment is for. There is no obligation.',
+    },
+    {
+      objection: 'I need to check my schedule',
+      response: "No problem. What day generally works best? I'll pencil it in and you can change it if you need to.",
+    },
+    {
+      objection: "I'm looking at other options too",
+      response: "That makes sense. A quick conversation will help you compare. Want me to find a time?",
+    },
+  ],
+};
+
 export function getVertical(id: string): Vertical {
+  if (id === OTHER_VERTICAL_ID) return OTHER_VERTICAL;
   return VERTICALS.find((v) => v.id === id) ?? VERTICALS[0];
+}
+
+/** The trade name to show or speak: the customer's own for a custom trade, the preset's otherwise. */
+export function tradeLabel(vertical: string | undefined, custom?: Partial<CustomTrade> | null): string {
+  if (vertical === OTHER_VERTICAL_ID && custom?.label) return custom.label;
+  return vertical ? getVertical(vertical).label : '';
 }
 
 /** Weekday-keyed business hours; Mon–Fri 8–6, Sat 9–2, closed Sunday. */

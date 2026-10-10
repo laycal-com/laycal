@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 
 // Import models and utilities dynamically to avoid import issues
@@ -23,10 +24,10 @@ export async function GET(
 ) {
   try {
     console.log('GET /api/support/[ticketId] - Starting request for ticket:', params.ticketId);
-    const { userId } = await auth();
-    console.log('User ID from auth:', userId);
+    const { accountId } = await getAccountAuth();
+    console.log('User ID from auth:', accountId);
     
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -36,7 +37,7 @@ export async function GET(
     // Find the ticket by ticketId and ensure it belongs to the current user
     const ticket = await SupportTicket.findOne({ 
       ticketId: params.ticketId,
-      userId: userId 
+      accountId: accountId 
     }).lean();
 
     if (!ticket) {

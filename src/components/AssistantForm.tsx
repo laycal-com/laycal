@@ -10,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { UpgradeModal } from './UpgradeModal';
 import { SpeedToLeadWizard, type SpeedToLeadResult } from './SpeedToLeadWizard';
 import { SPEED_TO_LEAD_SUMMARY_PROMPT } from '@/lib/speedToLead/tools';
 
@@ -23,17 +22,24 @@ interface AssistantFormProps {
 
 // Vapi's own voices lead the list — they are the lowest-latency option on a
 // phone call, which is what speed-to-lead is optimised for.
+// Ids must come from https://docs.vapi.ai/providers/voice/vapi-voices: Vapi
+// retires voices (Paige and Hana went in 2026) and then rejects new assistants
+// that use them.
 const VOICE_OPTIONS = {
   female: [
-    { id: 'Paige', name: 'Paige (recommended)', provider: 'vapi' },
-    { id: 'Hana', name: 'Hana', provider: 'vapi' },
+    { id: 'Clara', name: 'Clara (recommended) · professional', provider: 'vapi' },
+    { id: 'Emma', name: 'Emma · friendly', provider: 'vapi' },
+    { id: 'Leah', name: 'Leah · warm', provider: 'vapi' },
+    { id: 'Savannah', name: 'Savannah · friendly', provider: 'vapi' },
     { id: 'alloy', name: 'Alloy', provider: 'openai' },
     { id: 'nova', name: 'Nova', provider: 'openai' },
     { id: 'shimmer', name: 'Shimmer', provider: 'openai' },
   ],
   male: [
-    { id: 'Elliot', name: 'Elliot (recommended)', provider: 'vapi' },
-    { id: 'Rohan', name: 'Rohan', provider: 'vapi' },
+    { id: 'Elliot', name: 'Elliot (recommended) · calm', provider: 'vapi' },
+    { id: 'Kai', name: 'Kai · helpful', provider: 'vapi' },
+    { id: 'Leo', name: 'Leo · authoritative', provider: 'vapi' },
+    { id: 'Rohan', name: 'Rohan · energetic', provider: 'vapi' },
     { id: 'onyx', name: 'Onyx', provider: 'openai' },
     { id: 'fable', name: 'Fable', provider: 'openai' },
     { id: 'echo', name: 'Echo', provider: 'openai' },
@@ -66,7 +72,6 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showWizard, setShowWizard] = useState(!assistant); // Show wizard for new assistants
 
   useEffect(() => {
@@ -142,9 +147,9 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
         const error = await response.json();
         
         // Handle upgrade required error
-        if (error.upgradeRequired) {
+        if (error.needsCredits) {
           toast.error(error.error);
-          setShowUpgradeModal(true);
+          
           return;
         }
         
@@ -402,9 +407,6 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
       </Card>
 
       {/* Upgrade Modal */}
-      {showUpgradeModal && (
-        <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
-      )}
     </div>
   );
 }

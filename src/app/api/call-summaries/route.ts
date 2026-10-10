@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import CallSummary from '@/models/CallSummary';
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
     
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     const summaryId = searchParams.get('id');
 
     if (summaryId) {
-      const summary = await CallSummary.findOne({ _id: summaryId, userId });
+      const summary = await CallSummary.findOne({ _id: summaryId, accountId });
       if (!summary) {
         return NextResponse.json({ error: 'Call summary not found' }, { status: 404 });
       }
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build filter
-    const filter: any = { userId };
+    const filter: any = { accountId };
     if (phoneNumberId) filter.phoneNumberId = phoneNumberId;
     if (leadId) filter.leadId = leadId;
     if (status) filter['callData.status'] = status;

@@ -1,7 +1,7 @@
 import { Schema, model, models, Document } from 'mongoose';
 
 export interface IPendingTransaction extends Document {
-  userId: string;
+  accountId: string;
   orderId: string;
   amount: number;
   planType: string;
@@ -12,7 +12,7 @@ export interface IPendingTransaction extends Document {
 }
 
 const PendingTransactionSchema = new Schema<IPendingTransaction>({
-  userId: {
+  accountId: {
     type: String,
     required: true,
     index: true
@@ -56,19 +56,19 @@ const PendingTransactionSchema = new Schema<IPendingTransaction>({
 });
 
 // Compound indexes
-PendingTransactionSchema.index({ userId: 1, status: 1 });
+PendingTransactionSchema.index({ accountId: 1, status: 1 });
 PendingTransactionSchema.index({ orderId: 1, status: 1 });
 
 // Static methods
 PendingTransactionSchema.statics.createPending = function(
-  userId: string,
+  accountId: string,
   orderId: string, 
   amount: number,
   planType: string,
   description: string
 ) {
   return new this({
-    userId,
+    accountId,
     orderId,
     amount,
     planType,

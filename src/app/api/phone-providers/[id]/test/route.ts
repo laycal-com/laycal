@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import PhoneProvider from '@/models/PhoneProvider';
@@ -9,9 +10,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
 
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -19,7 +20,7 @@ export async function POST(
 
     const provider = await PhoneProvider.findOne({
       _id: params.id,
-      userId
+      accountId
     });
 
     if (!provider) {

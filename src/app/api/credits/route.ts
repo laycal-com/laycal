@@ -1,60 +1,36 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import Subscription from '@/models/Subscription';
-import Credit from '@/models/Credit';
+import { NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
+import CreditLedger from '@/models/CreditLedger';
+import { PricingService } from '@/lib/pricing';
+import { logger } from '@/lib/logger';
 
+/** Balance and recent ledger entries for the signed-in account. */
 export async function GET() {
   try {
-    const { userId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { accountId, account } = await getAccountAuth();
+    if (!accountId || !account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    await connectToDatabase();
+    const [entries, pricing] = await Promise.all([
+      CreditLedger.find({ accountId }).sort({ createdAt: -1 }).limit(10).lean(),
+      PricingService.getPricing(),
+    ]);
 
-    // Get subscription with credit balance
-    const subscription = await Subscription.findOne({ userId, isActive: true }).lean();
-    
-    if (!subscription) {
-      return NextResponse.json({
-        balance: 0,
-        planType: 'starter',
-        needsTopup: false,
-        minimumBalance: 5,
-        recentTransactions: []
-      });
-    }
+    const minimumBalance = pricing.minimum_topup_amount || 5;
 
-    // Get recent credit transactions
-    const recentTransactions = await Credit.find({ userId })
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .select('transactionType amount description createdAt');
-
-    const formattedTransactions = recentTransactions.map(tx => ({
-      type: tx.transactionType,
-      amount: tx.amount,
-      description: tx.description,
-      date: tx.createdAt.toISOString()
-    }));
-
-    const response = {
-      balance: subscription.creditBalance || 0,
-      planType: subscription.planType,
-      needsTopup: (subscription.creditBalance || 0) <= (subscription.minimumBalance || 5),
-      minimumBalance: subscription.minimumBalance || 5,
-      recentTransactions: formattedTransactions
-    };
-    
-    return NextResponse.json(response);
-
+    return NextResponse.json({
+      balance: account.creditBalance,
+      planType: 'payg',
+      needsTopup: account.creditBalance <= minimumBalance,
+      minimumBalance,
+      recentTransactions: entries.map((e: any) => ({
+        type: e.type,
+        amount: e.amount,
+        description: e.description,
+        date: e.createdAt,
+      })),
+    });
   } catch (error) {
-    console.error('Credits API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch credit data' },
-      { status: 500 }
-    );
+    logger.error('CREDITS_GET_ERROR', 'Failed to load credits', { error });
+    return NextResponse.json({ error: 'Failed to load credits' }, { status: 500 });
   }
 }

@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 export interface ICallSummary {
   _id: string;
-  userId: string;
+  accountId: string;
   vapiCallId: string;
   phoneNumberId: string; // Vapi phone number ID as identifier
   leadId?: string; // Optional - might not have lead for standalone calls
@@ -53,7 +53,7 @@ export interface ICallSummary {
 }
 
 const CallSummarySchema = new mongoose.Schema<ICallSummary>({
-  userId: {
+  accountId: {
     type: String,
     required: true,
     index: true
@@ -126,7 +126,7 @@ const CallSummarySchema = new mongoose.Schema<ICallSummary>({
 });
 
 // Indexes for efficient queries
-CallSummarySchema.index({ userId: 1, createdAt: -1 });
+CallSummarySchema.index({ accountId: 1, createdAt: -1 });
 CallSummarySchema.index({ phoneNumberId: 1, createdAt: -1 });
 CallSummarySchema.index({ leadId: 1 }, { sparse: true });
 CallSummarySchema.index({ vapiCallId: 1 });

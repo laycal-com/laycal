@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 
 // Import models and utilities dynamically to avoid import issues
@@ -19,9 +20,9 @@ async function getRequiredModules() {
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
     
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     // Find tickets with admin messages newer than last check
     const ticketsWithNewMessages = await SupportTicket.find({
-      userId,
+      accountId,
       status: { $ne: 'closed' }, // Only check non-closed tickets
       'messages': {
         $elemMatch: {
@@ -83,9 +84,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // This endpoint allows updating the "last checked" time
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
     
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

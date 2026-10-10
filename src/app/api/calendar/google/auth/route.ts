@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { calendarManager } from '@/lib/calendar/manager';
 import * as Sentry from '@sentry/nextjs';
 
 export async function GET(request: NextRequest) {
-  let userId: string | null = null;
+  let accountId: string | null = null;
   
   try {
     console.log('Google Calendar auth started');
     
-    const authResult = await auth();
-    userId = authResult.userId;
+    const authResult = await getAccountAuth();
+    accountId = authResult.accountId;
     
-    console.log('Google Calendar auth user authenticated', { userId: userId || 'none' });
+    console.log('Google Calendar auth user authenticated', { accountId: accountId || 'none' });
 
-    if (!userId) {
+    if (!accountId) {
       console.error('Google Calendar auth no user ID found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -23,15 +24,15 @@ export async function GET(request: NextRequest) {
     
     const googleProvider = calendarManager.getProvider('google') as any;
     if (!googleProvider) {
-      console.error('Google Calendar provider not available', { userId });
+      console.error('Google Calendar provider not available', { accountId });
       return NextResponse.json({ error: 'Google Calendar provider not available' }, { status: 500 });
     }
 
-    console.log('Generating Google Calendar auth URL', { userId });
+    console.log('Generating Google Calendar auth URL', { accountId });
     
     const authUrl = googleProvider.getAuthUrl();
     
-    console.log('Google Calendar auth URL generated successfully', { userId, authUrl });
+    console.log('Google Calendar auth URL generated successfully', { accountId, authUrl });
 
     return NextResponse.json({ authUrl });
 
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error in Google auth';
     
     console.error('Google Calendar auth critical error', {
-      userId, 
+      accountId, 
       url: request.url,
       errorMessage: errorMsg
     });
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
         component: 'google-calendar-auth'
       },
       extra: {
-        userId,
+        accountId,
         url: request.url
       }
     });

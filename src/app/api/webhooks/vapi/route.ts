@@ -599,8 +599,8 @@ async function storeAppointment(call: any, message: any, appointmentData: any, l
     // calendar right here, so every row the user sees is genuinely booked and
     // editable — rather than sitting unconfirmed and invisible.
     let calendarEventId: string | undefined;
-    if (lead?.userId) {
-      const result = await calendarManager.createEventOn(lead.userId, {
+    if (lead?.accountId) {
+      const result = await calendarManager.createEventOn(lead.accountId, {
         title,
         startTime: appointmentData.startTime,
         endTime: appointmentData.endTime,
@@ -613,7 +613,7 @@ async function storeAppointment(call: any, message: any, appointmentData: any, l
       } else {
         logger.error('APPOINTMENT_CALENDAR_WRITE_FAILED', 'Could not write extracted appointment to calendar', {
           vapiCallId: call.id,
-          userId: lead.userId,
+          accountId: lead.accountId,
           data: { error: result.error, startTime: appointmentData.startTime },
         });
       }
@@ -622,7 +622,7 @@ async function storeAppointment(call: any, message: any, appointmentData: any, l
     const appointment = new Appointment({
       vapiCallId: call.id,
       phoneNumberId: call.phoneNumberId || 'unknown', // Vapi phone number ID
-      userId: lead?.userId,
+      accountId: lead?.accountId,
       assistantId: lead?.assignedAssistantId ?? null,
       leadId: lead?._id ?? null,
       source: 'vapi_webhook',
@@ -651,7 +651,7 @@ async function storeAppointment(call: any, message: any, appointmentData: any, l
 
     logger.info('APPOINTMENT_STORED', 'Appointment recorded and written to calendar', {
       vapiCallId: call.id,
-      userId: lead?.userId,
+      accountId: lead?.accountId,
       data: {
         title,
         customerName,
@@ -770,7 +770,7 @@ async function processStandaloneAppointment(payload: any, call: any, message: an
 // Track call usage for billing purposes
 async function trackCallUsage(lead: any, message: any) {
   try {
-    if (!lead.assignedAssistantId || !lead.userId) return;
+    if (!lead.assignedAssistantId || !lead.accountId) return;
     
     const durationSeconds = message.durationSeconds || 0;
     if (durationSeconds < 1) return; // Skip very short calls
@@ -781,14 +781,16 @@ async function trackCallUsage(lead: any, message: any) {
     
     // Track usage
     await usageValidator.trackCallUsage(
-      lead.userId,
+      lead.accountId,
       lead.assignedAssistantId.toString(),
       assistantName,
-      durationSeconds
+      durationSeconds,
+      // The call id is what stops a repeated webhook from charging twice.
+      lead.vapiCallId || message?.call?.id
     );
     
     logger.info('USAGE_TRACKED', 'Call usage tracked for billing', {
-      userId: lead.userId,
+      accountId: lead.accountId,
       assistantId: lead.assignedAssistantId.toString(),
       assistantName,
       durationSeconds,
@@ -828,10 +830,10 @@ async function createCallSummary(call: any, message: any, lead?: any, payload?: 
   try {
     // Extract basic call information
     const phoneNumberId = call.phoneNumberId || payload.phoneNumberId || 'unknown';
-    const userId = lead?.userId;
+    const accountId = lead?.accountId;
     
-    if (!userId) {
-      logger.warn('CALL_SUMMARY_NO_USER', 'Cannot create call summary without userId', {
+    if (!accountId) {
+      logger.warn('CALL_SUMMARY_NO_USER', 'Cannot create call summary without accountId', {
         vapiCallId: call.id,
         phoneNumberId
       });
@@ -888,7 +890,7 @@ async function createCallSummary(call: any, message: any, lead?: any, payload?: 
     const stereoRecordingUrl = message?.artifact?.stereoRecordingUrl || payload?.artifact?.stereoRecordingUrl;
 
     const callSummaryData = {
-      userId,
+      accountId,
       vapiCallId: call.id,
       phoneNumberId,
       leadId: lead?._id?.toString(),
@@ -940,7 +942,7 @@ async function createCallSummary(call: any, message: any, lead?: any, payload?: 
       callSummaryId: callSummary._id.toString(),
       vapiCallId: call.id,
       phoneNumberId,
-      userId,
+      accountId,
       leadId: lead?._id?.toString(),
       data: {
         hasStructuredData: Object.keys(structuredData).length > 0,
@@ -956,7 +958,7 @@ async function createCallSummary(call: any, message: any, lead?: any, payload?: 
     logger.error('CALL_SUMMARY_ERROR', 'Failed to create call summary', {
       vapiCallId: call.id,
       error,
-      userId: lead?.userId
+      accountId: lead?.accountId
     });
   }
 }

@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { calendarManager } from '@/lib/calendar/manager';
 import * as Sentry from '@sentry/nextjs';
 
 export async function GET(request: NextRequest) {
-  let userId: string | null = null;
+  let accountId: string | null = null;
   
   try {
     console.log('Google Calendar callback started', { url: request.url });
     
-    const authResult = await auth();
-    userId = authResult.userId;
+    const authResult = await getAccountAuth();
+    accountId = authResult.accountId;
     
-    console.log('Google Calendar callback user authenticated', { userId: userId || 'none' });
+    console.log('Google Calendar callback user authenticated', { accountId: accountId || 'none' });
 
-    if (!userId) {
+    if (!accountId) {
       console.error('Google Calendar callback no user ID found');
       return NextResponse.redirect(new URL('/sign-in', request.url));
     }
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
     console.log('Google Calendar callback params parsed', paramsData);
 
     if (error) {
-      console.error('Google Calendar authentication error', { userId, error });
+      console.error('Google Calendar authentication error', { accountId, error });
       return NextResponse.redirect(
         new URL('/settings?calendar_error=authentication_failed', request.url)
       );
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     if (!code) {
       console.error('Google Calendar callback no authorization code', { 
-        userId, 
+        accountId, 
         searchParams: Object.fromEntries(searchParams.entries()) 
       });
       return NextResponse.redirect(
@@ -53,18 +54,18 @@ export async function GET(request: NextRequest) {
     
     const googleProvider = calendarManager.getProvider('google');
     if (!googleProvider) {
-      console.error('Google Calendar provider not available', { userId });
+      console.error('Google Calendar provider not available', { accountId });
       return NextResponse.redirect(
         new URL('/settings?calendar_error=provider_unavailable', request.url)
       );
     }
 
-    console.log('Starting Google Calendar token exchange', { userId });
+    console.log('Starting Google Calendar token exchange', { accountId });
     
     // Exchange code for tokens and save to database
-    await googleProvider.authenticate(userId, { code });
+    await googleProvider.authenticate(accountId, { code });
     
-    console.log('Google Calendar authentication completed successfully', { userId });
+    console.log('Google Calendar authentication completed successfully', { accountId });
 
     return NextResponse.redirect(
       new URL('/settings?calendar_success=google_connected', request.url)
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
     
     console.error('Google Calendar callback critical error', {
       errorMessage: errorMsg,
-      userId,
+      accountId,
       url: request.url,
       searchParams: request.nextUrl.searchParams ? Object.fromEntries(request.nextUrl.searchParams.entries()) : null
     });
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest) {
         component: 'google-calendar-callback'
       },
       extra: {
-        userId,
+        accountId,
         url: request.url,
         searchParams: request.nextUrl.searchParams ? Object.fromEntries(request.nextUrl.searchParams.entries()) : null
       }

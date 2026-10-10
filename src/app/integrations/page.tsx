@@ -87,6 +87,7 @@ export default function IntegrationsPage() {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
+                  data-tour={`tab-${tab.id}`}
                   onClick={() => setActiveTab(tab.id as TabType)}
                   className={`flex-1 py-4 px-6 text-center border-b-2 font-medium text-sm transition-colors ${
                     activeTab === tab.id

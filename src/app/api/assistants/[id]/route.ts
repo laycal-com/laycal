@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Assistant from '@/models/Assistant';
@@ -13,15 +14,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { accountId } = await getAccountAuth();
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
     await connectToDatabase();
 
-    const assistant = await Assistant.findOne({ _id: id, userId })
+    const assistant = await Assistant.findOne({ _id: id, accountId })
       .populate('phoneNumbers.phoneProviderId', 'displayName phoneNumber');
 
     if (!assistant) {
@@ -47,8 +48,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { accountId } = await getAccountAuth();
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -58,7 +59,7 @@ export async function PUT(
 
     await connectToDatabase();
 
-    const assistant = await Assistant.findOne({ _id: id, userId });
+    const assistant = await Assistant.findOne({ _id: id, accountId });
     if (!assistant) {
       return NextResponse.json({ error: 'Assistant not found' }, { status: 404 });
     }
@@ -68,7 +69,7 @@ export async function PUT(
       const phoneProviderIds = phoneNumbers.map((pn: any) => pn.phoneProviderId);
       const providers = await PhoneProvider.find({
         _id: { $in: phoneProviderIds },
-        userId
+        accountId
       });
 
       if (providers.length !== phoneProviderIds.length) {
@@ -82,7 +83,7 @@ export async function PUT(
     // Check for duplicate name (excluding current assistant)
     if (name && name !== assistant.name) {
       const existingAssistant = await Assistant.findOne({ 
-        userId, 
+        accountId, 
         name, 
         _id: { $ne: id } 
       });
@@ -95,7 +96,7 @@ export async function PUT(
     }
 
     logger.info('ASSISTANT_UPDATE_START', `Updating assistant: ${assistant.name}`, {
-      userId,
+      accountId,
       data: { assistantId: id, name }
     });
 
@@ -142,7 +143,7 @@ export async function PUT(
     ).populate('phoneNumbers.phoneProviderId', 'displayName phoneNumber');
 
     logger.info('ASSISTANT_UPDATE_SUCCESS', `Assistant updated successfully: ${updatedAssistant?.name}`, {
-      userId,
+      accountId,
       data: { assistantId: id, name: updatedAssistant?.name }
     });
 
@@ -173,22 +174,22 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { accountId } = await getAccountAuth();
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
     await connectToDatabase();
 
-    const assistant = await Assistant.findOne({ _id: id, userId });
+    const assistant = await Assistant.findOne({ _id: id, accountId });
     if (!assistant) {
       return NextResponse.json({ error: 'Assistant not found' }, { status: 404 });
     }
 
     // Check if assistant is being used by any leads
     const leadsCount = await Lead.countDocuments({ 
-      userId, 
+      accountId, 
       assignedAssistantId: id,
       status: { $in: ['pending', 'calling'] }
     });
@@ -201,7 +202,7 @@ export async function DELETE(
     }
 
     logger.info('ASSISTANT_DELETE_START', `Deleting assistant: ${assistant.name}`, {
-      userId,
+      accountId,
       data: { assistantId: id, vapiAssistantId: assistant.vapiAssistantId }
     });
 
@@ -212,7 +213,7 @@ export async function DELETE(
     await Assistant.findByIdAndDelete(id);
 
     logger.info('ASSISTANT_DELETE_SUCCESS', `Assistant deleted successfully: ${assistant.name}`, {
-      userId,
+      accountId,
       data: { assistantId: id }
     });
 

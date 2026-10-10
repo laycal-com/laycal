@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Bot, Minus, Phone, Plus, Wallet } from 'lucide-react';
+import { Minus, Phone, Plus, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Panel, PanelHeader } from './panels';
 import { CountUp } from './charts';
@@ -25,25 +25,13 @@ export interface CreditData {
   recentTransactions: Array<{ type: string; amount: number; description: string; date: string }>;
 }
 
-export interface UsageData {
-  planType: string;
-  planName: string;
-  minutesUsed: number;
-  minuteLimit: number;
-  minutesRemaining: number;
-  minutesOverage: number;
-  assistantsCreated: number;
-  assistantLimit: number;
-  assistantsRemaining: number;
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
-  isOverLimit: boolean;
-  isPayAsYouGo: boolean;
-  currentPeriodCost: number;
-  overageCost: number;
-  callsUsed?: number;
-  callLimit?: number;
-  callsRemaining?: number;
+/** Pay-as-you-go terms for the account, from /api/account. */
+export interface BillingData {
+  balance: number;
+  ratePerMinute: number;
+  nextAssistantFee: number;
+  assistantFee: number;
+  minimumTopup: number;
 }
 
 export interface ProviderData {
@@ -185,127 +173,51 @@ export function BalancePanel({
 
 /* -------------------------------------------------------------------------- */
 
-export function PlanPanel({
-  usage,
-  pricing,
-  onUpgrade,
-}: {
-  usage: UsageData | null;
-  pricing: PricingData | null;
-  onUpgrade: () => void;
-}) {
-  if (!usage) {
+export function RatePanel({ billing, assistants }: { billing: BillingData | null; assistants: number }) {
+  if (!billing) {
     return (
       <Panel className="h-full">
-        <PanelHeader title="Plan" />
-        <div className="p-5 text-sm text-muted-foreground">Plan details are unavailable right now.</div>
+        <PanelHeader title="Your pricing" />
+        <div className="p-5 text-sm text-muted-foreground">Pricing details are unavailable right now.</div>
       </Panel>
     );
   }
 
-  const isTrial = usage.planType === 'trial';
-  const callsUsed = usage.callsUsed || 0;
-  const callLimit = usage.callLimit || 5;
-  const unlimitedAssistants = usage.assistantLimit === -1;
-  const assistantPct = unlimitedAssistants
-    ? 0
-    : (usage.assistantsCreated / Math.max(usage.assistantLimit, 1)) * 100;
-
-  const showUpgrade = isTrial
-    ? usage.isOverLimit || callsUsed >= callLimit || usage.assistantsRemaining === 0
-    : !usage.isPayAsYouGo && (usage.isOverLimit || usage.minutesRemaining < 100);
+  const rows: [string, string, string][] = [
+    ['Calls', `$${billing.ratePerMinute.toFixed(2)} / min`, 'Billed per second of talk time'],
+    [
+      'Next assistant',
+      billing.nextAssistantFee === 0 ? 'Free' : `$${billing.nextAssistantFee}`,
+      billing.nextAssistantFee === 0 ? 'Your first assistant is on us' : `One-time fee. You have ${assistants}.`,
+    ],
+  ];
 
   return (
     <Panel className="flex h-full flex-col">
       <PanelHeader
-        title="Plan"
-        subtitle={
-          isTrial
-            ? `Trial ends ${new Date(usage.currentPeriodEnd).toLocaleDateString()}`
-            : `${new Date(usage.currentPeriodStart).toLocaleDateString()} – ${new Date(
-                usage.currentPeriodEnd
-              ).toLocaleDateString()}`
-        }
+        title="Your pricing"
+        subtitle="Pay as you go. No plan, no monthly minimum."
         action={
           <span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium text-foreground">
-            {usage.planName}
+            Pay-as-you-go
           </span>
         }
       />
-      <div className="flex flex-1 flex-col gap-5 p-5">
-        {isTrial ? (
-          <div>
-            <div className="mb-1.5 flex items-baseline justify-between text-sm">
-              <span className="font-medium text-foreground">Trial calls</span>
-              <span className="tabular-nums text-muted-foreground">
-                {callsUsed} / {callLimit}
-              </span>
+      <div className="flex flex-1 flex-col p-5">
+        <dl>
+          {rows.map(([label, value, hint]) => (
+            <div key={label} className="flex items-baseline justify-between gap-4 border-b border-border py-3.5 first:pt-0 last:border-b-0">
+              <div>
+                <dt className="text-sm font-medium text-foreground">{label}</dt>
+                <dd className="mt-0.5 text-xs text-muted-foreground">{hint}</dd>
+              </div>
+              <span className="font-mono text-lg font-medium tabular-nums text-foreground">{value}</span>
             </div>
-            <Meter
-              value={(callsUsed / callLimit) * 100}
-              tone={callsUsed >= callLimit ? 'rose' : 'blue'}
-            />
-          </div>
-        ) : (
-          <div>
-            <div className="mb-1.5 flex items-baseline justify-between text-sm">
-              <span className="font-medium text-foreground">Calling minutes</span>
-              <span className="tabular-nums text-muted-foreground">
-                {usage.minutesUsed}
-                {usage.minuteLimit === -1 ? '' : ` / ${usage.minuteLimit}`}
-              </span>
-            </div>
-            {usage.minuteLimit === -1 ? (
-              <p className="text-xs text-muted-foreground">
-                Pay-as-you-go — ${pricing?.cost_per_minute_payg ?? 0.07} per minute
-              </p>
-            ) : (
-              <Meter
-                value={(usage.minutesUsed / Math.max(usage.minuteLimit, 1)) * 100}
-                tone={usage.isOverLimit ? 'rose' : usage.minutesRemaining < 100 ? 'amber' : 'blue'}
-              />
-            )}
-          </div>
-        )}
-
-        <div>
-          <div className="mb-1.5 flex items-baseline justify-between text-sm">
-            <span className="flex items-center gap-1.5 font-medium text-foreground">
-              <Bot className="h-3.5 w-3.5 text-muted-foreground" />
-              Assistants
-            </span>
-            <span className="tabular-nums text-muted-foreground">
-              {usage.assistantsCreated}
-              {unlimitedAssistants ? '' : ` / ${usage.assistantLimit}`}
-            </span>
-          </div>
-          {unlimitedAssistants ? (
-            <p className="text-xs text-muted-foreground">Unlimited on your plan</p>
-          ) : (
-            <Meter value={assistantPct} tone={usage.assistantsRemaining === 0 ? 'amber' : 'blue'} />
-          )}
-        </div>
-
-        <div className="mt-auto flex items-end justify-between border-t border-border pt-4">
-          <div>
-            <p className="text-xs text-muted-foreground">This period</p>
-            <p className="font-mono text-lg font-medium tabular-nums text-foreground">
-              ${usage.currentPeriodCost.toFixed(2)}
-            </p>
-          </div>
-          {showUpgrade ? (
-            <Button size="sm" onClick={onUpgrade}>
-              Upgrade
-            </Button>
-          ) : (
-            <Link
-              href="/#pricing"
-              className="text-xs font-medium text-foreground underline-offset-4 transition-colors hover:underline"
-            >
-              View plans →
-            </Link>
-          )}
-        </div>
+          ))}
+        </dl>
+        <p className="mt-auto pt-4 text-xs leading-5 text-muted-foreground">
+          Calls stop when your balance reaches zero. Calls already in progress are allowed to finish.
+        </p>
       </div>
     </Panel>
   );

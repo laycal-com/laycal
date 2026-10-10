@@ -139,11 +139,11 @@ export class GoogleCalendarProvider implements CalendarProvider {
     );
   }
 
-  async isAuthenticated(userId: string): Promise<boolean> {
+  async isAuthenticated(accountId: string): Promise<boolean> {
     try {
       await connectToDatabase();
       const connection = await CalendarConnection.findOne({ 
-        userId, 
+        accountId, 
         provider: 'google', 
         isActive: true 
       });
@@ -155,37 +155,37 @@ export class GoogleCalendarProvider implements CalendarProvider {
       // Check if token is expired
       if (connection.tokenExpiry && connection.tokenExpiry < new Date()) {
         // Try to refresh the token
-        return await this.refreshAuth(userId);
+        return await this.refreshAuth(accountId);
       }
 
       return true;
     } catch (error) {
       logger.error('GOOGLE_AUTH_CHECK', 'Failed to check Google Calendar authentication', {
-        userId,
+        accountId,
         error
       });
       return false;
     }
   }
 
-  async authenticate(userId: string, authData: { code: string }): Promise<void> {
+  async authenticate(accountId: string, authData: { code: string }): Promise<void> {
     try {
-      console.log('Google Calendar authenticate starting', { userId, hasCode: !!authData.code });
+      console.log('Google Calendar authenticate starting', { accountId, hasCode: !!authData.code });
       
       await connectToDatabase();
-      console.log('Google Calendar authenticate database connected', { userId });
+      console.log('Google Calendar authenticate database connected', { accountId });
 
       // Exchange authorization code for tokens
-      console.log('Google Calendar authenticate exchanging code for tokens', { userId });
+      console.log('Google Calendar authenticate exchanging code for tokens', { accountId });
       const { tokens } = await this.oauth2Client.getToken(authData.code);
       console.log('Google Calendar authenticate tokens received', { 
-        userId, 
+        accountId, 
         hasAccessToken: !!tokens.access_token, 
         hasRefreshToken: !!tokens.refresh_token 
       });
       
       logger.info('GOOGLE_AUTH_SUCCESS', 'Google Calendar authentication successful', {
-        userId,
+        accountId,
         data: { 
           hasAccessToken: !!tokens.access_token,
           hasRefreshToken: !!tokens.refresh_token,
@@ -194,11 +194,11 @@ export class GoogleCalendarProvider implements CalendarProvider {
       });
 
       // Save or update calendar connection
-      console.log('Google Calendar authenticate saving to database', { userId });
+      console.log('Google Calendar authenticate saving to database', { accountId });
       await CalendarConnection.findOneAndUpdate(
-        { userId, provider: 'google' },
+        { accountId, provider: 'google' },
         {
-          userId,
+          accountId,
           provider: 'google',
           isActive: true,
           accessToken: tokens.access_token,
@@ -209,14 +209,14 @@ export class GoogleCalendarProvider implements CalendarProvider {
         },
         { upsert: true, new: true }
       );
-      console.log('Google Calendar authenticate successfully saved to database', { userId });
+      console.log('Google Calendar authenticate successfully saved to database', { accountId });
 
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       
       console.error('Google Calendar authenticate failed', {
         errorMessage: errorMsg,
-        userId,
+        accountId,
         hasCode: !!authData.code,
         codePreview: authData.code ? `${authData.code.substring(0, 20)}...` : null
       });
@@ -226,13 +226,13 @@ export class GoogleCalendarProvider implements CalendarProvider {
           component: 'google-calendar-authenticate'
         },
         extra: {
-          userId,
+          accountId,
           hasCode: !!authData.code
         }
       });
       
       logger.error('GOOGLE_AUTH_ERROR', 'Google Calendar authentication failed', {
-        userId,
+        accountId,
         error
       });
       
@@ -240,11 +240,11 @@ export class GoogleCalendarProvider implements CalendarProvider {
     }
   }
 
-  async refreshAuth(userId: string): Promise<boolean> {
+  async refreshAuth(accountId: string): Promise<boolean> {
     try {
       await connectToDatabase();
       const connection = await CalendarConnection.findOne({ 
-        userId, 
+        accountId, 
         provider: 'google', 
         isActive: true 
       });
@@ -267,25 +267,25 @@ export class GoogleCalendarProvider implements CalendarProvider {
       await connection.save();
 
       logger.info('GOOGLE_TOKEN_REFRESH', 'Google Calendar token refreshed', {
-        userId,
+        accountId,
         data: { expiryDate: credentials.expiry_date }
       });
 
       return true;
     } catch (error) {
       logger.error('GOOGLE_TOKEN_REFRESH_ERROR', 'Failed to refresh Google Calendar token', {
-        userId,
+        accountId,
         error
       });
       return false;
     }
   }
 
-  async createEvent(userId: string, event: CalendarEvent): Promise<CalendarEventResult> {
+  async createEvent(accountId: string, event: CalendarEvent): Promise<CalendarEventResult> {
     try {
       await connectToDatabase();
       const connection = await CalendarConnection.findOne({ 
-        userId, 
+        accountId, 
         provider: 'google', 
         isActive: true 
       });
@@ -333,7 +333,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
       };
 
       logger.info('GOOGLE_CREATE_EVENT', 'Creating Google Calendar event', {
-        userId,
+        accountId,
         data: { 
           title: event.title,
           startTime: event.startTime,
@@ -350,7 +350,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
       });
 
       logger.info('GOOGLE_EVENT_CREATED', 'Google Calendar event created successfully', {
-        userId,
+        accountId,
         data: { 
           eventId: response.data.id,
           title: event.title,
@@ -369,21 +369,21 @@ export class GoogleCalendarProvider implements CalendarProvider {
 
     } catch (error) {
       logger.error('GOOGLE_CREATE_EVENT_ERROR', 'Failed to create Google Calendar event', {
-        userId,
+        accountId,
         error,
         data: { eventTitle: event.title }
       });
 
       // Check if it's an auth error and try to refresh
       if (error instanceof Error && error.message.includes('invalid_grant')) {
-        const refreshed = await this.refreshAuth(userId);
+        const refreshed = await this.refreshAuth(accountId);
         if (refreshed) {
           // Retry once after refresh
           try {
-            return await this.createEvent(userId, event);
+            return await this.createEvent(accountId, event);
           } catch (retryError) {
             logger.error('GOOGLE_CREATE_EVENT_RETRY_ERROR', 'Failed to create event after token refresh', {
-              userId,
+              accountId,
               error: retryError,
               data: { eventTitle: event.title }
             });
@@ -399,11 +399,11 @@ export class GoogleCalendarProvider implements CalendarProvider {
     }
   }
 
-  async updateEvent(userId: string, eventId: string, event: CalendarEvent): Promise<CalendarEventResult> {
+  async updateEvent(accountId: string, eventId: string, event: CalendarEvent): Promise<CalendarEventResult> {
     try {
       await connectToDatabase();
       const connection = await CalendarConnection.findOne({ 
-        userId, 
+        accountId, 
         provider: 'google', 
         isActive: true 
       });
@@ -451,7 +451,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
       });
 
       logger.info('GOOGLE_EVENT_UPDATED', 'Google Calendar event updated successfully', {
-        userId,
+        accountId,
         data: { eventId, title: event.title }
       });
 
@@ -463,7 +463,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
 
     } catch (error) {
       logger.error('GOOGLE_UPDATE_EVENT_ERROR', 'Failed to update Google Calendar event', {
-        userId,
+        accountId,
         error,
         data: { eventId, eventTitle: event.title }
       });
@@ -476,11 +476,11 @@ export class GoogleCalendarProvider implements CalendarProvider {
     }
   }
 
-  async deleteEvent(userId: string, eventId: string): Promise<CalendarEventResult> {
+  async deleteEvent(accountId: string, eventId: string): Promise<CalendarEventResult> {
     try {
       await connectToDatabase();
       const connection = await CalendarConnection.findOne({ 
-        userId, 
+        accountId, 
         provider: 'google', 
         isActive: true 
       });
@@ -502,7 +502,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
       });
 
       logger.info('GOOGLE_EVENT_DELETED', 'Google Calendar event deleted successfully', {
-        userId,
+        accountId,
         data: { eventId }
       });
 
@@ -514,7 +514,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
 
     } catch (error) {
       logger.error('GOOGLE_DELETE_EVENT_ERROR', 'Failed to delete Google Calendar event', {
-        userId,
+        accountId,
         error,
         data: { eventId }
       });
@@ -533,7 +533,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
    * freebusy returns only busy ranges — never event titles or attendees — so we
    * read the strict minimum from what is often a customer's own calendar.
    */
-  async findAvailability(userId: string, options: FindAvailabilityOptions): Promise<AvailabilityResult> {
+  async findAvailability(accountId: string, options: FindAvailabilityOptions): Promise<AvailabilityResult> {
     const requested: TimeWindow = { start: options.start, end: options.end };
     const base: AvailabilityResult = {
       free: false,
@@ -545,7 +545,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
 
     try {
       await connectToDatabase();
-      const connection = await CalendarConnection.findOne({ userId, provider: 'google', isActive: true });
+      const connection = await CalendarConnection.findOne({ accountId, provider: 'google', isActive: true });
 
       if (!connection?.accessToken) {
         return { ...base, error: 'Google Calendar not connected' };
@@ -589,7 +589,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
         : buildAlternatives(reqStart, searchEnd, busy, options);
 
       logger.info('GOOGLE_FREEBUSY', 'Availability checked', {
-        userId,
+        accountId,
         data: { requested: options.start, free, busyBlocks: busy.length, alternatives: alternatives.length },
       });
 
@@ -604,7 +604,7 @@ export class GoogleCalendarProvider implements CalendarProvider {
         /insufficient|ACCESS_TOKEN_SCOPE_INSUFFICIENT|insufficientPermissions/i.test(message);
 
       logger.error('GOOGLE_FREEBUSY_ERROR', 'Availability lookup failed', {
-        userId,
+        accountId,
         error,
         data: { insufficientScope: insufficient },
       });

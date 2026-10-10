@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Assistant from '@/models/Assistant';
@@ -13,8 +14,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { accountId } = await getAccountAuth();
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -30,7 +31,7 @@ export async function POST(
 
     await connectToDatabase();
 
-    const assistant = await Assistant.findOne({ _id: id, userId });
+    const assistant = await Assistant.findOne({ _id: id, accountId });
     if (!assistant) {
       return NextResponse.json({ error: 'Assistant not found' }, { status: 404 });
     }
@@ -44,7 +45,7 @@ export async function POST(
 
 
     // Get phone provider (custom or default for US numbers)
-    const providerResult = await getPhoneProviderOrDefault(userId, phoneNumber);
+    const providerResult = await getPhoneProviderOrDefault(accountId, phoneNumber);
     
     if (!providerResult) {
       return NextResponse.json(
@@ -64,7 +65,7 @@ export async function POST(
     // Add custom provider info if not using default
     if (!providerResult.isDefault) {
       const customProvider = await PhoneProvider.findOne({ 
-        userId, 
+        accountId, 
         vapiPhoneNumberId: providerResult.vapiPhoneNumberId 
       });
       if (customProvider) {
@@ -77,7 +78,7 @@ export async function POST(
     }
 
     logger.info('ASSISTANT_TEST_START', `Testing assistant: ${assistant.name}`, {
-      userId,
+      accountId,
       data: logData
     });
 
@@ -86,7 +87,7 @@ export async function POST(
       await tenantVapiService.getAssistant(assistant.vapiAssistantId);
     } catch (vapiError) {
       logger.error('ASSISTANT_TEST_VAPI_NOT_FOUND', `Vapi assistant not found: ${assistant.vapiAssistantId}`, {
-        userId,
+        accountId,
         data: { 
           assistantId: id,
           vapiAssistantId: assistant.vapiAssistantId,
@@ -107,7 +108,7 @@ export async function POST(
 
     // Make the test call using the new initiateCall method with better default provider support
     const callResult = await tenantVapiService.initiateCall({
-      userId,
+      accountId,
       phoneNumber,
       assistantId: assistant.vapiAssistantId,
       // Without these the prompt's {{client_company}}, {{service_type}} and
@@ -128,7 +129,7 @@ export async function POST(
     await assistant.save();
 
     logger.info('ASSISTANT_TEST_SUCCESS', `Assistant test call initiated: ${assistant.name}`, {
-      userId,
+      accountId,
       data: { 
         assistantId: id,
         callId: callResult.id,

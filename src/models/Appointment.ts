@@ -22,7 +22,7 @@ export interface IAppointment extends Document {
   phoneNumberId: string;
   status: 'booked' | 'cancelled';
   /** Owning user. Always set on new rows; backfilled on legacy ones. */
-  userId?: string;
+  accountId?: string;
   /** Which agent booked it, for per-assistant reporting. */
   assistantId?: mongoose.Types.ObjectId;
   /** The lead this visit came from, when the call could be attributed to one. */
@@ -78,7 +78,7 @@ const AppointmentSchema = new Schema<IAppointment>({
     default: 'booked',
     index: true
   },
-  userId: { type: String, index: true },
+  accountId: { type: String, index: true },
   assistantId: {
     type: Schema.Types.ObjectId,
     ref: 'Assistant',
@@ -127,7 +127,7 @@ AppointmentSchema.pre('save', function (next) {
   next();
 });
 
-AppointmentSchema.index({ userId: 1, status: 1 });
+AppointmentSchema.index({ accountId: 1, status: 1 });
 AppointmentSchema.index({ phoneNumberId: 1, status: 1 });
 AppointmentSchema.index({ createdAt: -1 });
 

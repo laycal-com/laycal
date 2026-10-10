@@ -100,7 +100,7 @@ export default function AdminLayout({
       permission: null
     },
     {
-      name: 'Users',
+      name: 'Accounts',
       href: '/admin/users',
       icon: '👥',
       permission: 'view_users'

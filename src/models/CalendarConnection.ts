@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 import { encrypt, decrypt } from '@/models/PhoneProvider';
 
 export interface ICalendarConnection extends Document {
-  userId: string;
+  accountId: string;
   provider: 'google' | 'outlook' | 'ical';
   isActive: boolean;
   accessToken?: string;
@@ -15,7 +15,7 @@ export interface ICalendarConnection extends Document {
 }
 
 const CalendarConnectionSchema = new Schema({
-  userId: {
+  accountId: {
     type: String,
     required: true,
     index: true
@@ -63,6 +63,6 @@ const CalendarConnectionSchema = new Schema({
 });
 
 // Ensure only one active connection per provider per user
-CalendarConnectionSchema.index({ userId: 1, provider: 1 }, { unique: true });
+CalendarConnectionSchema.index({ accountId: 1, provider: 1 }, { unique: true });
 
 export default mongoose.models.CalendarConnection || mongoose.model<ICalendarConnection>('CalendarConnection', CalendarConnectionSchema);

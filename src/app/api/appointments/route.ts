@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Appointment from '@/models/Appointment';
@@ -7,9 +8,9 @@ import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
 
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -21,14 +22,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'booked';
 
-    const phoneProviders = await PhoneProvider.find({ userId }).select('vapiPhoneNumberId');
+    const phoneProviders = await PhoneProvider.find({ accountId }).select('vapiPhoneNumberId');
     const phoneNumberIds = phoneProviders.map(provider => provider.vapiPhoneNumberId).filter(Boolean);
 
-    // Ownership by userId OR phone number. Rows written by the in-call booking
-    // tool carry userId directly; older rows predate that field and can only be
+    // Ownership by accountId OR phone number. Rows written by the in-call booking
+    // tool carry accountId directly; older rows predate that field and can only be
     // matched through the user's Vapi phone numbers. Requiring a phone provider
     // used to hide every appointment from anyone whose provider was unset.
-    const ownership: any[] = [{ userId }];
+    const ownership: any[] = [{ accountId }];
     if (phoneNumberIds.length > 0) {
       ownership.push({ phoneNumberId: { $in: phoneNumberIds } });
     }
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     if (status !== 'all') query.status = status;
 
     logger.info('GET_APPOINTMENTS', 'Fetching appointments for user', {
-      userId,
+      accountId,
       data: { status: status || 'all', phoneProviderCount: phoneProviders.length }
     });
 
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
     });
 
     logger.info('GET_APPOINTMENTS_RESULT', 'Found appointments', {
-      userId,
+      accountId,
       data: { appointmentCount: appointments.length, status }
     });
 

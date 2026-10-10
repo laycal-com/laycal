@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ISupportTicket extends Document {
   ticketId: string; // Human-readable ticket ID (e.g., SUP-001234)
-  userId?: string; // Clerk user ID if submitted by logged-in user
+  accountId?: string; // Clerk user ID if submitted by logged-in user
   userEmail: string;
   userName?: string;
   subject: string;
@@ -17,7 +17,7 @@ export interface ISupportTicket extends Document {
   messages: Array<{
     id: string;
     from: 'user' | 'admin';
-    authorId: string; // userId or adminId
+    authorId: string; // accountId or adminId
     authorName: string;
     message: string;
     attachments?: Array<{
@@ -54,7 +54,7 @@ const supportTicketSchema = new Schema<ISupportTicket>({
     required: true,
     unique: true
   },
-  userId: {
+  accountId: {
     type: String // Clerk user ID
   },
   userEmail: {
@@ -138,7 +138,7 @@ const supportTicketSchema = new Schema<ISupportTicket>({
 
 // Add indexes
 supportTicketSchema.index({ ticketId: 1 });
-supportTicketSchema.index({ userId: 1, createdAt: -1 });
+supportTicketSchema.index({ accountId: 1, createdAt: -1 });
 supportTicketSchema.index({ userEmail: 1, createdAt: -1 });
 supportTicketSchema.index({ status: 1, priority: 1, createdAt: -1 });
 supportTicketSchema.index({ assignedTo: 1, status: 1 });

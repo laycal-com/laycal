@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { paypalService } from '@/lib/paypal';
 import { connectToDatabase } from '@/lib/mongodb';
@@ -7,9 +8,9 @@ import PendingTransaction from '@/models/PendingTransaction';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
     
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -31,12 +32,12 @@ export async function POST(request: NextRequest) {
         description: description || `Credit top-up: $${amount}`,
         currency: 'USD'
       },
-      userId
+      accountId
     );
 
     // Store pending transaction in database
     const pendingTransaction = PendingTransaction.createPending(
-      userId,
+      accountId,
       order.id,
       parseFloat(amount),
       planType || 'credit-topup',
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     });
 
     logger.info('PAYPAL_ORDER_CREATED', 'PayPal order created for credit top-up', {
-      userId,
+      accountId,
       data: {
         orderId: order.id,
         amount,

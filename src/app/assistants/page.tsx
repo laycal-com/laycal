@@ -10,6 +10,9 @@ import { AssistantForm } from '@/components/AssistantForm';
 import { AssistantWebTest } from '@/components/AssistantWebTest';
 import { PaymentGateWrapper } from '@/components/PaymentGateWrapper';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+import { useAccount } from '@/components/portal/account-context';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Assistant {
   _id: string;
@@ -46,6 +49,27 @@ export default function AssistantsPage() {
   const [assistants, setAssistants] = useState<Assistant[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const router = useRouter();
+  const { data: accountData, refresh: refreshAccount } = useAccount();
+
+  // The first assistant is free. Each one after it is paid from credits, so
+  // without enough balance the wizard would only fail at its last step.
+  const billing = accountData?.billing;
+  const createBlocked = !!billing && billing.nextAssistantFee > 0 && billing.balance < billing.nextAssistantFee;
+  const blockedReason = billing
+    ? `Your first assistant was free. Each additional one costs $${billing.nextAssistantFee}, and your balance is $${billing.balance.toFixed(2)}. Add credits to create another.`
+    : '';
+
+  const openCreate = () => {
+    if (createBlocked) {
+      toast.error('Add credits to create another assistant', {
+        description: blockedReason,
+        action: { label: 'Add credits', onClick: () => router.push('/dashboard#credits') },
+      });
+      return;
+    }
+    setShowForm(true);
+  };
   const [editingAssistant, setEditingAssistant] = useState<Assistant | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
   const [showTestModal, setShowTestModal] = useState(false);
@@ -53,12 +77,10 @@ export default function AssistantsPage() {
   const [testPhoneNumber, setTestPhoneNumber] = useState('');
   const [webTestAssistant, setWebTestAssistant] = useState<Assistant | null>(null);
   const [resyncingId, setResyncingId] = useState<string | null>(null);
-  const [subscription, setSubscription] = useState<any>(null);
 
   useEffect(() => {
     if (isLoaded && user) {
       fetchAssistants();
-      fetchSubscription();
     }
   }, [isLoaded, user]);
 
@@ -77,17 +99,6 @@ export default function AssistantsPage() {
     }
   };
 
-  const fetchSubscription = async () => {
-    try {
-      const response = await fetch('/api/subscription');
-      if (response.ok) {
-        const data = await response.json();
-        setSubscription(data.subscription);
-      }
-    } catch (error) {
-      console.error('Error fetching subscription:', error);
-    }
-  };
 
   const handleDelete = async (assistant: Assistant) => {
     if (!confirm(`Are you sure you want to delete "${assistant.name}"? This action cannot be undone.`)) {
@@ -248,6 +259,7 @@ export default function AssistantsPage() {
   };
 
   const handleFormSuccess = () => {
+    refreshAccount();
     setShowForm(false);
     setEditingAssistant(null);
     fetchAssistants();
@@ -282,13 +294,26 @@ export default function AssistantsPage() {
                 The AI voice agents that call your leads and book visits
               </p>
             </div>
-            <Button 
-              onClick={() => setShowForm(true)}
-              className="bg-primary hover:bg-primary/90 text-white"
-            >
+            {/* Not `disabled`: a disabled button swallows hover and click, and the
+                reason it is unavailable is the whole point. */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  data-tour="new-assistant"
+                  onClick={openCreate}
+                  aria-disabled={createBlocked}
+                  className={`bg-primary hover:bg-primary/90 text-white ${createBlocked ? 'cursor-not-allowed opacity-50 hover:bg-primary' : ''}`}
+                >
               <Plus className="w-4 h-4 mr-2" />
               New assistant
             </Button>
+              </TooltipTrigger>
+              {createBlocked && (
+                <TooltipContent side="bottom" align="end" className="max-w-xs text-left leading-5">
+                  {blockedReason}
+                </TooltipContent>
+              )}
+            </Tooltip>
           </div>
 
       {loading ? (
@@ -304,7 +329,7 @@ export default function AssistantsPage() {
               Create your first AI assistant to start making outbound calls
             </p>
             <Button 
-              onClick={() => setShowForm(true)}
+              onClick={openCreate}
               className="bg-primary hover:bg-primary/90 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -383,8 +408,7 @@ export default function AssistantsPage() {
                     Edit
                   </Button>
                   
-                  {/* Hide test button for trial users */}
-                  {subscription?.planType !== 'trial' && (
+                  {(
                     <Button
                       variant="outline"
                       size="sm"

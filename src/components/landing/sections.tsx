@@ -4,6 +4,7 @@ import { Building2, CalendarCheck, PhoneOutgoing, ShoppingBag, Webhook, Wrench }
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card } from '@/components/ui/card';
 import { Eyebrow, Reveal, Section, SectionHeader, Shell } from './primitives';
+import { LogoMark } from '@/components/brand/logo-mark';
 
 const surface = 'rounded-2xl border-white/[0.08] bg-neutral-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]';
 
@@ -236,9 +237,7 @@ export function SiteFooter() {
       <Shell className="grid gap-12 pb-12 pt-16 md:grid-cols-[1.4fr_1fr_1fr_1fr] md:gap-10 md:pt-20">
         <div>
           <Link href="/" aria-label="Laycal home" className="inline-flex items-center gap-2.5">
-            <span className="flex size-6 items-center justify-center rounded-md bg-primary">
-              <span className="size-2 rounded-full bg-white" />
-            </span>
+            <LogoMark />
             <span className="text-[17px] font-semibold tracking-tight text-white">Laycal</span>
           </Link>
           <p className="mt-5 max-w-[34ch] text-sm leading-6 text-neutral-500">

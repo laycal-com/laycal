@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import PhoneProvider from '@/models/PhoneProvider';
@@ -14,9 +15,9 @@ export async function GET(
   const { id } = await params;
 
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
 
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -24,7 +25,7 @@ export async function GET(
 
     const provider = await PhoneProvider.findOne({
       _id: id,
-      userId
+      accountId
     });
 
     if (!provider) {
@@ -66,9 +67,9 @@ export async function PUT(
   const { id } = await params;
 
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
 
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -85,7 +86,7 @@ export async function PUT(
 
     const provider = await PhoneProvider.findOne({
       _id: id,
-      userId
+      accountId
     });
 
     if (!provider) {
@@ -132,9 +133,9 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
 
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -142,7 +143,7 @@ export async function DELETE(
 
     const provider = await PhoneProvider.findOne({
       _id: id,
-      userId
+      accountId
     });
 
     if (!provider) {
@@ -165,7 +166,7 @@ export async function DELETE(
         vapiNumberReleased = await vapi.deletePhoneNumber(provider.vapiPhoneNumberId);
       } catch (releaseError) {
         logger.warn('PHONE_PROVIDER_VAPI_RELEASE_FAILED', 'Could not release Vapi number on delete', {
-          userId,
+          accountId,
           data: {
             providerId: id,
             vapiPhoneNumberId: provider.vapiPhoneNumberId,
@@ -181,14 +182,14 @@ export async function DELETE(
     // so those assistants fall back to the default number instead of carrying
     // an ObjectId that resolves to nothing at call time.
     const detached = await Assistant.updateMany(
-      { userId, 'phoneNumbers.phoneProviderId': id },
+      { accountId, 'phoneNumbers.phoneProviderId': id },
       { $pull: { phoneNumbers: { phoneProviderId: id } } }
     );
 
     // Promote another provider so the account still has a default to use.
     let promoted: string | null = null;
     if (provider.isDefault) {
-      const nextProvider = await PhoneProvider.findOne({ userId, isActive: true });
+      const nextProvider = await PhoneProvider.findOne({ accountId, isActive: true });
       if (nextProvider) {
         nextProvider.isDefault = true;
         await nextProvider.save();
@@ -196,10 +197,10 @@ export async function DELETE(
       }
     }
 
-    const remaining = await PhoneProvider.countDocuments({ userId });
+    const remaining = await PhoneProvider.countDocuments({ accountId });
 
     logger.info('PHONE_PROVIDER_DELETED', 'Phone provider deleted', {
-      userId,
+      accountId,
       data: {
         providerId: id,
         vapiNumberReleased,

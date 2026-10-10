@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Loader2, Plus, X, Sparkles } from 'lucide-re
 import {
   VERTICALS,
   DEFAULT_VERTICAL_ID,
+  OTHER_VERTICAL_ID,
   getVertical,
   DEFAULT_BUSINESS_HOURS,
   WEEKDAY_LABELS,
@@ -24,6 +25,7 @@ export interface SpeedToLeadResult {
   firstMessage: string;
   serviceConfig: {
     vertical: string;
+    customTrade?: { label: string; description: string; booking: string };
     clientCompany: string;
     serviceArea?: string;
     timezone: string;
@@ -63,6 +65,9 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
   const [generated, setGenerated] = useState<{ mainPrompt: string; firstMessage: string } | null>(null);
 
   const [vertical, setVertical] = useState(DEFAULT_VERTICAL_ID);
+  // Only used when the trade is "Other": there is no preset, so the business describes itself.
+  const [customTrade, setCustomTrade] = useState({ label: '', description: '', booking: '' });
+  const isCustom = vertical === OTHER_VERTICAL_ID;
   const [clientCompany, setClientCompany] = useState('');
   const [serviceArea, setServiceArea] = useState('');
   const [agentName, setAgentName] = useState('Sam');
@@ -92,7 +97,8 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
   const canProceed = () => {
     switch (step) {
       case 1:
-        return !!clientCompany.trim();
+        if (!clientCompany.trim()) return false;
+        return !isCustom || (!!customTrade.label.trim() && !!customTrade.description.trim() && !!customTrade.booking.trim());
       case 2:
         return !!agentName.trim();
       case 3:
@@ -115,6 +121,7 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
           agentName,
           clientCompany,
           vertical,
+          customTrade: isCustom ? customTrade : undefined,
           serviceArea,
           timezone,
           businessHours,
@@ -144,9 +151,12 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
     onComplete({
       mainPrompt: generated.mainPrompt,
       firstMessage: generated.firstMessage,
-      suggestedName: `${clientCompany} — ${current.label} Intake`.slice(0, 100),
+      suggestedName: `${clientCompany} — ${isCustom ? customTrade.label.trim() : current.label} Intake`.slice(0, 100),
       serviceConfig: {
         vertical,
+        customTrade: isCustom
+          ? { label: customTrade.label.trim(), description: customTrade.description.trim(), booking: customTrade.booking.trim() }
+          : undefined,
         clientCompany,
         serviceArea: serviceArea || undefined,
         timezone,
@@ -221,10 +231,69 @@ export function SpeedToLeadWizard({ onComplete, onCancel }: Props) {
                     {v.label}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => changeVertical(OTHER_VERTICAL_ID)}
+                  aria-pressed={isCustom}
+                  className={`col-span-2 p-3 border rounded-lg text-left text-sm transition-colors ${
+                    isCustom
+                      ? 'border-primary bg-primary/10 text-brand-soft font-medium'
+                      : 'border-dashed border-border hover:bg-accent'
+                  }`}
+                >
+                  Other
+                  <span className="ml-2 font-normal text-muted-foreground">My business is not on this list</span>
+                </button>
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
                 Sets the qualifying questions the agent asks. You can edit them in step 4.
               </p>
+
+              {isCustom && (
+                <div className="mt-4 space-y-4 rounded-lg border border-border bg-muted/40 p-4">
+                  <p className="text-sm text-muted-foreground">
+                    Tell us about your business. The agent&apos;s script is written from these answers, so be specific.
+                  </p>
+                  <div>
+                    <label className={labelCls} htmlFor="custom-trade-label">Your industry or trade *</label>
+                    <input
+                      id="custom-trade-label"
+                      className={inputCls}
+                      maxLength={80}
+                      value={customTrade.label}
+                      onChange={(e) => setCustomTrade((c) => ({ ...c, label: e.target.value }))}
+                      placeholder="e.g. Solar installation, B2B software, Dental clinic"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls} htmlFor="custom-trade-description">What do you sell or do? *</label>
+                    <textarea
+                      id="custom-trade-description"
+                      className={inputCls}
+                      rows={3}
+                      maxLength={400}
+                      value={customTrade.description}
+                      onChange={(e) => setCustomTrade((c) => ({ ...c, description: e.target.value }))}
+                      placeholder="e.g. We install rooftop solar for homeowners and handle permits and financing."
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls} htmlFor="custom-trade-booking">What should the call book? *</label>
+                    <input
+                      id="custom-trade-booking"
+                      className={inputCls}
+                      maxLength={120}
+                      value={customTrade.booking}
+                      onChange={(e) => setCustomTrade((c) => ({ ...c, booking: e.target.value }))}
+                      placeholder="e.g. a free 30-minute consultation, a product demo, a site survey"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    The starting questions in step 4 are generic for a custom trade. Replace them with the ones you
+                    would ask a new lead.
+                  </p>
+                </div>
+              )}
             </div>
             <div>
               <label className={labelCls}>Service area</label>

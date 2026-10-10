@@ -24,8 +24,9 @@ export default function PhoneProviderPrompt() {
       setHasOwnProvider(hasProvider);
       
       if (!hasProvider) {
+        // Banner only. The pop-up used to open by itself two seconds later on
+        // every visit, which collided with the setup guide and nagged everyone else.
         setShowBanner(true);
-        setTimeout(() => setShowPopup(true), 2000);
       }
     } catch (error) {
       console.error('Failed to check phone provider:', error);
@@ -34,9 +35,6 @@ export default function PhoneProviderPrompt() {
 
   const handleBannerDismiss = () => {
     setShowBanner(false);
-    if (!showPopup) {
-      setTimeout(() => setShowPopup(true), 500);
-    }
   };
 
   const handlePopupDismiss = () => {

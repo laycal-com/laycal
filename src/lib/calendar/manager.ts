@@ -37,8 +37,8 @@ export class CalendarManager {
    * that disagree would produce double-bookings, so speed-to-lead reads and
    * writes the same one calendar.
    */
-  async findAvailability(userId: string, options: FindAvailabilityOptions): Promise<AvailabilityResult> {
-    const active = await this.getUserActiveProviders(userId);
+  async findAvailability(accountId: string, options: FindAvailabilityOptions): Promise<AvailabilityResult> {
+    const active = await this.getUserActiveProviders(accountId);
     const providerName = active[0];
     const provider = providerName ? this.getProvider(providerName) : undefined;
 
@@ -53,12 +53,12 @@ export class CalendarManager {
       };
     }
 
-    return provider.findAvailability(userId, options);
+    return provider.findAvailability(accountId, options);
   }
 
   /** Books a single event on the user's first active provider. */
-  async createEventOn(userId: string, event: CalendarEvent): Promise<CalendarEventResult> {
-    const active = await this.getUserActiveProviders(userId);
+  async createEventOn(accountId: string, event: CalendarEvent): Promise<CalendarEventResult> {
+    const active = await this.getUserActiveProviders(accountId);
     const providerName = active[0];
     const provider = providerName ? this.getProvider(providerName) : undefined;
 
@@ -66,26 +66,26 @@ export class CalendarManager {
       return { success: false, error: 'No active calendar connection', provider: 'none' };
     }
 
-    return this.createEventWithRetry(provider, userId, event);
+    return this.createEventWithRetry(provider, accountId, event);
   }
 
-  async getUserActiveProviders(userId: string): Promise<string[]> {
+  async getUserActiveProviders(accountId: string): Promise<string[]> {
     try {
       await connectToDatabase();
       
       logger.info('GET_USER_PROVIDERS', 'Looking up calendar providers for user', {
-        userId
+        accountId
       });
       
       const connections = await CalendarConnection.find({ 
-        userId, 
+        accountId, 
         isActive: true 
       }).select('provider');
       
       const providers = connections.map(conn => conn.provider);
       
       logger.info('GET_USER_PROVIDERS_RESULT', 'Found calendar providers for user', {
-        userId,
+        accountId,
         data: { 
           providerCount: providers.length,
           providers: providers,
@@ -96,17 +96,17 @@ export class CalendarManager {
       return providers;
     } catch (error) {
       logger.error('GET_USER_PROVIDERS', 'Failed to get user calendar providers', {
-        userId,
+        accountId,
         error
       });
       return [];
     }
   }
 
-  async createAppointmentFromWebhook(userId: string, appointmentData: AppointmentData): Promise<void> {
+  async createAppointmentFromWebhook(accountId: string, appointmentData: AppointmentData): Promise<void> {
     try {
       logger.info('APPOINTMENT_WEBHOOK', 'Processing appointment creation from webhook', {
-        userId,
+        accountId,
         data: {
           callId: appointmentData.callId,
           title: appointmentData.appointment.title,
@@ -115,11 +115,11 @@ export class CalendarManager {
       });
 
       // Get all active calendar providers for the user
-      const activeProviders = await this.getUserActiveProviders(userId);
+      const activeProviders = await this.getUserActiveProviders(accountId);
       
       if (activeProviders.length === 0) {
         logger.warn('NO_CALENDAR_PROVIDERS', 'No active calendar providers found for user', {
-          userId,
+          accountId,
           data: { callId: appointmentData.callId }
         });
         return;
@@ -131,7 +131,7 @@ export class CalendarManager {
         : [];
 
       logger.info('CALENDAR_EVENT_PREPARATION', 'Preparing calendar event with attendees', {
-        userId,
+        accountId,
         data: {
           customerEmail: appointmentData.appointment.customer.email,
           attendeesCount: attendees.length,
@@ -156,7 +156,7 @@ export class CalendarManager {
             throw new Error(`Provider ${providerName} not found`);
           }
 
-          return this.createEventWithRetry(provider, userId, calendarEvent);
+          return this.createEventWithRetry(provider, accountId, calendarEvent);
         })
       );
 
@@ -166,7 +166,7 @@ export class CalendarManager {
         
         if (result.status === 'fulfilled' && result.value.success) {
           logger.info('APPOINTMENT_CREATED', 'Calendar appointment created successfully', {
-            userId,
+            accountId,
             data: {
               provider: providerName,
               eventId: result.value.eventId,
@@ -177,7 +177,7 @@ export class CalendarManager {
         } else {
           const error = result.status === 'rejected' ? result.reason : result.value.error;
           logger.error('APPOINTMENT_CREATE_FAILED', 'Failed to create calendar appointment', {
-            userId,
+            accountId,
             error,
             data: {
               provider: providerName,
@@ -190,7 +190,7 @@ export class CalendarManager {
 
     } catch (error) {
       logger.error('APPOINTMENT_WEBHOOK_ERROR', 'Critical error processing appointment webhook', {
-        userId,
+        accountId,
         error,
         data: { callId: appointmentData.callId }
       });
@@ -199,12 +199,12 @@ export class CalendarManager {
 
   private async createEventWithRetry(
     provider: CalendarProvider, 
-    userId: string, 
+    accountId: string, 
     event: CalendarEvent
   ): Promise<CalendarEventResult> {
     try {
       // First attempt
-      const result = await provider.createEvent(userId, event);
+      const result = await provider.createEvent(accountId, event);
       
       if (result.success) {
         return result;
@@ -212,7 +212,7 @@ export class CalendarManager {
 
       // If first attempt failed, log and retry once
       logger.warn('CALENDAR_EVENT_RETRY', 'Calendar event creation failed, retrying', {
-        userId,
+        accountId,
         data: { 
           provider: provider.name,
           error: result.error,
@@ -221,11 +221,11 @@ export class CalendarManager {
       });
 
       // Retry once
-      return await provider.createEvent(userId, event);
+      return await provider.createEvent(accountId, event);
 
     } catch (error) {
       logger.error('CALENDAR_EVENT_CREATE_ERROR', 'Calendar event creation failed with exception', {
-        userId,
+        accountId,
         error,
         data: { 
           provider: provider.name,
@@ -260,24 +260,24 @@ export class CalendarManager {
     return description;
   }
 
-  async disconnectProvider(userId: string, providerName: string): Promise<void> {
+  async disconnectProvider(accountId: string, providerName: string): Promise<void> {
     try {
       await connectToDatabase();
       
       await CalendarConnection.findOneAndUpdate(
-        { userId, provider: providerName },
+        { accountId, provider: providerName },
         { isActive: false },
         { new: true }
       );
 
       logger.info('CALENDAR_DISCONNECTED', 'Calendar provider disconnected', {
-        userId,
+        accountId,
         data: { provider: providerName }
       });
 
     } catch (error) {
       logger.error('CALENDAR_DISCONNECT_ERROR', 'Failed to disconnect calendar provider', {
-        userId,
+        accountId,
         error,
         data: { provider: providerName }
       });

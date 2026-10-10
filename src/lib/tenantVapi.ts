@@ -1,4 +1,5 @@
 import { connectToDatabase } from '@/lib/mongodb';
+import { canPlaceCall } from '@/lib/billing';
 import PhoneProvider from '@/models/PhoneProvider';
 import { logger } from './logger';
 import { getPhoneProviderOrDefault, getNoPhoneProviderErrorMessage } from './defaultPhoneProvider';
@@ -8,7 +9,7 @@ const VAPI_ASSISTANT_ID = process.env.VAPI_ASSISTANT_ID;
 const VAPI_WEBHOOK_URL = process.env.VAPI_WEBHOOK_URL;
 
 export interface TenantVapiCallRequest {
-  userId: string;
+  accountId: string;
   phoneNumber: string;
   assistantId?: string;
   phoneProviderId?: string;
@@ -120,8 +121,25 @@ function isStalePhoneNumberError(status: number, body: string): boolean {
  * code ("en"), unlike OpenAI/11Labs voices which take neither — so the extra
  * keys are only emitted for that provider.
  */
+/**
+ * Vapi voices that have been retired, mapped to the closest current one. Vapi
+ * answers 400 for these on create, so an assistant saved with an old voice
+ * would otherwise become impossible to re-create or re-sync.
+ */
+const RETIRED_VAPI_VOICES: Record<string, string> = {
+  Paige: 'Clara',
+  Hana: 'Emma',
+  Lily: 'Leah',
+  Kylie: 'Savannah',
+  Neha: 'Naina',
+  Spencer: 'Kai',
+  Harry: 'Leo',
+  Cole: 'Elliot',
+};
+
 function buildVoice(voice: VapiAssistantConfig['voice'], language: string) {
-  const base = { provider: voice.provider, voiceId: voice.voiceId };
+  const voiceId = (voice.provider === 'vapi' && RETIRED_VAPI_VOICES[voice.voiceId]) || voice.voiceId;
+  const base = { provider: voice.provider, voiceId };
   if (voice.provider !== 'vapi') return base;
 
   return {
@@ -222,6 +240,13 @@ export class TenantVapiService {
     }
 
     await connectToDatabase();
+
+    // Every call path (intake, upload, retry, test) comes through here, so this
+    // is the single place a call is refused for lack of credit.
+    const credit = await canPlaceCall(callData.accountId);
+    if (!credit.ok) {
+      throw new Error(credit.reason || 'No credits left');
+    }
     
     let vapiPhoneNumberId: string;
     let assistantId: string;
@@ -249,7 +274,7 @@ export class TenantVapiService {
       // Use the provided assistantId if available, otherwise fall back to environment variable
       assistantId = callData.assistantId || VAPI_ASSISTANT_ID || '';
       
-      const providerResult = await getPhoneProviderOrDefault(callData.userId, callData.phoneNumber);
+      const providerResult = await getPhoneProviderOrDefault(callData.accountId, callData.phoneNumber);
       
       if (!providerResult) {
         throw new Error(getNoPhoneProviderErrorMessage(callData.phoneNumber));
@@ -276,7 +301,7 @@ export class TenantVapiService {
       // Log when using default provider for US numbers
       if (isUsingDefaultProvider) {
         logger.info('USING_DEFAULT_US_PROVIDER', 'Using default phone provider for US number', {
-          userId: callData.userId,
+          accountId: callData.accountId,
           data: { targetPhoneNumber: callData.phoneNumber, vapiPhoneNumberId }
         });
       }
@@ -318,7 +343,7 @@ export class TenantVapiService {
       // stale id, re-provision from the provider's credentials, and retry once.
       if (isStalePhoneNumberError(response.status, error) && healableProviderId) {
         logger.warn('VAPI_PHONE_NUMBER_STALE', 'Cached Vapi phone number no longer exists — re-provisioning', {
-          userId: callData.userId,
+          accountId: callData.accountId,
           data: { staleVapiPhoneNumberId: vapiPhoneNumberId, phoneProviderId: healableProviderId },
         });
 
@@ -329,7 +354,7 @@ export class TenantVapiService {
 
           const freshId = await this.ensureVapiPhoneNumber(provider);
           logger.info('VAPI_PHONE_NUMBER_REPROVISIONED', 'Re-created Vapi phone number', {
-            userId: callData.userId,
+            accountId: callData.accountId,
             data: { phoneProviderId: healableProviderId, vapiPhoneNumberId: freshId },
           });
 

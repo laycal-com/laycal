@@ -25,7 +25,7 @@ export interface PayPalOneTimePayment {
 }
 
 export interface PayPalUsageCharge {
-  userId: string;
+  accountId: string;
   amount: number;
   description: string;
   type: 'usage-based' | 'platform-fee' | 'overage';
@@ -136,7 +136,7 @@ export class PayPalService {
   }
 
   // Create subscription
-  async createSubscription(planId: string, userId: string): Promise<any> {
+  async createSubscription(planId: string, accountId: string): Promise<any> {
     try {
       const accessToken = await this.getAccessToken();
 
@@ -147,10 +147,10 @@ export class PayPalService {
         subscriber: {
           name: {
             given_name: 'User',
-            surname: userId.slice(0, 10),
+            surname: accountId.slice(0, 10),
           },
         },
-        custom_id: userId,
+        custom_id: accountId,
         application_context: {
           brand_name: 'AI Voice Assistant',
           locale: 'en-US',
@@ -170,7 +170,7 @@ export class PayPalService {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
-          'PayPal-Request-Id': `sub-${userId}-${Date.now()}`,
+          'PayPal-Request-Id': `sub-${accountId}-${Date.now()}`,
         },
         body: JSON.stringify(requestBody),
       });
@@ -184,7 +184,7 @@ export class PayPalService {
       
       logger.info('PAYPAL_SUBSCRIPTION_CREATED', 'PayPal subscription created', {
         subscriptionId: result.id,
-        userId,
+        accountId,
         planId
       });
 
@@ -192,7 +192,7 @@ export class PayPalService {
     } catch (error) {
       logger.error('PAYPAL_SUBSCRIPTION_ERROR', 'Failed to create PayPal subscription', { 
         error, 
-        userId, 
+        accountId, 
         planId 
       });
       throw error;
@@ -200,7 +200,7 @@ export class PayPalService {
   }
 
   // Create one-time payment for add-ons
-  async createOneTimePayment(payment: PayPalOneTimePayment, userId: string): Promise<any> {
+  async createOneTimePayment(payment: PayPalOneTimePayment, accountId: string): Promise<any> {
     try {
       const accessToken = await this.getAccessToken();
 
@@ -213,7 +213,7 @@ export class PayPalService {
               value: payment.amount.toFixed(2),
             },
             description: payment.description,
-            custom_id: userId,
+            custom_id: accountId,
           },
         ],
         application_context: {
@@ -231,7 +231,7 @@ export class PayPalService {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
-          'PayPal-Request-Id': `payment-${userId}-${Date.now()}`,
+          'PayPal-Request-Id': `payment-${accountId}-${Date.now()}`,
         },
         body: JSON.stringify(requestBody),
       });
@@ -245,7 +245,7 @@ export class PayPalService {
       
       logger.info('PAYPAL_PAYMENT_CREATED', 'PayPal one-time payment created', {
         orderId: result.id,
-        userId,
+        accountId,
         amount: payment.amount,
         description: payment.description
       });
@@ -254,7 +254,7 @@ export class PayPalService {
     } catch (error) {
       logger.error('PAYPAL_PAYMENT_ERROR', 'Failed to create PayPal payment', { 
         error, 
-        userId, 
+        accountId, 
         payment 
       });
       throw error;
@@ -271,11 +271,11 @@ export class PayPalService {
         currency: 'USD'
       };
 
-      const result = await this.createOneTimePayment(payment, charge.userId);
+      const result = await this.createOneTimePayment(payment, charge.accountId);
       
       logger.info('PAYPAL_USAGE_CHARGE', 'Usage-based charge created', {
         orderId: result.id,
-        userId: charge.userId,
+        accountId: charge.accountId,
         amount: charge.amount,
         type: charge.type
       });

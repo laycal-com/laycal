@@ -92,7 +92,7 @@ async function handle(req: NextRequest, assistantId: string) {
     ).map(([k, v]) => [Number(k), v as { open: string; close: string }])
   );
 
-  const availability = await calendarManager.findAvailability(assistant.userId, {
+  const availability = await calendarManager.findAvailability(assistant.accountId, {
     start: start.toISOString(),
     end: end.toISOString(),
     durationMins,
@@ -103,7 +103,7 @@ async function handle(req: NextRequest, assistantId: string) {
 
   if (availability.needsReconnect) {
     logger.error('VAPI_CALENDAR_SCOPE', 'Calendar grant is missing the freebusy scope', {
-      userId: assistant.userId,
+      accountId: assistant.accountId,
       data: { assistantId },
     });
   }
@@ -117,7 +117,7 @@ async function handle(req: NextRequest, assistantId: string) {
   }
 
   logger.info('VAPI_CALENDAR_CHECK', 'Availability checked for assistant', {
-    userId: assistant.userId,
+    accountId: assistant.accountId,
     data: { assistantId, startTime: start.toISOString(), free: availability.free },
   });
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import mongoose from 'mongoose';
 import { connectToDatabase } from '@/lib/mongodb';
@@ -21,16 +22,16 @@ import { logger } from '@/lib/logger';
  * for a period that has already closed.
  */
 
-async function loadOwned(id: string, userId: string) {
+async function loadOwned(id: string, accountId: string) {
   if (!mongoose.Types.ObjectId.isValid(id)) return null;
 
   const appointment = await Appointment.findById(id);
   if (!appointment) return null;
 
-  if (appointment.userId && appointment.userId === userId) return appointment;
+  if (appointment.accountId && appointment.accountId === accountId) return appointment;
 
-  // Rows created before userId existed are owned via the user's Vapi numbers.
-  const providers = await PhoneProvider.find({ userId }).select('vapiPhoneNumberId');
+  // Rows created before accountId existed are owned via the user's Vapi numbers.
+  const providers = await PhoneProvider.find({ accountId }).select('vapiPhoneNumberId');
   const ids = providers.map((p) => p.vapiPhoneNumberId).filter(Boolean);
   return ids.includes(appointment.phoneNumberId) ? appointment : null;
 }
@@ -40,11 +41,11 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
   const { id } = await ctx.params;
 
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { accountId } = await getAccountAuth();
+    if (!accountId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await connectToDatabase();
-    const appointment = await loadOwned(id, userId);
+    const appointment = await loadOwned(id, accountId);
     if (!appointment) return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
 
     const body = await request.json();
@@ -65,11 +66,11 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
     const end = new Date(start.getTime() + durationMs);
 
     if (appointment.calendarEventId) {
-      const providers = await calendarManager.getUserActiveProviders(userId);
+      const providers = await calendarManager.getUserActiveProviders(accountId);
       const provider = providers[0] ? calendarManager.getProvider(providers[0]) : undefined;
 
       if (provider) {
-        const res = await provider.updateEvent(userId, appointment.calendarEventId, {
+        const res = await provider.updateEvent(accountId, appointment.calendarEventId, {
           title: appointment.appointmentData.title,
           startTime: start.toISOString(),
           endTime: end.toISOString(),
@@ -80,7 +81,7 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
         // says 2pm while the tech's calendar says 10am is worse than an error.
         if (!res.success) {
           logger.error('APPOINTMENT_RESCHEDULE_CALENDAR_FAILED', 'Calendar update failed', {
-            userId,
+            accountId,
             data: { appointmentId: id, error: res.error },
           });
           return NextResponse.json(
@@ -102,7 +103,7 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
     ).catch(() => undefined);
 
     logger.info('APPOINTMENT_RESCHEDULED', 'Appointment rescheduled', {
-      userId,
+      accountId,
       data: { appointmentId: id, startTime: start.toISOString() },
     });
 
@@ -121,22 +122,22 @@ export async function DELETE(request: NextRequest, ctx: { params: Promise<{ id: 
   const { id } = await ctx.params;
 
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { accountId } = await getAccountAuth();
+    if (!accountId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await connectToDatabase();
-    const appointment = await loadOwned(id, userId);
+    const appointment = await loadOwned(id, accountId);
     if (!appointment) return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
 
     if (appointment.calendarEventId) {
-      const providers = await calendarManager.getUserActiveProviders(userId);
+      const providers = await calendarManager.getUserActiveProviders(accountId);
       const provider = providers[0] ? calendarManager.getProvider(providers[0]) : undefined;
       if (provider) {
-        const res = await provider.deleteEvent(userId, appointment.calendarEventId);
+        const res = await provider.deleteEvent(accountId, appointment.calendarEventId);
         if (!res.success) {
           // Not fatal — the event may already be gone from the calendar.
           logger.warn('APPOINTMENT_CANCEL_CALENDAR_FAILED', 'Calendar delete failed', {
-            userId,
+            accountId,
             data: { appointmentId: id, error: res.error },
           });
         }
@@ -153,7 +154,7 @@ export async function DELETE(request: NextRequest, ctx: { params: Promise<{ id: 
     await appointment.save();
 
     logger.info('APPOINTMENT_CANCELLED', 'Appointment cancelled', {
-      userId,
+      accountId,
       data: { appointmentId: id },
     });
 

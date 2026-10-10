@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import PhoneProvider from '@/models/PhoneProvider';
@@ -8,15 +9,15 @@ import { logger } from '@/lib/logger';
 // GET - List all phone providers for the current user
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
 
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await connectToDatabase();
 
-    const providers = await PhoneProvider.find({ userId })
+    const providers = await PhoneProvider.find({ accountId })
       .sort({ isDefault: -1, createdAt: -1 });
 
     return NextResponse.json({
@@ -39,7 +40,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     logger.error('PHONE_PROVIDERS_FETCH', 'Failed to fetch phone providers', {
-      userId,
       error
     });
     return NextResponse.json({
@@ -52,9 +52,9 @@ export async function GET(request: NextRequest) {
 // POST - Create a new phone provider
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
 
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -87,11 +87,11 @@ export async function POST(request: NextRequest) {
     await connectToDatabase();
 
     // Check if this is the first provider for this user
-    const existingProviders = await PhoneProvider.countDocuments({ userId });
+    const existingProviders = await PhoneProvider.countDocuments({ accountId });
     const shouldBeDefault = existingProviders === 0 || isDefault;
 
     const provider = new PhoneProvider({
-      userId,
+      accountId,
       providerName,
       displayName,
       phoneNumber,
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     
     try {
       logger.info('VAPI_PHONE_CREATE', 'Creating Vapi phone number automatically', {
-        userId,
+        accountId,
         data: { providerName, phoneNumber, displayName }
       });
       
@@ -119,12 +119,12 @@ export async function POST(request: NextRequest) {
       await provider.save();
       
       logger.info('VAPI_PHONE_CREATE_SUCCESS', 'Vapi phone number created successfully', {
-        userId,
+        accountId,
         data: { vapiPhoneNumberId, providerName, phoneNumber }
       });
     } catch (error) {
       logger.error('VAPI_PHONE_CREATE_FAILED', 'Failed to create Vapi phone number', {
-        userId,
+        accountId,
         error,
         data: { providerName, phoneNumber }
       });
@@ -155,9 +155,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     logger.error('PHONE_PROVIDER_CREATE', 'Failed to create phone provider', {
-      userId,
       error,
-      data: { providerName, displayName, phoneNumber }
     });
     return NextResponse.json({
       error: 'Failed to create phone provider',

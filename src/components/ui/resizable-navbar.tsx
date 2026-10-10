@@ -9,6 +9,7 @@ import {
 } from "motion/react";
 
 import React, { useRef, useState } from "react";
+import { LogoMark } from '@/components/brand/logo-mark';
 
 
 interface NavbarProps {
@@ -243,9 +244,7 @@ export const NavbarLogo = () => {
       aria-label="Laycal home"
       className="relative z-20 mr-4 flex items-center gap-2.5 px-2 py-1"
     >
-      <span className="flex size-6 items-center justify-center rounded-md bg-primary">
-        <span className="size-2 rounded-full bg-white" />
-      </span>
+      <LogoMark />
       <span className="text-[17px] font-semibold tracking-tight text-black dark:text-white">Laycal</span>
     </a>
   );

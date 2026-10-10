@@ -12,6 +12,7 @@ export interface LogEntry {
   timestamp: string;
   level: LogLevel;
   userId?: string;
+  accountId?: string;
   leadId?: string;
   vapiCallId?: string;
   operation: string;
@@ -102,6 +103,8 @@ class Logger {
 
   private log(level: LogLevel, operation: string, message: string, context?: {
     userId?: string;
+    accountId?: string;
+    [key: string]: any;
     leadId?: string;
     vapiCallId?: string;
     data?: any;
@@ -147,6 +150,8 @@ class Logger {
 
   debug(operation: string, message: string, context?: {
     userId?: string;
+    accountId?: string;
+    [key: string]: any;
     leadId?: string;
     vapiCallId?: string;
     data?: any;
@@ -156,6 +161,8 @@ class Logger {
 
   info(operation: string, message: string, context?: {
     userId?: string;
+    accountId?: string;
+    [key: string]: any;
     leadId?: string;
     vapiCallId?: string;
     data?: any;
@@ -165,6 +172,8 @@ class Logger {
 
   warn(operation: string, message: string, context?: {
     userId?: string;
+    accountId?: string;
+    [key: string]: any;
     leadId?: string;
     vapiCallId?: string;
     data?: any;
@@ -175,6 +184,8 @@ class Logger {
 
   error(operation: string, message: string, context?: {
     userId?: string;
+    accountId?: string;
+    [key: string]: any;
     leadId?: string;
     vapiCallId?: string;
     data?: any;

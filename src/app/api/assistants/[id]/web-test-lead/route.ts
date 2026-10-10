@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Assistant from '@/models/Assistant';
@@ -24,21 +25,21 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ id: st
   const { id } = await ctx.params;
 
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { accountId } = await getAccountAuth();
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json().catch(() => ({}));
 
     await connectToDatabase();
-    const assistant = await Assistant.findOne({ _id: id, userId });
+    const assistant = await Assistant.findOne({ _id: id, accountId });
     if (!assistant) {
       return NextResponse.json({ error: 'Assistant not found' }, { status: 404 });
     }
 
     const lead = await Lead.create({
-      userId,
+      accountId,
       name: String(body.name || 'Browser Test').slice(0, 120),
       // Marks the row as non-dialable so it can never be picked up by a real
       // calling flow; browser calls have no phone number.
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ id: st
     });
 
     logger.info('WEB_TEST_LEAD_CREATED', 'Test lead created for browser call', {
-      userId,
+      accountId,
       leadId: lead._id.toString(),
       data: { assistantId: id },
     });
@@ -81,8 +82,8 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
   const { id } = await ctx.params;
 
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { accountId } = await getAccountAuth();
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -92,13 +93,13 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
     }
 
     await connectToDatabase();
-    const result = await Lead.updateOne({ _id: leadId, userId }, { $set: { vapiCallId } });
+    const result = await Lead.updateOne({ _id: leadId, accountId }, { $set: { vapiCallId } });
     if (result.matchedCount === 0) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
     logger.info('WEB_TEST_LEAD_LINKED', 'Test lead linked to Vapi call', {
-      userId,
+      accountId,
       leadId: String(leadId),
       vapiCallId: String(vapiCallId),
       data: { assistantId: id },

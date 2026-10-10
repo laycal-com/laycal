@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 import { HERO_TILES } from '@/components/landing/product-tiles';
+import { LogoMark } from '@/components/brand/logo-mark';
 
 /**
  * Split-screen frame for the sign-in and invitation pages: our headline and
@@ -33,9 +34,7 @@ export function AuthShell({
             Back to site
           </Link>
           <Link href="/" aria-label="Laycal home" className="flex items-center gap-2.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <span className="flex size-6 items-center justify-center rounded-md bg-primary">
-              <span className="size-2 rounded-full bg-white" />
-            </span>
+            <LogoMark />
             <span className="text-[17px] font-semibold tracking-tight">Laycal</span>
           </Link>
         </div>

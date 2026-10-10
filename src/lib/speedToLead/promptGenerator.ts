@@ -1,10 +1,12 @@
 import { complete, DEFAULT_PROMPT_MODEL } from '@/lib/openrouter';
-import { getVertical, WEEKDAY_LABELS } from './verticals';
+import { getVertical, OTHER_VERTICAL_ID, WEEKDAY_LABELS, type CustomTrade } from './verticals';
 
 export interface SpeedToLeadConfig {
   agentName: string;
   clientCompany: string;
   vertical: string;
+  /** Present only when vertical is 'other'. */
+  customTrade?: CustomTrade;
   serviceArea?: string;
   timezone: string;
   businessHours: Record<string, { open: string; close: string }>;
@@ -176,6 +178,7 @@ Appointment length is ${cfg.appointmentDurationMins} minutes. Business hours are
 
 function buildUserMessage(cfg: SpeedToLeadConfig): string {
   const vertical = getVertical(cfg.vertical);
+  const custom = cfg.vertical === OTHER_VERTICAL_ID ? cfg.customTrade : undefined;
   const toneNote = {
     warm: 'Warm and friendly, with light conversational fillers.',
     direct: 'Direct and efficient. Minimal filler, no chitchat.',
@@ -186,10 +189,17 @@ function buildUserMessage(cfg: SpeedToLeadConfig): string {
 
 BUSINESS
 - Company name: ${cfg.clientCompany}
-- Trade: ${vertical.label} (${vertical.descriptor})
+${
+    custom
+      ? `- Business type: ${custom.label}
+- What the business does: ${custom.description}
+- What this call must book: ${custom.booking}
+- This is NOT a home-services company. The reference prompt below is from one; keep its structure, stages and pacing, but replace its vocabulary. Do not say "homeowner", "technician", "diagnostic visit" or "on-site" unless they genuinely fit this business. Call the person "the customer" and the appointment what it is here.`
+      : `- Trade: ${vertical.label} (${vertical.descriptor})`
+  }
 ${cfg.serviceArea ? `- Service area: ${cfg.serviceArea}` : ''}
 - Agent's name: ${cfg.agentName}
-- Diagnostic/visit fee to quote: ${cfg.diagnosticFee || 'not specified — say the technician will confirm pricing, do not invent a number'}
+- ${custom ? 'Price to quote for the appointment' : 'Diagnostic/visit fee to quote'}: ${cfg.diagnosticFee || (custom ? 'not specified — say pricing is covered in the appointment, do not invent a number' : 'not specified — say the technician will confirm pricing, do not invent a number')}
 
 TONE
 ${toneNote}
@@ -263,7 +273,12 @@ export async function generateSpeedToLeadPrompt(
   body = body.replace(/\n{3,}/g, '\n\n').trim();
 
   // Turn-taking goes last so it is the freshest instruction in context.
-  const mainPrompt = `${body}\n\n${buildToolBlock(cfg)}\n\n${TURN_TAKING_BLOCK}`;
+  // The tool block is fixed text written for home services. For any other
+  // business only the noun changes; the tool names and instructions must not.
+  const toolBlock =
+    cfg.vertical === OTHER_VERTICAL_ID ? buildToolBlock(cfg).replace(/\bhomeowner\b/g, 'customer') : buildToolBlock(cfg);
+
+  const mainPrompt = `${body}\n\n${toolBlock}\n\n${TURN_TAKING_BLOCK}`;
 
   return {
     mainPrompt,

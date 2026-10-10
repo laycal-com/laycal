@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 
 // Import models and utilities only when needed to identify the failing import
@@ -6,13 +7,11 @@ async function getRequiredModules() {
   try {
     const { connectToDatabase } = await import('@/lib/mongodb');
     const SupportTicketModule = await import('@/models/SupportTicket');
-    const SubscriptionModule = await import('@/models/Subscription');
     const { logger } = await import('@/lib/logger');
     
     return {
       connectToDatabase,
       SupportTicket: SupportTicketModule.default,
-      Subscription: SubscriptionModule.default,
       logger
     };
   } catch (error) {
@@ -24,8 +23,8 @@ async function getRequiredModules() {
 export async function POST(request: NextRequest) {
   try {
     console.log('POST /api/support - Starting request');
-    const { userId } = await auth();
-    console.log('User ID from auth:', userId);
+    const { accountId } = await getAccountAuth();
+    console.log('User ID from auth:', accountId);
     
     const requestBody = await request.json();
     console.log('Request body:', requestBody);
@@ -41,8 +40,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!userId && !userEmail) {
-      console.log('Validation failed: no userId or userEmail');
+    if (!accountId && !userEmail) {
+      console.log('Validation failed: no accountId or userEmail');
       return NextResponse.json(
         { error: 'User authentication or email is required' },
         { status: 400 }
@@ -52,7 +51,7 @@ export async function POST(request: NextRequest) {
     console.log('Validation passed, importing modules...');
 
     // Import modules dynamically to catch import errors
-    const { connectToDatabase, SupportTicket, Subscription, logger } = await getRequiredModules();
+    const { connectToDatabase, SupportTicket, logger } = await getRequiredModules();
     console.log('Modules imported successfully, connecting to database...');
 
     await connectToDatabase();
@@ -64,9 +63,9 @@ export async function POST(request: NextRequest) {
     let finalUserEmail = userEmail;
     let finalUserName = userName;
 
-    if (userId) {
-      console.log('Looking up subscription for user:', userId);
-      const subscription = await Subscription.findOne({ userId, isActive: true });
+    if (accountId) {
+      console.log('Looking up subscription for user:', accountId);
+      const subscription: any = null; // plans no longer exist
       console.log('Subscription found:', !!subscription);
       if (subscription) {
         userSubscriptionType = subscription.planType;
@@ -99,7 +98,7 @@ export async function POST(request: NextRequest) {
     // Create support ticket
     const ticket = new SupportTicket({
       ticketId, // Set ticketId manually
-      userId,
+      accountId,
       userEmail: finalUserEmail,
       userName: finalUserName,
       subject: subject.trim(),
@@ -111,7 +110,7 @@ export async function POST(request: NextRequest) {
       messages: [{
         id: new Date().getTime().toString(),
         from: 'user',
-        authorId: userId || 'anonymous',
+        authorId: accountId || 'anonymous',
         authorName: finalUserName || 'Anonymous User',
         message: description.trim(),
         isInternal: false,
@@ -127,7 +126,7 @@ export async function POST(request: NextRequest) {
 
     logger.info('SUPPORT_TICKET_CREATED', 'New support ticket created', {
       ticketId: ticket.ticketId,
-      userId,
+      accountId,
       userEmail: finalUserEmail,
       category,
       priority,
@@ -171,11 +170,11 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     console.log('GET /api/support - Starting request');
-    const { userId } = await auth();
-    console.log('GET User ID from auth:', userId);
+    const { accountId } = await getAccountAuth();
+    console.log('GET User ID from auth:', accountId);
     
-    if (!userId) {
-      console.log('GET: No userId, returning unauthorized');
+    if (!accountId) {
+      console.log('GET: No accountId, returning unauthorized');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -184,8 +183,8 @@ export async function GET(request: NextRequest) {
     console.log('GET: Connecting to database...');
     await connectToDatabase();
 
-    console.log('GET: Finding tickets for user:', userId);
-    const tickets = await SupportTicket.find({ userId })
+    console.log('GET: Finding tickets for user:', accountId);
+    const tickets = await SupportTicket.find({ accountId })
       .sort({ createdAt: -1 })
       .select('ticketId subject status priority category createdAt updatedAt')
       .lean();

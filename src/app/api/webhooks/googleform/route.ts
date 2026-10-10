@@ -20,20 +20,20 @@ export async function POST(req: NextRequest) {
       company,
       about,
       assistantId,
-      userId,
+      accountId,
       ...customFields // All other fields are custom
     } = body;
 
     logger.info('GOOGLEFORM_WEBHOOK_RECEIVED', 'Google Form webhook data received', {
-      data: { userId, assistantId, phone, firstname, lastname, customFieldCount: Object.keys(customFields).length }
+      data: { accountId, assistantId, phone, firstname, lastname, customFieldCount: Object.keys(customFields).length }
     });
 
-    if (!userId || !assistantId) {
-      logger.error('GOOGLEFORM_WEBHOOK_ERROR', 'Missing userId or assistantId', {
-        data: { userId, assistantId }
+    if (!accountId || !assistantId) {
+      logger.error('GOOGLEFORM_WEBHOOK_ERROR', 'Missing accountId or assistantId', {
+        data: { accountId, assistantId }
       });
       return NextResponse.json(
-        { error: 'userId and assistantId are required' },
+        { error: 'accountId and assistantId are required' },
         { status: 400 }
       );
     }
@@ -62,13 +62,13 @@ export async function POST(req: NextRequest) {
 
     const assistant = await Assistant.findOne({ 
       _id: assistantId, 
-      userId: userId,
+      accountId: accountId,
       isActive: true 
     });
 
     if (!assistant) {
       logger.error('GOOGLEFORM_WEBHOOK_ERROR', 'Assistant not found or inactive', {
-        data: { assistantId, userId }
+        data: { assistantId, accountId }
       });
       return NextResponse.json(
         { error: 'Assistant not found or inactive' },
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     const fullName = `${firstname} ${lastname}`.trim();
 
     const lead = new Lead({
-      userId,
+      accountId,
       name: fullName,
       phoneNumber: normalizedPhone,
       email: email || null,
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
     logger.info('GOOGLEFORM_LEAD_CREATED', 'Lead created from Google Form', {
       data: { 
         leadId: lead._id.toString(), 
-        userId, 
+        accountId, 
         assistantId, 
         phone: normalizedPhone,
         name: fullName
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
         const vapiService = new TenantVapiService();
 
         vapiCallResponse = await vapiService.initiateCall({
-          userId,
+          accountId,
           phoneNumber: normalizedPhone,
           assistantId: assistant.vapiAssistantId,
           // Only Vapi's own customer fields; everything else is a prompt

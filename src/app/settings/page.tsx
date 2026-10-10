@@ -441,6 +441,7 @@ export default function SettingsPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-foreground">Settings</h1>
           <p className="mt-1 text-sm text-muted-foreground">Manage your phone number providers and call settings</p>
+          <a href="/onboarding?edit=1" className="mt-3 inline-block text-sm font-medium text-foreground underline underline-offset-4 hover:no-underline">Edit business details</a>
         </div>
 
         {/* Phone Providers Section */}

@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { calendarManager } from '@/lib/calendar/manager';
 import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
 
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const activeProviders = await calendarManager.getUserActiveProviders(userId);
+    const activeProviders = await calendarManager.getUserActiveProviders(accountId);
     const availableProviders = calendarManager.getAvailableProviders();
 
     // Check authentication status for each provider
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
         }
 
         const connected = activeProviders.includes(providerName);
-        const authenticated = connected ? await provider.isAuthenticated(userId) : false;
+        const authenticated = connected ? await provider.isAuthenticated(accountId) : false;
 
         // A connection made before the freebusy scopes were added still books
         // fine but cannot answer availability. Probe it here so the user is
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
 
         if (authenticated) {
           const probeStart = new Date(Date.now() + 3_600_000);
-          const probe = await calendarManager.findAvailability(userId, {
+          const probe = await calendarManager.findAvailability(accountId, {
             start: probeStart.toISOString(),
             end: new Date(probeStart.getTime() + 1_800_000).toISOString(),
             durationMins: 30,
@@ -61,7 +62,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     logger.error('CALENDAR_STATUS_ERROR', 'Failed to get calendar status', {
-      userId: await auth().then(a => a.userId),
       error
     });
 
@@ -74,9 +74,9 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { accountId } = await getAccountAuth();
 
-    if (!userId) {
+    if (!accountId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -86,10 +86,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Provider name is required' }, { status: 400 });
     }
 
-    await calendarManager.disconnectProvider(userId, provider);
+    await calendarManager.disconnectProvider(accountId, provider);
 
     logger.info('CALENDAR_DISCONNECTED', 'Calendar provider disconnected via API', {
-      userId,
+      accountId,
       data: { provider }
     });
 
@@ -100,7 +100,6 @@ export async function DELETE(request: NextRequest) {
 
   } catch (error) {
     logger.error('CALENDAR_DISCONNECT_ERROR', 'Failed to disconnect calendar provider', {
-      userId: await auth().then(a => a.userId),
       error
     });
 

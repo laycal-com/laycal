@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ILead extends Document {
-  userId: string;
+  accountId: string;
   name: string;
   phoneNumber: string;
   email?: string;
@@ -37,7 +37,7 @@ export interface ILead extends Document {
 }
 
 const LeadSchema = new Schema<ILead>({
-  userId: {
+  accountId: {
     type: String,
     required: true,
     index: true
@@ -158,10 +158,10 @@ LeadSchema.pre('save', function(next) {
   next();
 });
 
-LeadSchema.index({ userId: 1, createdAt: -1 });
+LeadSchema.index({ accountId: 1, createdAt: -1 });
 LeadSchema.index({ status: 1 });
 LeadSchema.index({ vapiCallId: 1 });
 LeadSchema.index({ assignedAssistantId: 1 });
-LeadSchema.index({ userId: 1, assignedAssistantId: 1 });
+LeadSchema.index({ accountId: 1, assignedAssistantId: 1 });
 
 export default mongoose.models.Lead || mongoose.model<ILead>('Lead', LeadSchema);
