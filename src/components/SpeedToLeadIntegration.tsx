@@ -64,36 +64,59 @@ export function SpeedToLeadIntegration({ assistantId, assistantName }: Props) {
 
   const endpoint = `${origin}/api/webhooks/lead-intake/${assistantId}`;
 
+  // Deliberately forgiving and noisy: the first version matched question titles
+  // exactly ("Phone" but not "Phone number") and threw the response away, so a
+  // form that did not line up failed without a trace.
   const appsScript = `function onFormSubmit(e) {
-  if (!e || !e.namedValues) {
-    Logger.log("Run this from a form submit trigger, not the editor.");
+  // Works with a trigger on the spreadsheet (namedValues) or on the form itself (response).
+  var answers = {};
+  if (e && e.namedValues) {
+    for (var k in e.namedValues) answers[k] = e.namedValues[k][0];
+  } else if (e && e.response) {
+    e.response.getItemResponses().forEach(function (r) {
+      answers[r.getItem().getTitle()] = String(r.getResponse());
+    });
+  } else {
+    Logger.log("No form data. Add an 'On form submit' trigger; do not run this from the editor.");
     return;
   }
 
-  var r = e.namedValues;
-  var get = function (names) {
-    for (var i = 0; i < names.length; i++) {
-      if (r[names[i]] && r[names[i]][0]) return r[names[i]][0];
+  // Question titles are matched loosely: capitals, spaces and punctuation are
+  // ignored, and a title only needs to contain the word ("Your phone number" works).
+  var norm = function (s) { return String(s).toLowerCase().replace(/[^a-z0-9]/g, ""); };
+  var find = function (words) {
+    var keys = Object.keys(answers);
+    for (var i = 0; i < words.length; i++) {
+      for (var j = 0; j < keys.length; j++) {
+        if (norm(keys[j]).indexOf(words[i]) !== -1 && answers[keys[j]]) return answers[keys[j]];
+      }
     }
     return "";
   };
 
   var payload = {
-    firstName:    get(["First Name", "firstName", "First name"]),
-    lastName:     get(["Last Name", "lastName", "Last name"]),
-    email:        get(["Email", "Email Address"]),
-    phone:        get(["Phone", "Phone Number", "Mobile"]),
-    address:      get(["Address", "Service Address"]),
-    details:      get(["Details", "Describe the problem", "Message"]),
-    availability: get(["Availability", "Preferred time", "Best time to call"])
+    firstName:    find(["firstname", "first"]),
+    lastName:     find(["lastname", "surname", "last"]),
+    email:        find(["email"]),
+    phone:        find(["phone", "mobile", "whatsapp", "tel", "number"]),
+    address:      find(["address"]),
+    details:      find(["details", "describe", "problem", "message", "issue"]),
+    availability: find(["availability", "preferredtime", "besttime"])
   };
+  // A single "Name" or "Full name" question.
+  if (!payload.firstName) payload.firstName = find(["fullname", "name"]);
 
-  UrlFetchApp.fetch(${JSON.stringify(endpoint)}, {
+  var res = UrlFetchApp.fetch(${JSON.stringify(endpoint)}, {
     method: "post",
     contentType: "application/json",
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   });
+
+  // Shows under Executions in Apps Script. 200 means the call was started;
+  // anything else says why it was not.
+  Logger.log("Laycal replied " + res.getResponseCode() + ": " + res.getContentText());
+  Logger.log("Sent: " + JSON.stringify(payload));
 }`;
 
   const htmlSnippet = `<script>
