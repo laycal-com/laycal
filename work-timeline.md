@@ -170,3 +170,8 @@ Times are the machine's local time (`date '+%Y-%m-%d %H:%M'`).
 - **What:** added `public/assets/blogs/lead-response-time.png`, `first-call-questions.png` and `after-hours-leads.png` (1200x630) and pointed each post's `image:` at its own. They are drawn in code by `scripts/make-blog-banners.js` (SVG rendered with `sharp`): dark background, faint grid, one blue glow, a motif per topic, no text.
 - **Why:** all three posts shared the default Laycal image on the blog index and when shared. No text in the banners because the post template lays the title over the image.
 - **Status:** committed, pushed. To add a banner for a new post, add a motif function to the script and run `node scripts/make-blog-banners.js`. Not AI-generated; no credits spent.
+
+### 2026-10-11 17:22 · seo · Banner step added to the blog-publishing workflow
+- **What:** added a "Publishing a blog post" section to the `laycal-seo` skill (frontmatter, copy rules, banner via `scripts/make-blog-banners.js`, verify, indexing, log). Noted the script in `CLAUDE.md` (Pages and Commands).
+- **Why:** the owner wants every new post to get its own banner without having to ask.
+- **Status:** committed, pushed (`CLAUDE.md` and this file only; the skill lives outside the repo). No site change.

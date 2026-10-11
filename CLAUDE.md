@@ -102,7 +102,7 @@ search work, `laycal-seo`.
 - Portal: `/dashboard`, `/assistants`, `/leads`, `/appointments`, `/call-summary`, `/integrations`, `/settings`, `/support`
 - Admin: `/admin/...` (`/admin/users` is the Accounts screen)
 - Redirected in `next.config.ts`: `/features`, `/pricing`, `/about`, `/case-studies`, `/sdr`, `/blog`, and the six retired `/blogs/*-alternative-2026` posts (to the comparison pages)
-- Blog: posts are markdown files in `blogs/`, written for the buyer (lead response time, the first call, after-hours leads), not competitor roundups. The template has no markdown table support
+- Blog: posts are markdown files in `blogs/`, written for the buyer (lead response time, the first call, after-hours leads), not competitor roundups. The template has no markdown table support. Every post gets its own banner in `public/assets/blogs/`, drawn by `scripts/make-blog-banners.js` (add a motif, run the script); the full steps are in the `laycal-seo` skill under "Publishing a blog post"
 
 ### Components (`src/components/`)
 - `landing/` — the public page kit: `primitives.tsx` (`Shell`, `Section`, `SectionHeader`, `Reveal`, `DemoCta`), `site-nav.tsx`, `hero.tsx`, `sections.tsx`, `features.tsx`, `roi.tsx`, `pricing.tsx`, `cta.tsx`, `reactivation.tsx`, `solution.tsx` (`SOLUTIONS`: content for `/speed-to-lead` and `/instant-lead-follow-up`), `comparison.tsx` (`COMPARISONS`: content for `/justcall-alternative`, `/nooks-alternative` and the `/compare` index), `product-tiles.tsx` (`HERO_TILES`), `providers.tsx` (`useRate()`)
@@ -150,6 +150,9 @@ npx tsc --noEmit     # type check (no dedicated script)
 
 # Dev server beside a production build on port 3000
 NEXT_DIST_DIR=.next-dev npx next dev --turbopack -p 3100
+
+# Redraw the blog post banners into public/assets/blogs/
+node scripts/make-blog-banners.js
 
 # Drop customer collections (dry run unless --apply)
 node scripts/reset-accounts.mjs
