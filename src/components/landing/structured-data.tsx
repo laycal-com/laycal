@@ -3,6 +3,16 @@ import { FAQS } from '@/components/landing/sections';
 
 const SITE_URL = 'https://www.laycal.com';
 
+// Laycal's own profiles on other sites. Listing them tells search engines
+// those pages belong to this company. Add a profile here when one goes live.
+const PROFILES = [
+  'https://www.crunchbase.com/organization/laycal',
+  'https://www.g2.com/products/laycal',
+  'https://www.capterra.com/p/10267621/Laycal/',
+  'https://www.getapp.com/all-software/a/laycal/',
+  'https://www.softwareadvice.com/product/774970-Laycal/',
+];
+
 function JsonLd({ data }: { data: Record<string, unknown> }) {
   return (
     <script
@@ -21,6 +31,9 @@ export function OrganizationJsonLd() {
         name: 'Laycal',
         url: SITE_URL,
         logo: `${SITE_URL}/assets/logo.png`,
+        description:
+          'Laycal is a speed-to-lead platform: an AI voice agent calls every new lead within a minute, qualifies them and books the meeting on the business’s calendar.',
+        sameAs: PROFILES,
       }}
     />
   );
