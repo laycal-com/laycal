@@ -32,28 +32,9 @@ const COMPARISONS = [
   {
     slug: '/nooks-alternative',
     name: 'Nooks',
-    category: 'Parallel dialer for SDR teams',
+    category: 'Sales platform for SDR teams',
     summary:
-      'Nooks helps outbound SDR teams dial faster. Laycal covers the leads that come to you: every new form submission gets an AI call within a minute, without a sales team behind it.',
-  },
-];
-
-const GUIDES = [
-  {
-    slug: '/blogs/justcall-alternatives-2026',
-    name: '7 JustCall Alternatives for 2026',
-  },
-  {
-    slug: '/blogs/nooks-alternative-2026',
-    name: 'Nooks Alternatives for 2026',
-  },
-  {
-    slug: '/blogs/kixie-alternative-2026',
-    name: 'Kixie Alternatives for 2026',
-  },
-  {
-    slug: '/blogs/aloware-alternative-2026',
-    name: 'Aloware Alternatives for 2026',
+      'Nooks is built for sales development teams: prospecting, dialing and coaching for reps. Laycal covers the leads that come to you: every new form submission gets an AI call within a minute, without a sales team behind it.',
   },
 ];
 
@@ -107,22 +88,6 @@ export default function ComparePage() {
                 </Link>
               ))}
             </div>
-          </section>
-
-          <section className="mb-16">
-            <h2 className="text-3xl font-semibold text-foreground mb-8">Alternatives roundups</h2>
-            <ul className="space-y-3">
-              {GUIDES.map((g) => (
-                <li key={g.slug}>
-                  <Link
-                    href={g.slug}
-                    className="text-brand-soft hover:underline text-lg font-medium"
-                  >
-                    {g.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
           </section>
 
           <section className="text-center text-white p-12 rounded-2xl bg-primary/10">

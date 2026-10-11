@@ -50,6 +50,7 @@ interface BlogPost {
 
 async function getBlogPosts(): Promise<BlogPost[]> {
   const blogsDirectory = path.join(process.cwd(), 'blogs');
+  if (!fs.existsSync(blogsDirectory)) return [];
   const filenames = fs.readdirSync(blogsDirectory);
   
   const posts = filenames

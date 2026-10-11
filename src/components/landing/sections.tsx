@@ -226,7 +226,7 @@ const FOOTER: [string, [string, string][]][] = [
   ['Product', [['Features', '/#features'], ['Pricing', '/#pricing'], ['Calculator', '/#roi']]],
   ['Solutions', [['Speed to lead', '/speed-to-lead'], ['Instant lead follow-up', '/instant-lead-follow-up'], ['Lead reactivation', '/lead-reactivation']]],
   ['Compare', [['All comparisons', '/compare'], ['JustCall alternative', '/justcall-alternative'], ['Nooks alternative', '/nooks-alternative']]],
-  ['Company', [['Blog', '/blogs'], ['Contact', '/contact']]],
+  ['Company', [['Contact', '/contact']]],
 ];
 
 const footLink =

@@ -16,7 +16,6 @@ const staticRoutes = [
   { url: '/instant-lead-follow-up', priority: 0.9, changeFrequency: 'monthly' as const, lastModified: '2026-10-11' },
   { url: '/lead-reactivation', priority: 0.8, changeFrequency: 'monthly' as const, lastModified: '2026-10-10' },
   { url: '/contact', priority: 0.8, changeFrequency: 'monthly' as const, lastModified: '2026-10-10' },
-  { url: '/blogs', priority: 0.9, changeFrequency: 'daily' as const, lastModified: '2026-10-11' },
 
   // Alternative/comparison pages
   { url: '/compare', priority: 0.8, changeFrequency: 'weekly' as const, lastModified: '2026-10-11' },

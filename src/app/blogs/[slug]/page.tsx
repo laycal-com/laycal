@@ -80,6 +80,7 @@ function generateTableOfContents(content: string): TocItem[] {
 
 async function getRelatedPosts(currentSlug: string, category: string): Promise<{ slug: string; title: string; image: string; readTime: string; publishedAt: string }[]> {
   const blogsDirectory = path.join(process.cwd(), 'blogs');
+  if (!fs.existsSync(blogsDirectory)) return [];
   const filenames = fs.readdirSync(blogsDirectory);
   
   const posts = filenames

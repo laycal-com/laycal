@@ -20,7 +20,6 @@ const ITEMS = [
   { name: 'How it works', link: '/#how' },
   { name: 'Features', link: '/#features' },
   { name: 'Pricing', link: '/#pricing' },
-  { name: 'Blog', link: '/blogs' },
   { name: 'FAQ', link: '/#faq' },
 ];
 

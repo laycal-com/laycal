@@ -9,14 +9,14 @@ import { OG_IMAGE } from '@/lib/seo';
 export const metadata: Metadata = {
   title: 'Nooks Alternative: Outbound Dialer vs AI Lead Response',
   description:
-    'Nooks is a parallel dialer for outbound SDR teams. Laycal is AI speed-to-lead: every inbound lead gets called within a minute. Which one do you actually need?',
+    'Nooks is a sales platform for SDR teams. Laycal is AI speed-to-lead: every inbound lead gets called within a minute. Which one do you actually need?',
   alternates: {
     canonical: '/nooks-alternative',
   },
   openGraph: {
     title: 'Nooks Alternative: Outbound Dialer vs AI Lead Response | Laycal',
     description:
-      'Nooks is a parallel dialer for outbound SDR teams. Laycal is AI speed-to-lead: every inbound lead gets called within a minute.',
+      'Nooks is a sales platform for SDR teams. Laycal is AI speed-to-lead: every inbound lead gets called within a minute.',
     url: 'https://www.laycal.com/nooks-alternative',
     images: [OG_IMAGE],
   },
@@ -47,11 +47,12 @@ export default function NooksAlternativePage() {
               Outbound dialer vs. inbound speed-to-lead
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed mb-8">
-              Nooks is a parallel dialer and virtual salesfloor: it exists so a team of SDRs can
-              work through outbound call lists faster. Laycal is the opposite motion: the leads come
-              to you (forms, ads, referrals), and an AI voice agent calls each one within a minute,
+              Nooks describes itself as an agent platform for go-to-market teams: AI prospecting,
+              dialing and sequencing for reps, with coaching and revenue intelligence for their
+              managers. It is built around a sales development team. Laycal does one job: when a lead
+              comes to you through a form or an ad, an AI voice agent calls them within a minute,
               qualifies them and books the meeting. If you don&apos;t have — or don&apos;t want — an
-              SDR team, a dialer solves a problem you don&apos;t have.
+              SDR team, a tool for SDRs solves a problem you don&apos;t have.
             </p>
 
             <div className="grid md:grid-cols-2 gap-8">
@@ -98,8 +99,8 @@ export default function NooksAlternativePage() {
               <div className="bg-muted/40 border border-border p-8 rounded-xl text-center">
                 <h3 className="text-2xl font-semibold text-foreground mb-2">Nooks</h3>
                 <p className="text-muted-foreground">
-                  No public pricing page — pricing is quoted through sales after a demo, and the
-                  product is aimed at funded sales teams with multiple seats.
+                  No published prices. Its pricing page offers a custom quote after you talk to
+                  the team.
                 </p>
               </div>
               <div className="bg-green-500/10 p-8 rounded-xl text-center">
@@ -112,8 +113,7 @@ export default function NooksAlternativePage() {
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-4 text-center">
-              Nooks pricing status checked at nooks.io in October 2026 — no published plans at the
-              time of writing.
+              Nooks details checked on nooks.ai in October 2026.
             </p>
           </section>
 
@@ -127,7 +127,7 @@ export default function NooksAlternativePage() {
                 <li>
                   <strong className="text-foreground">You need a dialer for cold outbound.</strong>{' '}
                   Laycal is built for responding to leads who raised their hand, not for working
-                  cold lists at scale. A parallel dialer like Nooks is the right category for that.
+                  cold lists at scale. A tool built for sales development teams, like Nooks, is the right category for that.
                 </li>
                 <li>
                   <strong className="text-foreground">You want reps to have live conversations
@@ -161,7 +161,7 @@ export default function NooksAlternativePage() {
                 <tbody className="divide-y divide-border">
                   <tr>
                     <td className="px-6 py-4 font-medium">Primary job</td>
-                    <td className="px-6 py-4 text-center text-muted-foreground">Outbound parallel dialing for SDR teams</td>
+                    <td className="px-6 py-4 text-center text-muted-foreground">Prospecting, dialing and coaching for SDR teams</td>
                     <td className="px-6 py-4 text-center text-muted-foreground">Instant AI follow-up on inbound leads</td>
                   </tr>
                   <tr>
@@ -171,7 +171,7 @@ export default function NooksAlternativePage() {
                   </tr>
                   <tr>
                     <td className="px-6 py-4 font-medium">Pricing model</td>
-                    <td className="px-6 py-4 text-center text-muted-foreground">Sales-quoted, per seat</td>
+                    <td className="px-6 py-4 text-center text-muted-foreground">Custom quote from sales</td>
                     <td className="px-6 py-4 text-center text-muted-foreground">Pay per calling minute — estimate it with the homepage calculator</td>
                   </tr>
                   <tr>

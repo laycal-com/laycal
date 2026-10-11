@@ -37,7 +37,18 @@ const nextConfig: NextConfig = {
   // /speed-to-lead and /instant-lead-follow-up were rebuilt as real pages:
   // they were earning search traffic, which a redirect to the homepage loses.
   redirects: async () => [
-    { source: '/blog', destination: '/blogs', permanent: true },
+    // The six "X alternative" blog posts were retired on 2026-10-11: they sold
+    // Laycal as a dialer replacement and carried claims that were not true.
+    { source: '/blogs/justcall-alternatives-2026', destination: '/justcall-alternative', permanent: true },
+    { source: '/blogs/nooks-alternative-2026', destination: '/nooks-alternative', permanent: true },
+    { source: '/blogs/kixie-alternative-2026', destination: '/compare', permanent: true },
+    { source: '/blogs/ringover-alternative-2026', destination: '/compare', permanent: true },
+    { source: '/blogs/aloware-alternative-2026', destination: '/compare', permanent: true },
+    { source: '/blogs/dialpad-alternative-2026', destination: '/compare', permanent: true },
+    // The blog has no posts for now. Temporary, so it can come back at /blogs:
+    // remove these two lines and restore the nav, footer and sitemap entries.
+    { source: '/blogs', destination: '/', permanent: false },
+    { source: '/blog', destination: '/', permanent: false },
     { source: '/features', destination: '/#features', permanent: true },
     { source: '/pricing', destination: '/#pricing', permanent: true },
     { source: '/about', destination: '/', permanent: true },
