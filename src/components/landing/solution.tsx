@@ -25,12 +25,12 @@ import { useRate } from './providers';
 import { DemoCta, Dot, Eyebrow, GhostLink, Reveal, Section, SectionHeader, Shell } from './primitives';
 import { HERO_TILES } from './product-tiles';
 
-const surface = 'rounded-2xl border-white/[0.08] bg-neutral-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]';
-const iconBox =
+export const surface = 'rounded-2xl border-white/[0.08] bg-neutral-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]';
+export const iconBox =
   'flex size-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-neutral-200 transition-colors duration-200 group-hover:border-primary/40 group-hover:text-brand-soft';
 const tile = (title: string) => HERO_TILES.find((t) => t.title === title)?.content;
 
-type Item = { icon: LucideIcon; title: string; copy: string };
+export type Item = { icon: LucideIcon; title: string; copy: string };
 
 type Solution = {
   eyebrow: string;
@@ -313,7 +313,7 @@ function SolutionHero({ s }: { s: Solution }) {
 
 /* ------------------------------ card sections ------------------------------ */
 
-function CardGrid({ items, numbered = false }: { items: Item[]; numbered?: boolean }) {
+export function CardGrid({ items, numbered = false }: { items: Item[]; numbered?: boolean }) {
   return (
     <div className="mt-12 grid gap-5 md:mt-14 md:grid-cols-3">
       {items.map((item, i) => (

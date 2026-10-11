@@ -105,7 +105,7 @@ search work, `laycal-seo`.
 - Blog: the `/blogs` routes and template still exist. To bring the blog back, add markdown posts to `blogs/`, remove the two temporary redirects, and restore the nav, footer and sitemap entries
 
 ### Components (`src/components/`)
-- `landing/` — the public page kit: `primitives.tsx` (`Shell`, `Section`, `SectionHeader`, `Reveal`, `DemoCta`), `site-nav.tsx`, `hero.tsx`, `sections.tsx`, `features.tsx`, `roi.tsx`, `pricing.tsx`, `cta.tsx`, `reactivation.tsx`, `solution.tsx` (`SOLUTIONS`: content for `/speed-to-lead` and `/instant-lead-follow-up`), `product-tiles.tsx` (`HERO_TILES`), `providers.tsx` (`useRate()`)
+- `landing/` — the public page kit: `primitives.tsx` (`Shell`, `Section`, `SectionHeader`, `Reveal`, `DemoCta`), `site-nav.tsx`, `hero.tsx`, `sections.tsx`, `features.tsx`, `roi.tsx`, `pricing.tsx`, `cta.tsx`, `reactivation.tsx`, `solution.tsx` (`SOLUTIONS`: content for `/speed-to-lead` and `/instant-lead-follow-up`), `comparison.tsx` (`COMPARISONS`: content for `/justcall-alternative`, `/nooks-alternative` and the `/compare` index), `product-tiles.tsx` (`HERO_TILES`), `providers.tsx` (`useRate()`)
 - `portal/` — `portal-shell.tsx` (sidebar, account gate, `PORTAL_ROUTES`, `DARK_ROUTES`), `account-context.tsx` (`useAccount()`), `setup-guide.tsx`, `page.tsx` (`PortalPage`, `PageHeader`)
 - `dashboard/` — panels, account cards, charts
 - `auth/auth-shell.tsx`, `brand/logo-mark.tsx`
