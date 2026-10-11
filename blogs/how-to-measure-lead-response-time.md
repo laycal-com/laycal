@@ -4,7 +4,7 @@ description: "A step-by-step way to work out how long new leads wait for your fi
 author: "Laycal Team"
 category: "Lead Response"
 publishedAt: "2026-10-11"
-image: "/assets/og-default.png"
+image: "/assets/blogs/lead-response-time.png"
 featured: true
 tags: ["Speed to Lead", "Lead Response Time", "Lead Follow-Up"]
 readTime: "5 min read"

@@ -4,7 +4,7 @@ description: "Leads that arrive in the evening or at the weekend usually wait lo
 author: "Laycal Team"
 category: "Lead Response"
 publishedAt: "2026-10-11"
-image: "/assets/og-default.png"
+image: "/assets/blogs/after-hours-leads.png"
 featured: false
 tags: ["After-Hours Leads", "Speed to Lead", "Lead Follow-Up"]
 readTime: "4 min read"

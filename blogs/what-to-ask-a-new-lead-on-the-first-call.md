@@ -4,7 +4,7 @@ description: "The first call to a new lead has three jobs: confirm, qualify and 
 author: "Laycal Team"
 category: "Lead Response"
 publishedAt: "2026-10-11"
-image: "/assets/og-default.png"
+image: "/assets/blogs/first-call-questions.png"
 featured: false
 tags: ["First Call", "Lead Qualification", "Speed to Lead"]
 readTime: "5 min read"
