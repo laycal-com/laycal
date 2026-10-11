@@ -45,10 +45,7 @@ const nextConfig: NextConfig = {
     { source: '/blogs/ringover-alternative-2026', destination: '/compare', permanent: true },
     { source: '/blogs/aloware-alternative-2026', destination: '/compare', permanent: true },
     { source: '/blogs/dialpad-alternative-2026', destination: '/compare', permanent: true },
-    // The blog has no posts for now. Temporary, so it can come back at /blogs:
-    // remove these two lines and restore the nav, footer and sitemap entries.
-    { source: '/blogs', destination: '/', permanent: false },
-    { source: '/blog', destination: '/', permanent: false },
+    { source: '/blog', destination: '/blogs', permanent: true },
     { source: '/features', destination: '/#features', permanent: true },
     { source: '/pricing', destination: '/#pricing', permanent: true },
     { source: '/about', destination: '/', permanent: true },

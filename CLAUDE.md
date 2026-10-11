@@ -97,12 +97,12 @@ search work, `laycal-seo`.
 - `admin/accounts` (+ `[id]`), `admin/dashboard/stats`
 
 ### Pages (`src/app/`)
-- Public: `/` (landing), `/lead-reactivation`, `/speed-to-lead`, `/instant-lead-follow-up`, `/compare`, `/justcall-alternative`, `/nooks-alternative`, `/contact`, `/privacy`, `/terms`, `/status`
+- Public: `/` (landing), `/lead-reactivation`, `/speed-to-lead`, `/instant-lead-follow-up`, `/compare`, `/justcall-alternative`, `/nooks-alternative`, `/blogs`, `/contact`, `/privacy`, `/terms`, `/status`
 - Auth: `/sign-in`, `/sign-up`, `/onboarding`
 - Portal: `/dashboard`, `/assistants`, `/leads`, `/appointments`, `/call-summary`, `/integrations`, `/settings`, `/support`
 - Admin: `/admin/...` (`/admin/users` is the Accounts screen)
-- Redirected in `next.config.ts`: `/features`, `/pricing`, `/about`, `/case-studies`, `/sdr`, the six retired `/blogs/*-alternative-2026` posts (to the comparison pages), and `/blogs` and `/blog` (temporarily, to `/`, while the blog has no posts)
-- Blog: the `/blogs` routes and template still exist. To bring the blog back, add markdown posts to `blogs/`, remove the two temporary redirects, and restore the nav, footer and sitemap entries
+- Redirected in `next.config.ts`: `/features`, `/pricing`, `/about`, `/case-studies`, `/sdr`, `/blog`, and the six retired `/blogs/*-alternative-2026` posts (to the comparison pages)
+- Blog: posts are markdown files in `blogs/`, written for the buyer (lead response time, the first call, after-hours leads), not competitor roundups. The template has no markdown table support
 
 ### Components (`src/components/`)
 - `landing/` — the public page kit: `primitives.tsx` (`Shell`, `Section`, `SectionHeader`, `Reveal`, `DemoCta`), `site-nav.tsx`, `hero.tsx`, `sections.tsx`, `features.tsx`, `roi.tsx`, `pricing.tsx`, `cta.tsx`, `reactivation.tsx`, `solution.tsx` (`SOLUTIONS`: content for `/speed-to-lead` and `/instant-lead-follow-up`), `product-tiles.tsx` (`HERO_TILES`), `providers.tsx` (`useRate()`)
@@ -181,7 +181,7 @@ Production values live in Vercel.
 5. Google Calendar booking and availability need different scopes; older connections must reconnect once.
 6. Stored recording URLs expire. Fetch a fresh one at view time through `api/call-summaries/[id]/recording`.
 7. Radix components that render in a portal (Select, Sheet, Tooltip, Dialog) sit outside a page's dark root and need the `dark` class passed in.
-8. The `blogs/` directory at the repo root holds blog posts as markdown. It is currently empty (kept by a placeholder file); the loaders return an empty list if it is missing.
+8. The `blogs/` directory at the repo root holds blog posts as markdown. The loaders return an empty list if it is empty or missing.
 9. Console statements are removed in production builds.
 
 ## When adding features
