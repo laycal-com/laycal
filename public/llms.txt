@@ -1,0 +1,44 @@
+# Laycal
+
+> Laycal is a speed-to-lead platform. When someone submits a business's form, an AI voice agent phones them within a minute, asks the business's qualifying questions, handles objections and books the meeting on the business's calendar.
+
+## Key facts
+
+- What it does: places an outbound phone call to each new lead within a minute of the form being submitted, qualifies the lead and books a meeting during the call.
+- Who it is for: any business where the first company to call usually wins the customer, for example home services (HVAC, plumbing, roofing, electrical), e-commerce with considered purchases, and B2B.
+- Lead sources: website forms, Google Forms, ad lead forms and CRMs, by sending each new lead to Laycal as it arrives. A CSV can be uploaded for an existing list.
+- Calendar: Google Calendar. The agent offers only free slots and creates the event while the lead is on the phone.
+- After each call: the outcome, a recording, a written summary and the details captured (name, email, appointment time).
+- Phone numbers: works with the business's own Twilio, Plivo or Vonage numbers.
+- Languages: English, Spanish, French and German.
+- Concurrency: many calls can run at the same time, so a busy hour does not create a backlog.
+- Pricing: pay as you go, per calling minute. No seats, plans or monthly minimum. The rate is confirmed on a demo.
+- Access: invite-only. There is no public sign-up or free trial; accounts are created by invitation after a demo.
+- Second use, lead reactivation: Laycal can call a list of past leads the business already holds and book the ones who are still interested. Lists must be opted-in; consent and do-not-call compliance are the customer's responsibility.
+
+## What Laycal is not
+
+- It does not answer inbound phone calls. It is not an AI receptionist or an answering service.
+- It is not a dialer or phone system for a team of sales reps.
+- It is not a cold-calling tool. It calls people who asked to be contacted.
+- It does not source leads or send email or SMS sequences.
+
+## Product pages
+
+- [Home](https://www.laycal.com/): what Laycal does, how it works, use cases, pricing model and FAQ.
+- [Speed to lead](https://www.laycal.com/speed-to-lead): what speed to lead means, why the first call matters and how Laycal brings it under a minute.
+- [Instant lead follow-up](https://www.laycal.com/instant-lead-follow-up): what the AI agent does on the call and how setup works.
+- [Lead reactivation](https://www.laycal.com/lead-reactivation): calling an existing list of opted-in leads.
+- [Compare](https://www.laycal.com/compare): how Laycal differs from dialers and phone systems, including when it is not the right tool.
+- [Contact](https://www.laycal.com/contact): contact form and demo booking.
+
+## Guides
+
+- [How to measure your lead response time](https://www.laycal.com/blogs/how-to-measure-lead-response-time): a step-by-step method using data a business already has.
+- [What to ask a new lead on the first call](https://www.laycal.com/blogs/what-to-ask-a-new-lead-on-the-first-call): the opening line, qualifying questions and how to end with a booked next step.
+- [What happens to the leads that come in after hours](https://www.laycal.com/blogs/what-happens-to-after-hours-leads): how to count out-of-hours leads and the options for handling them.
+
+## Optional
+
+- [Privacy policy](https://www.laycal.com/privacy)
+- [Terms of service](https://www.laycal.com/terms)

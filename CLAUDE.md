@@ -101,6 +101,7 @@ search work, `laycal-seo`.
 - Auth: `/sign-in`, `/sign-up`, `/onboarding`
 - Portal: `/dashboard`, `/assistants`, `/leads`, `/appointments`, `/call-summary`, `/integrations`, `/settings`, `/support`
 - Admin: `/admin/...` (`/admin/users` is the Accounts screen)
+- `public/llms.txt` — a plain-text summary of Laycal for AI assistants (facts, what it is not, links to the public pages and posts). Update it when a public page or post is added or removed, or when a product fact changes
 - Redirected in `next.config.ts`: `/features`, `/pricing`, `/about`, `/case-studies`, `/sdr`, `/blog`, and the six retired `/blogs/*-alternative-2026` posts (to the comparison pages)
 - Blog: posts are markdown files in `blogs/`, written for the buyer (lead response time, the first call, after-hours leads), not competitor roundups. The template has no markdown table support. Every post gets its own banner in `public/assets/blogs/`, drawn by `scripts/make-blog-banners.js` (add a motif, run the script); the full steps are in the `laycal-seo` skill under "Publishing a blog post"
 
