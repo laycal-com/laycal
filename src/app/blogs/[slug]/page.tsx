@@ -10,7 +10,6 @@ import React from 'react';
 import PublicNavbar from '@/components/PublicNavbar';
 import Footer from '@/components/Footer';
 import TableOfContents from '@/components/TableOfContents';
-import EmailPopup from '@/components/EmailPopup';
 import { DEMO_URL } from '@/lib/links';
 
 interface BlogPost {
@@ -117,7 +116,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: { absolute: `${post.title} | Laycal Blog - AI Voice Agent & Sales Automation` },
+    title: { absolute: `${post.title} | Laycal Blog` },
     description: post.description,
     keywords: `${post.tags.join(', ')}, ai voice agent, automated calling system, sales automation`,
     alternates: {
@@ -529,7 +528,6 @@ export default async function BlogPostPage({ params }: Props) {
       )}
 
       {/* Email Collection Popup */}
-      <EmailPopup postTitle={post.title} />
 
       <Footer />
     </div>

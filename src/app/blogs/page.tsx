@@ -9,24 +9,23 @@ import Footer from '@/components/Footer';
 import { OG_IMAGE } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: { absolute: "Laycal Blog - AI Voice Agent & Automated Calling System Insights | Sales Tips & Industry News" },
-  description: "Get the latest insights on AI voice agents, automated calling systems, sales strategies, and industry news. Learn how to increase sales efficiency with AI powered phone calls and appointment setters.",
-  keywords: "ai voice agent blog, automated calling system blog, ai powered phone calls, sales tips, ai appointment setter, sales automation, cold calling tips, business phone systems, ai for sales",
+  title: { absolute: "Laycal Blog | Speed to Lead and Lead Follow-Up" },
+  description: "Practical guides on responding to new leads: measuring your response time, running the first call and handling the leads that arrive after hours.",
   metadataBase: new URL("https://www.laycal.com"),
   alternates: {
     canonical: "/blogs",
   },
   openGraph: {
-    title: "Laycal Blog - AI Voice Agent & Sales Automation Insights",
-    description: "Get the latest insights on AI voice agents, automated calling systems, sales strategies, and industry news. Learn how to increase sales efficiency with AI powered phone calls and appointment setters.",
+    title: "Laycal Blog | Speed to Lead and Lead Follow-Up",
+    description: "Practical guides on responding to new leads: measuring your response time, running the first call and handling the leads that arrive after hours.",
     url: "https://www.laycal.com/blogs",
     type: "website",
     images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Laycal Blog - AI Voice Agent & Sales Automation Insights",
-    description: "Get the latest insights on AI voice agents, automated calling systems, sales strategies, and industry news.",
+    title: "Laycal Blog | Speed to Lead and Lead Follow-Up",
+    description: "Practical guides on responding to new leads: measuring your response time, running the first call and handling the leads that arrive after hours.",
     images: [OG_IMAGE.url],
   },
   robots: {
@@ -91,8 +90,8 @@ export default async function BlogPage() {
             The Laycal Blog
           </h1>
           <p className="text-xl md:text-2xl opacity-90 mb-8 max-w-3xl mx-auto">
-            Get tips and advice on delivering exceptional customer service, engaging and delighting your 
-            customers, and building a customer-centric company.
+            Practical guides on responding to new leads: how fast you really are, what to say on
+            the first call, and what to do about the leads that arrive after hours.
           </p>
         </div>
       </section>
