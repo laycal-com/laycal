@@ -161,7 +161,7 @@ export function UseCases() {
 
 /* ----------------------------------- FAQ ---------------------------------- */
 
-const FAQS = [
+export const FAQS = [
   {
     q: 'Does it sound like a robot?',
     a: 'No. You pick the voice, pace and personality, and the agent handles interruptions and objections mid-sentence. We play real recordings on the demo so you can judge for yourself.',
@@ -224,8 +224,8 @@ export function Faq() {
 
 const FOOTER: [string, [string, string][]][] = [
   ['Product', [['Features', '/#features'], ['Pricing', '/#pricing'], ['Calculator', '/#roi']]],
-  ['Compare', [['JustCall alternative', '/justcall-alternative'], ['Nooks alternative', '/nooks-alternative'], ['Lead reactivation', '/lead-reactivation']]],
-  ['Company', [['Blog', '/blogs'], ['Contact', '/contact'], ['Support', '/support']]],
+  ['Compare', [['All comparisons', '/compare'], ['JustCall alternative', '/justcall-alternative'], ['Nooks alternative', '/nooks-alternative'], ['Lead reactivation', '/lead-reactivation']]],
+  ['Company', [['Blog', '/blogs'], ['Contact', '/contact']]],
 ];
 
 const footLink =

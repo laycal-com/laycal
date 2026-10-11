@@ -3,8 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { MotionConfig } from 'motion/react';
 
-const DEFAULT_RATE = 0.07;
-const DEFAULT_ASSISTANT_FEE = 10;
+import { DEFAULT_ASSISTANT_FEE, DEFAULT_RATE } from './rate';
 
 const RateContext = createContext({ rate: DEFAULT_RATE, assistantFee: DEFAULT_ASSISTANT_FEE });
 
@@ -39,41 +38,5 @@ export function LandingProviders({ children }: { children: React.ReactNode }) {
     <MotionConfig reducedMotion="user">
       <RateContext.Provider value={{ rate, assistantFee }}>{children}</RateContext.Provider>
     </MotionConfig>
-  );
-}
-
-export function StructuredData() {
-  const { rate, rateLabel } = useRate();
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'SoftwareApplication',
-          name: 'Laycal',
-          description:
-            'Invite-only AI speed-to-lead platform. Calls every new lead within a minute of the form being submitted, qualifies them, handles objections and books meetings straight into Google Calendar.',
-          applicationCategory: 'BusinessApplication',
-          operatingSystem: 'Web-based',
-          offers: {
-            '@type': 'Offer',
-            price: String(rate),
-            priceCurrency: 'USD',
-            description: `Usage-based pricing from ${rateLabel} per minute`,
-          },
-          author: { '@type': 'Organization', name: 'Laycal', url: 'https://laycal.com' },
-          featureList: [
-            'AI Voice Agents',
-            '500+ Simultaneous Calls',
-            'Usage-based Pricing',
-            'Google Calendar Integration',
-            'Lead Management',
-            'Real-time Analytics',
-            'Multiple Voice Providers',
-          ],
-        }),
-      }}
-    />
   );
 }

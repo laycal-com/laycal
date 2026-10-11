@@ -10,7 +10,7 @@ import { PORTAL_ROUTES, PortalShell } from "@/components/portal/portal-shell";
 import { Analytics } from "@vercel/analytics/next";
 
 const MARKETING_ROUTES = [
-  '/contact', '/lead-reactivation', '/onboarding', '/justcall-alternative', '/nooks-alternative', '/blogs', '/privacy', '/terms', '/status',
+  '/contact', '/lead-reactivation', '/onboarding', '/justcall-alternative', '/nooks-alternative', '/compare', '/blogs', '/privacy', '/terms', '/status',
 ];
 
 interface ClientLayoutWrapperProps {

@@ -1,11 +1,16 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import ClientLayoutWrapper from "@/components/ClientLayoutWrapper";
+import { OrganizationJsonLd } from "@/components/landing/structured-data";
+import { OG_IMAGE } from "@/lib/seo";
 import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Laycal - Call Every New Lead in Under a Minute | AI Speed to Lead",
+  title: {
+    default: "Laycal - Call Every New Lead in Under a Minute | AI Speed to Lead",
+    template: "%s | Laycal",
+  },
   description: "Laycal calls every new lead within a minute of the form being submitted. An AI voice agent qualifies them, handles objections and books the meeting straight into your calendar.",
   keywords: "increase sales efficiency, ai powered phone calls, ai appointment setter, ai outbound calls, automated sales calls, ai lead generation, ai for cold calling, ai voice agent, ai sales assistant, automated calling system, JustCall alternative, Nooks alternative",
   authors: [{ name: "Laycal" }],
@@ -16,22 +21,21 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://laycal.com"),
-  alternates: {
-    canonical: "/",
-  },
+  metadataBase: new URL("https://www.laycal.com"),
   openGraph: {
     title: "Laycal - Call Every New Lead in Under a Minute | AI Speed to Lead",
     description: "Laycal calls every new lead within a minute of the form being submitted. An AI voice agent qualifies them, handles objections and books the meeting straight into your calendar.",
-    url: "https://laycal.com",
+    url: "https://www.laycal.com",
     siteName: "Laycal",
     locale: "en_US",
     type: "website",
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: "Laycal - Call Every New Lead in Under a Minute | AI Speed to Lead",
     description: "Laycal calls every new lead within a minute of the form being submitted. An AI voice agent qualifies them, handles objections and books the meeting straight into your calendar.",
+    images: [OG_IMAGE.url],
   },
   robots: {
     index: true,
@@ -101,6 +105,7 @@ export default function RootLayout({
           />
         </noscript>
         <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
+        <OrganizationJsonLd />
       </body>
     </html>
   );

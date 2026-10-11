@@ -6,44 +6,38 @@ import matter from 'gray-matter';
 // Base URL for the site
 const baseUrl = 'https://www.laycal.com';
 
-// Static routes with their priorities and change frequencies
+// Static routes with their priorities and change frequencies.
+// lastmod is the date the page's content last changed (from git history):
+// bump it when the content actually changes, not on every deploy.
 const staticRoutes = [
   // Public pages (high priority)
-  { url: '', priority: 1.0, changeFrequency: 'daily' as const },
-  { url: '/lead-reactivation', priority: 0.8, changeFrequency: 'monthly' as const },
-  { url: '/contact', priority: 0.8, changeFrequency: 'monthly' as const },
-  { url: '/blogs', priority: 0.9, changeFrequency: 'daily' as const },
-  
+  { url: '', priority: 1.0, changeFrequency: 'daily' as const, lastModified: '2026-10-11' },
+  { url: '/lead-reactivation', priority: 0.8, changeFrequency: 'monthly' as const, lastModified: '2026-10-10' },
+  { url: '/contact', priority: 0.8, changeFrequency: 'monthly' as const, lastModified: '2026-10-10' },
+  { url: '/blogs', priority: 0.9, changeFrequency: 'daily' as const, lastModified: '2026-10-11' },
+
   // Alternative/comparison pages
-  { url: '/justcall-alternative', priority: 0.8, changeFrequency: 'weekly' as const },
-  { url: '/nooks-alternative', priority: 0.8, changeFrequency: 'weekly' as const },
-  
+  { url: '/compare', priority: 0.8, changeFrequency: 'weekly' as const, lastModified: '2026-10-11' },
+  { url: '/justcall-alternative', priority: 0.8, changeFrequency: 'weekly' as const, lastModified: '2026-10-11' },
+  { url: '/nooks-alternative', priority: 0.8, changeFrequency: 'weekly' as const, lastModified: '2026-10-11' },
+
   // Legal pages
-  { url: '/privacy', priority: 0.3, changeFrequency: 'yearly' as const },
-  { url: '/terms', priority: 0.3, changeFrequency: 'yearly' as const },
-  { url: '/support', priority: 0.6, changeFrequency: 'monthly' as const },
-  { url: '/status', priority: 0.6, changeFrequency: 'daily' as const },
+  { url: '/privacy', priority: 0.3, changeFrequency: 'yearly' as const, lastModified: '2026-10-09' },
+  { url: '/terms', priority: 0.3, changeFrequency: 'yearly' as const, lastModified: '2026-10-09' },
 ];
 
-// Get all blog posts
+// Get all blog posts. Fails loud (empty list + error log) rather than serving
+// a stale hardcoded set.
 async function getBlogPosts() {
-  // First try the file system approach
   try {
     const blogsDirectory = path.join(process.cwd(), 'blogs');
-    
-    // Debug: Log the directory path being used
-    console.log('Blogs directory path:', blogsDirectory);
-    console.log('Current working directory:', process.cwd());
-    
-    // Check if blogs directory exists
+
     if (!fs.existsSync(blogsDirectory)) {
-      console.warn('Blogs directory not found at:', blogsDirectory);
-      throw new Error('Blogs directory not found');
+      throw new Error(`Blogs directory not found at: ${blogsDirectory}`);
     }
-    
+
     const filenames = fs.readdirSync(blogsDirectory);
-    console.log('Found blog files:', filenames.length, filenames);
-    
+
     const posts = filenames
       .filter((name) => name.endsWith('.md'))
       .map((filename) => {
@@ -51,7 +45,7 @@ async function getBlogPosts() {
         const fileContents = fs.readFileSync(filePath, 'utf8');
         const { data } = matter(fileContents);
         const stats = fs.statSync(filePath);
-        
+
         // Ensure we have a valid date for lastModified
         let lastModified: Date;
         try {
@@ -77,60 +71,16 @@ async function getBlogPosts() {
     return posts;
   } catch (error) {
     console.error('Error reading blog posts for sitemap:', error);
-    
-    // Fallback: Return known blog posts if file reading fails in production
-    const fallbackPosts = [
-      {
-        slug: 'justcall-alternatives-2026',
-        publishedAt: '2025-09-27',
-        lastModified: new Date('2025-09-27'),
-        featured: true,
-      },
-      {
-        slug: 'nooks-alternative-2026',
-        publishedAt: '2025-01-20',
-        lastModified: new Date('2025-01-20'),
-        featured: true,
-      },
-      {
-        slug: 'aloware-alternative-2026',
-        publishedAt: '2025-01-22',
-        lastModified: new Date('2025-01-22'),
-        featured: true,
-      },
-      {
-        slug: 'kixie-alternative-2026',
-        publishedAt: '2025-01-24',
-        lastModified: new Date('2025-01-24'),
-        featured: true,
-      },
-      {
-        slug: 'dialpad-alternative-2026',
-        publishedAt: '2025-01-26',
-        lastModified: new Date('2025-01-26'),
-        featured: true,
-      },
-      {
-        slug: 'ringover-alternative-2026',
-        publishedAt: '2025-01-28',
-        lastModified: new Date('2025-01-28'),
-        featured: true,
-      },
-    ];
-    
-    console.log('Using fallback blog posts:', fallbackPosts.length);
-    return fallbackPosts;
+    return [];
   }
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const blogPosts = await getBlogPosts();
-  const currentDate = new Date();
-  
-  // Static routes with proper URL encoding and date formatting
+
   const staticSitemapEntries: MetadataRoute.Sitemap = staticRoutes.map((route) => ({
     url: new URL(route.url, baseUrl).toString(),
-    lastModified: currentDate.toISOString(),
+    lastModified: route.lastModified,
     changeFrequency: route.changeFrequency,
     priority: route.priority,
   }));
@@ -140,7 +90,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Ensure proper URL encoding for blog slugs
     const encodedSlug = encodeURIComponent(post.slug);
     const postUrl = new URL(`/blogs/${encodedSlug}`, baseUrl).toString();
-    
+
     return {
       url: postUrl,
       lastModified: post.lastModified.toISOString(),
@@ -169,8 +119,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return validEntries;
 }
 
-// Configure revalidation (cache for 5 minutes for debugging) and add metadata
-export const revalidate = 300;
+export const revalidate = 3600;
 
 // Add explicit content type for better compatibility
 export const contentType = 'application/xml';

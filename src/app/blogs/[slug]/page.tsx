@@ -11,6 +11,7 @@ import PublicNavbar from '@/components/PublicNavbar';
 import Footer from '@/components/Footer';
 import TableOfContents from '@/components/TableOfContents';
 import EmailPopup from '@/components/EmailPopup';
+import { DEMO_URL } from '@/lib/links';
 
 interface BlogPost {
   title: string;
@@ -115,7 +116,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: `${post.title} | Laycal Blog - AI Voice Agent & Sales Automation`,
+    title: { absolute: `${post.title} | Laycal Blog - AI Voice Agent & Sales Automation` },
     description: post.description,
     keywords: `${post.tags.join(', ')}, ai voice agent, automated calling system, sales automation`,
     alternates: {
@@ -124,7 +125,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: post.title,
       description: post.description,
-      url: `https://laycal.com/blogs/${resolvedParams.slug}`,
+      url: `https://www.laycal.com/blogs/${resolvedParams.slug}`,
       type: 'article',
       publishedTime: post.publishedAt,
       authors: [post.author],
@@ -148,15 +149,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // Custom components for MDX
 const components = {
+  // Markdown bodies start with `# title`, but the template already renders the
+  // post title as the page's single H1 — so markdown H1s render as H2s.
   h1: ({ children }: any) => {
     const id = typeof children === 'string' ? children.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '';
     return (
-      <h1 id={id} className="text-4xl font-semibold text-foreground mb-6 mt-8 scroll-mt-24">
+      <h2 id={id} className="text-3xl font-semibold text-foreground mb-4 mt-8 scroll-mt-24">
         <a href={`#${id}`} className="group hover:text-brand-soft transition-colors">
           {children}
           <span className="ml-2 opacity-0 group-hover:opacity-100 text-brand-soft transition-opacity">#</span>
         </a>
-      </h1>
+      </h2>
     );
   },
   h2: ({ children }: any) => {
@@ -311,6 +314,30 @@ export default async function BlogPostPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-card">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BlogPosting',
+            headline: post.title,
+            description: post.description,
+            image: post.image.startsWith('http') ? post.image : `https://www.laycal.com${post.image}`,
+            datePublished: post.publishedAt,
+            author: { '@type': 'Organization', name: post.author || 'Laycal' },
+            publisher: {
+              '@type': 'Organization',
+              name: 'Laycal',
+              url: 'https://www.laycal.com',
+              logo: { '@type': 'ImageObject', url: 'https://www.laycal.com/assets/logo.png' },
+            },
+            mainEntityOfPage: {
+              '@type': 'WebPage',
+              '@id': `https://www.laycal.com/blogs/${resolvedParams.slug}`,
+            },
+          }),
+        }}
+      />
       <PublicNavbar />
       
       {/* Hero Section with Background Image */}
@@ -433,6 +460,33 @@ export default async function BlogPostPage({ params }: Props) {
           </div>
         </div>
       </article>
+
+      {/* Product CTA: route readers from editorial content to the demo and the comparison hub */}
+      <section className="bg-primary/5 py-16">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-semibold text-foreground mb-4">
+            Be the first call every lead gets
+          </h2>
+          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Laycal calls every new lead within a minute, qualifies them and books the meeting on
+            your calendar. Book a demo and hear a real call.
+          </p>
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <Link
+              href={DEMO_URL}
+              className="inline-block bg-primary text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary/90 transition-colors"
+            >
+              Book a demo
+            </Link>
+            <Link
+              href="/compare"
+              className="inline-block border border-border text-foreground px-8 py-4 rounded-lg font-semibold text-lg hover:bg-muted transition-colors"
+            >
+              Compare Laycal
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* Related Posts */}
       {relatedPosts.length > 0 && (

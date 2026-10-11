@@ -13,7 +13,7 @@ import { SiteFooter } from '@/components/landing/sections';
 import { SiteNav } from '@/components/landing/site-nav';
 
 export const metadata: Metadata = {
-  title: 'Lead Reactivation | Call Your Old Leads and Book the Interested Ones - Laycal',
+  title: { absolute: 'Lead Reactivation | Call Your Old Leads and Book the Interested Ones - Laycal' },
   description:
     'Upload the leads sitting in your CRM. Laycal calls every one, finds who is still interested and books them straight into your calendar.',
   alternates: { canonical: '/lead-reactivation' },

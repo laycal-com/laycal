@@ -1,7 +1,13 @@
 import { SignUp } from "@clerk/nextjs";
+import type { Metadata } from "next";
 
 import { AuthShell } from "@/components/auth/auth-shell";
 import { authFormAppearance } from "@/lib/clerkAppearance";
+
+export const metadata: Metadata = {
+  title: "Accept your invitation",
+  robots: { index: false, follow: false },
+};
 
 /**
  * Invitation landing page. Access is invite-only: this route is never linked

@@ -5,10 +5,11 @@ import { MiniMap, type MapPin } from '@/components/landing/mini-map';
 import { SiteFooter } from '@/components/landing/sections';
 import { SiteNav } from '@/components/landing/site-nav';
 import { DEMO_URL } from '@/lib/links';
+import { OG_IMAGE } from '@/lib/seo';
 import { ContactForm } from './contact-form';
 
 export const metadata: Metadata = {
-  title: "Contact Laycal | Questions, Support and Access",
+  title: { absolute: "Contact Laycal | Questions, Support and Access" },
   description: "Get in touch with Laycal about your account, support or getting access. Send a message or book a 15-minute demo.",
   keywords: "contact support, ai voice agent support, automated calling system help, ai powered phone calls support, ai appointment setter help, ai sales assistant support, increase sales efficiency support",
   alternates: {
@@ -17,7 +18,8 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Contact Laycal | Questions, Support and Access",
     description: "Get in touch with Laycal about your account, support or getting access. Send a message or book a 15-minute demo.",
-    url: "https://laycal.com/contact",
+    url: "https://www.laycal.com/contact",
+    images: [OG_IMAGE],
   },
 };
 

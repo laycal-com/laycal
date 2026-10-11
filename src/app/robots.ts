@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/admin/', '/api/', '/dashboard/'],
     },
-    sitemap: 'https://laycal.com/sitemap.xml',
+    sitemap: 'https://www.laycal.com/sitemap.xml',
   };
 }

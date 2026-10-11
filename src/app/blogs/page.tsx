@@ -6,25 +6,28 @@ import Link from 'next/link';
 import Image from 'next/image';
 import PublicNavbar from '@/components/PublicNavbar';
 import Footer from '@/components/Footer';
+import { OG_IMAGE } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: "Laycal Blog - AI Voice Agent & Automated Calling System Insights | Sales Tips & Industry News",
+  title: { absolute: "Laycal Blog - AI Voice Agent & Automated Calling System Insights | Sales Tips & Industry News" },
   description: "Get the latest insights on AI voice agents, automated calling systems, sales strategies, and industry news. Learn how to increase sales efficiency with AI powered phone calls and appointment setters.",
   keywords: "ai voice agent blog, automated calling system blog, ai powered phone calls, sales tips, ai appointment setter, sales automation, cold calling tips, business phone systems, ai for sales",
-  metadataBase: new URL("https://laycal.com"),
+  metadataBase: new URL("https://www.laycal.com"),
   alternates: {
     canonical: "/blogs",
   },
   openGraph: {
     title: "Laycal Blog - AI Voice Agent & Sales Automation Insights",
     description: "Get the latest insights on AI voice agents, automated calling systems, sales strategies, and industry news. Learn how to increase sales efficiency with AI powered phone calls and appointment setters.",
-    url: "https://laycal.com/blogs",
+    url: "https://www.laycal.com/blogs",
     type: "website",
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: "Laycal Blog - AI Voice Agent & Sales Automation Insights",
     description: "Get the latest insights on AI voice agents, automated calling systems, sales strategies, and industry news.",
+    images: [OG_IMAGE.url],
   },
   robots: {
     index: true,

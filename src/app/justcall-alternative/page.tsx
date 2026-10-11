@@ -4,18 +4,21 @@ import Link from 'next/link';
 import Image from 'next/image';
 import PublicNavbar from '@/components/PublicNavbar';
 import Footer from '@/components/Footer';
+import { OG_IMAGE } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: "JustCall Alternative - AI Voice Agent & Automated Calling System | Increase Sales Efficiency",
-  description: "Best JustCall alternative with AI powered phone calls and automated calling system. AI appointment setter, AI sales assistant, and AI voice agent to increase sales efficiency. Switch from JustCall today.",
-  keywords: "JustCall alternative, ai voice agent, automated calling system, ai powered phone calls, ai appointment setter, ai sales assistant, automated sales calls, increase sales efficiency, ai outbound calls, ai for cold calling, JustCall competitor",
+  title: 'JustCall Alternative for AI Lead Follow-Up',
+  description:
+    'JustCall is a per-seat phone system for teams. Laycal is usage-based AI that calls every new lead within a minute and books the meeting. An honest comparison.',
   alternates: {
-    canonical: "/justcall-alternative",
+    canonical: '/justcall-alternative',
   },
   openGraph: {
-    title: "JustCall Alternative - AI Voice Agent & Automated Calling System | Increase Sales Efficiency",
-    description: "Best JustCall alternative with AI powered phone calls and automated calling system. AI appointment setter, AI sales assistant, and AI voice agent to increase sales efficiency.",
-    url: "https://laycal.com/justcall-alternative",
+    title: 'JustCall Alternative for AI Lead Follow-Up | Laycal',
+    description:
+      'JustCall is a per-seat phone system for teams. Laycal is usage-based AI that calls every new lead within a minute and books the meeting.',
+    url: 'https://www.laycal.com/justcall-alternative',
+    images: [OG_IMAGE],
   },
 };
 
@@ -23,30 +26,37 @@ export default function JustCallAlternativePage() {
   return (
     <div className="min-h-screen bg-card">
       <PublicNavbar />
-      
-      {/* SEO Header */}
+
       <header className="bg-primary text-white py-16 pt-32">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h1 className="text-4xl font-semibold mb-4">
-            The #1 JustCall Alternative for 2026
+            The JustCall Alternative for Automated Lead Follow-Up
           </h1>
           <p className="text-xl opacity-90">
-            Save 95% on calling costs. No per-seat pricing. Enterprise AI calling at startup prices.
+            Pay per calling minute, not per seat. An AI agent calls every new lead within a minute —
+            no reps required.
           </p>
         </div>
       </header>
 
       <main className="py-16">
         <div className="max-w-4xl mx-auto px-4">
-          {/* Why Switch Section */}
+          {/* Category framing */}
           <section className="mb-16">
             <h2 className="text-3xl font-semibold text-foreground mb-8">
-              Why Switch from JustCall to Laycal?
+              First, an honest point: these are different tools
             </h2>
-            
+            <p className="text-muted-foreground text-lg leading-relaxed mb-8">
+              JustCall is a cloud phone system: your team gets numbers, a dialer, SMS and CRM
+              integrations, and your reps make and take the calls. Laycal is a speed-to-lead
+              platform: when a new lead submits a form, an AI voice agent calls them within a
+              minute, qualifies them and books the meeting on your calendar. Many businesses use
+              one, the other, or both.
+            </p>
+
             <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-red-500/10 p-6 rounded-lg">
-                <h3 className="text-xl font-semibold text-red-500 mb-4 flex items-center space-x-3">
+              <div className="bg-muted/40 border border-border p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center space-x-3">
                   <div className="w-8 h-8 bg-card rounded flex items-center justify-center p-1">
                     <Image
                       src="/assets/justcall.svg"
@@ -56,119 +66,122 @@ export default function JustCallAlternativePage() {
                       className="object-contain"
                     />
                   </div>
-                  <span>Problems</span>
+                  <span>Choose JustCall if…</span>
                 </h3>
                 <ul className="space-y-2 text-muted-foreground">
-                  <li>❌ Expensive per-seat pricing</li>
-                  <li>❌ Limited simultaneous calls</li>
-                  <li>❌ Hidden fees and sudden price hikes</li>
-                  <li>❌ Complex setup process</li>
-                  <li>❌ Reports of dropped calls and bugs</li>
-                  <li>❌ Rigid workflows and limited customization</li>
-                  <li>❌ Poor customer support response</li>
+                  <li>Your reps need a business phone system with their own numbers</li>
+                  <li>You want SMS, call recording and IVR for a support or sales team</li>
+                  <li>Per-seat pricing fits how your team works</li>
+                  <li>You need deep CRM integrations for manual calling workflows</li>
                 </ul>
               </div>
-              
+
               <div className="bg-green-500/10 p-6 rounded-lg">
-                <h3 className="text-xl font-semibold text-green-500 mb-4">🚀 Laycal Solutions</h3>
+                <h3 className="text-xl font-semibold text-green-500 mb-4">Choose Laycal if…</h3>
                 <ul className="space-y-2 text-muted-foreground">
-                  <li>✅ Pay-as-you-go pricing (no per-seat fees)</li>
-                  <li>✅ 500+ simultaneous calls</li>
-                  <li>✅ Transparent pricing, no hidden costs</li>
-                  <li>✅ 5-minute setup process</li>
-                  <li>✅ Multiple voice providers ensure uptime</li>
-                  <li>✅ Full AI prompt builder control</li>
-                  <li>✅ Fast, human customer support</li>
+                  <li>✅ Inbound leads wait hours (or days) for a first call</li>
+                  <li>✅ You want every new lead called in under a minute, 24/7</li>
+                  <li>✅ You don&apos;t have reps available to dial every form fill</li>
+                  <li>✅ You want AI to qualify and book meetings, not just connect calls</li>
+                  <li>✅ You prefer usage-based pricing with no seat licenses</li>
                 </ul>
               </div>
             </div>
           </section>
 
-          {/* Detailed Comparison */}
+          {/* Pricing comparison — verifiable figures only */}
           <section className="mb-16">
             <h2 className="text-3xl font-semibold text-foreground mb-8 text-center">
-              JustCall vs Laycal: Detailed Comparison (2026)
+              Pricing models compared
             </h2>
-            
+
             <div className="overflow-x-auto bg-card rounded-lg shadow-lg">
               <table className="w-full">
                 <thead className="bg-muted">
                   <tr>
-                    <th className="px-6 py-4 text-left font-semibold">Feature</th>
+                    <th className="px-6 py-4 text-left font-semibold"></th>
                     <th className="px-6 py-4 text-center font-semibold text-red-500">JustCall</th>
                     <th className="px-6 py-4 text-center font-semibold text-brand-soft">Laycal</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   <tr>
-                    <td className="px-6 py-4 font-medium">Pricing Model</td>
-                    <td className="px-6 py-4 text-center text-red-500">Per-seat + usage fees</td>
-                    <td className="px-6 py-4 text-center text-brand-soft">Pay-as-you-go only</td>
+                    <td className="px-6 py-4 font-medium">Pricing model</td>
+                    <td className="px-6 py-4 text-center text-muted-foreground">
+                      Per-seat subscription: $29–$89 per user/month billed annually, 2-seat minimum
+                    </td>
+                    <td className="px-6 py-4 text-center text-muted-foreground">
+                      Usage-based: per calling minute, no seat licenses
+                    </td>
                   </tr>
                   <tr>
-                    <td className="px-6 py-4 font-medium">Simultaneous Calls</td>
-                    <td className="px-6 py-4 text-center text-red-500">Limited by seats</td>
-                    <td className="px-6 py-4 text-center text-brand-soft">500+ calls</td>
+                    <td className="px-6 py-4 font-medium">AI voice agent</td>
+                    <td className="px-6 py-4 text-center text-muted-foreground">
+                      Available as a paid add-on
+                    </td>
+                    <td className="px-6 py-4 text-center text-muted-foreground">
+                      The core product — every account is AI calling
+                    </td>
                   </tr>
                   <tr>
-                    <td className="px-6 py-4 font-medium">AI Prompt Builder</td>
-                    <td className="px-6 py-4 text-center text-red-500">❌ Not available</td>
-                    <td className="px-6 py-4 text-center text-brand-soft">✅ Full control</td>
+                    <td className="px-6 py-4 font-medium">Who makes the calls</td>
+                    <td className="px-6 py-4 text-center text-muted-foreground">Your team, manually or via dialer</td>
+                    <td className="px-6 py-4 text-center text-muted-foreground">
+                      The AI agent, automatically, the moment a lead arrives
+                    </td>
                   </tr>
                   <tr>
-                    <td className="px-6 py-4 font-medium">Setup Time</td>
-                    <td className="px-6 py-4 text-center text-red-500">Hours to days</td>
-                    <td className="px-6 py-4 text-center text-brand-soft">5 minutes</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 font-medium">Contract Requirements</td>
-                    <td className="px-6 py-4 text-center text-red-500">Annual contracts</td>
-                    <td className="px-6 py-4 text-center text-brand-soft">No contracts</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 font-medium">Hidden Fees</td>
-                    <td className="px-6 py-4 text-center text-red-500">❌ Many reported</td>
-                    <td className="px-6 py-4 text-center text-brand-soft">✅ 100% transparent</td>
+                    <td className="px-6 py-4 font-medium">Contracts</td>
+                    <td className="px-6 py-4 text-center text-muted-foreground">
+                      Monthly or annual billing (annual is discounted)
+                    </td>
+                    <td className="px-6 py-4 text-center text-muted-foreground">No contracts</td>
                   </tr>
                 </tbody>
               </table>
             </div>
+            <p className="text-sm text-muted-foreground mt-4 text-center">
+              JustCall plan details from justcall.io/pricing, checked October 2026. Laycal is pay
+              as you go, per calling minute — see the calculator on our homepage.
+            </p>
           </section>
 
-          {/* Migration Guide */}
+          {/* How Laycal works */}
           <section className="mb-16">
             <h2 className="text-3xl font-semibold text-foreground mb-8">
-              How to Migrate from JustCall to Laycal
+              What switching to Laycal looks like
             </h2>
-            
+
             <div className="bg-primary/10 p-8 rounded-lg">
               <div className="space-y-4">
                 <div className="flex items-start space-x-4">
                   <div className="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-semibold">1</div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Export Your JustCall Data</h3>
-                    <p className="text-muted-foreground">Download your lead lists and call history from JustCall</p>
+                    <h3 className="font-semibold text-foreground">Connect a lead source</h3>
+                    <p className="text-muted-foreground">
+                      Website forms, ad lead forms via webhook, your CRM, or a CSV upload of an
+                      existing list.
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
                   <div className="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-semibold">2</div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Sign Up for Laycal</h3>
-                    <p className="text-muted-foreground">Create your account in under 2 minutes</p>
+                    <h3 className="font-semibold text-foreground">Set the script</h3>
+                    <p className="text-muted-foreground">
+                      Qualifying questions, objections to expect, and what gets booked — you control
+                      the prompt.
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
                   <div className="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-semibold">3</div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Upload Your Leads</h3>
-                    <p className="text-muted-foreground">Bulk upload your CSV files with drag-and-drop</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-4">
-                  <div className="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-semibold">4</div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Start Calling</h3>
-                    <p className="text-muted-foreground">Launch your first AI calling campaign immediately</p>
+                    <h3 className="font-semibold text-foreground">Every lead gets called</h3>
+                    <p className="text-muted-foreground">
+                      Within a minute of submission, day or night. Qualified leads land on your
+                      Google Calendar.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -178,24 +191,27 @@ export default function JustCallAlternativePage() {
           {/* CTA Section */}
           <section className="text-center text-white p-12 rounded-2xl">
             <h2 className="text-3xl font-semibold mb-4">
-              Ready to Switch from JustCall?
+              See it on one of your own leads
             </h2>
             <p className="text-xl mb-8 opacity-90">
-              Join thousands who made the switch and saved 95% on calling costs
+              Book a demo and we&apos;ll call a test lead live, so you can judge the voice and the
+              speed yourself.
             </p>
             <div className="space-y-4">
-              <Link 
-                href={DEMO_URL} 
+              <Link
+                href={DEMO_URL}
                 className="inline-block bg-primary text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary/90 transition-colors"
               >
-                Start Free Trial - No Credit Card Required
+                Book a demo
               </Link>
-              <p className="text-sm opacity-75">✅ Import JustCall data ✅ 5-minute setup ✅ Cancel anytime</p>
+              <p className="text-sm opacity-75">
+                ✅ Pay per calling minute ✅ No seats, no contracts ✅ Invite-only, by demo
+              </p>
             </div>
           </section>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );
