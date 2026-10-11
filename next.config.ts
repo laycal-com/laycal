@@ -34,15 +34,15 @@ const nextConfig: NextConfig = {
   },
   // Pages removed in the 2026-10 redesign. Their content lives on the landing
   // page now; these keep old links and search results from hitting a 404.
+  // /speed-to-lead and /instant-lead-follow-up were rebuilt as real pages:
+  // they were earning search traffic, which a redirect to the homepage loses.
   redirects: async () => [
     { source: '/blog', destination: '/blogs', permanent: true },
     { source: '/features', destination: '/#features', permanent: true },
     { source: '/pricing', destination: '/#pricing', permanent: true },
     { source: '/about', destination: '/', permanent: true },
     { source: '/case-studies', destination: '/', permanent: true },
-    { source: '/sdr', destination: '/', permanent: true },
-    { source: '/instant-lead-follow-up', destination: '/', permanent: true },
-    { source: '/speed-to-lead', destination: '/', permanent: true },
+    { source: '/sdr', destination: '/instant-lead-follow-up', permanent: true },
   ],
   headers: async () => {
     return [

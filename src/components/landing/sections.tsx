@@ -224,7 +224,8 @@ export function Faq() {
 
 const FOOTER: [string, [string, string][]][] = [
   ['Product', [['Features', '/#features'], ['Pricing', '/#pricing'], ['Calculator', '/#roi']]],
-  ['Compare', [['All comparisons', '/compare'], ['JustCall alternative', '/justcall-alternative'], ['Nooks alternative', '/nooks-alternative'], ['Lead reactivation', '/lead-reactivation']]],
+  ['Solutions', [['Speed to lead', '/speed-to-lead'], ['Instant lead follow-up', '/instant-lead-follow-up'], ['Lead reactivation', '/lead-reactivation']]],
+  ['Compare', [['All comparisons', '/compare'], ['JustCall alternative', '/justcall-alternative'], ['Nooks alternative', '/nooks-alternative']]],
   ['Company', [['Blog', '/blogs'], ['Contact', '/contact']]],
 ];
 
@@ -234,7 +235,7 @@ const footLink =
 export function SiteFooter() {
   return (
     <footer className="relative overflow-hidden border-t border-white/[0.08]">
-      <Shell className="grid gap-12 pb-12 pt-16 md:grid-cols-[1.4fr_1fr_1fr_1fr] md:gap-10 md:pt-20">
+      <Shell className="grid gap-12 pb-12 pt-16 md:grid-cols-2 md:gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr] md:pt-20">
         <div>
           <Link href="/" aria-label="Laycal home" className="inline-flex items-center gap-2.5">
             <LogoMark />

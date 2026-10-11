@@ -12,6 +12,8 @@ const baseUrl = 'https://www.laycal.com';
 const staticRoutes = [
   // Public pages (high priority)
   { url: '', priority: 1.0, changeFrequency: 'daily' as const, lastModified: '2026-10-11' },
+  { url: '/speed-to-lead', priority: 0.9, changeFrequency: 'monthly' as const, lastModified: '2026-10-11' },
+  { url: '/instant-lead-follow-up', priority: 0.9, changeFrequency: 'monthly' as const, lastModified: '2026-10-11' },
   { url: '/lead-reactivation', priority: 0.8, changeFrequency: 'monthly' as const, lastModified: '2026-10-10' },
   { url: '/contact', priority: 0.8, changeFrequency: 'monthly' as const, lastModified: '2026-10-10' },
   { url: '/blogs', priority: 0.9, changeFrequency: 'daily' as const, lastModified: '2026-10-11' },
