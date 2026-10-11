@@ -175,3 +175,8 @@ Times are the machine's local time (`date '+%Y-%m-%d %H:%M'`).
 - **What:** added a "Publishing a blog post" section to the `laycal-seo` skill (frontmatter, copy rules, banner via `scripts/make-blog-banners.js`, verify, indexing, log). Noted the script in `CLAUDE.md` (Pages and Commands).
 - **Why:** the owner wants every new post to get its own banner without having to ask.
 - **Status:** committed, pushed (`CLAUDE.md` and this file only; the skill lives outside the repo). No site change.
+
+### 2026-10-11 17:30 · seo · Read Search Console's generative AI report; added `llms.txt` on a branch (not pushed)
+- **What:** (1) Read the "Generative AI features" report for `laycal.com` (10 Jul – 9 Oct 2026): 99 impressions in Google's AI features in 3 months. By page: `/` 57 (plus 11 on the non-www address), `/sdr` 28, the Nooks post 5, `/speed-to-lead` 4, then 3 or fewer each. The report gives no queries or clicks. (2) Added `public/llms.txt`, a plain-text summary of Laycal for AI assistants (facts, what it is not, links to the public pages and posts), and a line in `CLAUDE.md` saying to keep it current.
+- **Why:** the owner asked whether optimising for AI assistants helps; this gives a starting number and adds the one cheap technical item. There is little evidence the major assistants read `llms.txt`, so expect nothing from it.
+- **Status:** `llms.txt` committed (`64b088d`); first held on a branch at the owner's request, then merged and pushed the same day once the owner approved. Checked locally: served as text, all 11 links in it resolve. No changes made in Search Console.
