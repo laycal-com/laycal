@@ -301,7 +301,7 @@ function SolutionHero({ s }: { s: Solution }) {
           </div>
           <div
             aria-hidden="true"
-            className="group/tile absolute bottom-0 left-0 h-72 w-[21rem] shadow-[0_30px_80px_-10px_rgba(0,0,0,0.9)]"
+            className="group/tile absolute bottom-0 left-0 h-[21rem] w-[21rem] shadow-[0_30px_80px_-10px_rgba(0,0,0,0.9)]"
           >
             {tile(s.heroTiles[1])}
           </div>

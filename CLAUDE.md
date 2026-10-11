@@ -1,239 +1,195 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working in this repository.
 
-## Project Overview
+## Keep this file current
 
-This is a **SaaS template** built as a **lead calling platform** using AI voice agents through Vapi integration. It's NOT a generic SaaS template despite the name - it's specifically designed for automated outbound calling to sales leads.
+This file must describe the code as it is. **When a change makes any line here
+wrong or incomplete, update this file in the same change** — a new or deleted
+model, route, page or core module; a changed rule about tenancy, billing,
+calls or design; a new command or environment variable. Do the same for the
+`laycal-dev` skill (`~/.claude/skills/laycal-dev/`) when the change touches
+what it covers. Do not log completed work here; record only what a future
+session needs to know. Last reviewed: 2026-10-11.
 
-**Core Business Logic**: Upload CSV of leads → AI voice agent calls each lead → Track call results and appointments → Calendar integration for booking follow-ups.
+## Log your work in `work-timeline.md`
 
-## Current Platform Capabilities (Latest)
+Several agents work in this repo at the same time. **Read the latest entries in
+`work-timeline.md` before starting, and add an entry at the bottom after every
+piece of work**, in the same change: what you did, when and why, in a few
+lines, and whether it is committed. Include things you tried and removed. The
+format is at the top of that file. Never edit another agent's entry.
 
-### 🤖 Advanced AI Assistant Creation
-- **10-Step Prompt Wizard**: Comprehensive wizard that generates professional AI prompts without requiring users to write prompts from scratch
-- **Dynamic Prompt Generation**: Creates contextual prompts based on business type, target audience, objectives, and conversation style
-- **Multi-Objective Support**: Appointment booking, lead generation, information sharing, callbacks, and custom objectives
-- **Advanced Email Collection**: Built-in protocols for letter-by-letter email spelling and confirmation during appointment booking
-- **Conversation Flow Optimization**: Natural pacing instructions with explicit WAIT commands and response acknowledgment
+## What this is
 
-### 📞 VAPI Integration Enhancements
-- **Conversation Flow Control**: Optimized endpointing (300ms), interruption handling, and natural conversation pacing
-- **Summary & Structured Data Extraction**: Automatic call transcription summaries and appointment data extraction (email, name, phone, appointment time)
-- **Timezone-Aware Scheduling**: Dynamic timezone handling for appointment booking with VAPI template variables
-- **Multi-Tenant Phone Providers**: Support for Twilio, Plivo, Nexmo/Vonage with encrypted credential storage
-- **Webhook Processing**: Real-time call status updates and data extraction
-- **Anti-Hangup Protection**: Disabled endCallFunction to prevent premature call termination
+The repo is named `saas-template` but it is **Laycal** (laycal.com, GitHub
+`laycal-com/laycal`): an AI voice agent that phones a new lead within a minute
+of a form being submitted, qualifies them and books the meeting on the
+business's calendar.
 
-### 🎯 Lead Management System
-- **CSV Lead Upload**: Bulk upload prospects with validation and error reporting
-- **Call Status Tracking**: Real-time monitoring of call progress (pending, calling, completed, failed)
-- **Appointment Management**: Structured data extraction for booking confirmations
-- **Multi-Campaign Support**: Organize leads by campaigns and track performance
-- **Call Results Analytics**: Detailed reporting on call outcomes and conversion rates
+**Core flow:** lead source posts to the intake webhook → the assistant calls
+within seconds → it qualifies, handles objections and books a real open slot in
+Google Calendar during the call → the business gets the outcome, recording and
+summary.
 
-### 🔧 Advanced Configuration
-- **Custom Objection Handling**: User-defined responses to common prospect objections
-- **Business Context Integration**: Dynamic prompt generation based on business description and target audience
-- **Communication Style Options**: Natural (with fillers) vs. Sharp (direct) conversation styles
-- **Call Duration Controls**: Configurable call length preferences (brief, normal, detailed)
-- **Custom Scripts**: Optional script integration for specific call flows
+**Secondary use:** lead reactivation — upload a CSV of existing leads and the
+assistant calls each one.
 
-## Key Technologies & Architecture
+For detailed rules and the traps already met, load the `laycal-dev` skill; for
+search work, `laycal-seo`.
 
-- **Framework**: Next.js 15 with TypeScript, App Router, React 19
-- **Authentication**: Clerk (not NextAuth)
-- **Database**: MongoDB with Mongoose ODM
-- **Payments**: PayPal integration (not Stripe)
-- **AI Voice**: Vapi.ai for outbound calling
-- **Phone Providers**: Multi-tenant support for Twilio, Plivo, Nexmo/Vonage
-- **Calendar**: Google Calendar integration
-- **UI**: Tailwind CSS 4 + shadcn/ui components, Framer Motion
-- **Animations**: GSAP + Three.js for 3D effects
-- **Logging**: Custom file-based logger with structured logs
-- **Monitoring**: Sentry integration for error tracking
-- **Analytics**: Vercel Analytics
-- **Build Configuration**: Custom Next.js config with security headers, Turbopack, console removal
+## Product rules
 
-## Critical File Locations
+- **Buyer:** any business where the first call wins the customer (home
+  services, e-commerce, B2B). Not SDR teams or bulk cold calling.
+- **Copy:** lead with "called within a minute". No "cheap", no competitor
+  framing outside the dedicated comparison pages, no invented statistics,
+  logos or testimonials.
+- **Invite-only:** no public sign-up. Acquisition buttons link to `DEMO_URL`
+  (`src/lib/links.ts`). `/sign-up` is never linked publicly but must stay
+  mounted and public, because Clerk invitation emails land there.
+- **Pay as you go:** no plans, tiers, trials or subscriptions. A per-minute
+  rate set per account; first assistant free, each further one a one-time fee.
+- **Appointments are bookings:** booked live on the call. No pending or
+  confirmation queue.
 
-### Models (MongoDB Schemas)
-- `/src/models/Lead.ts` - Lead management with call results tracking
-- `/src/models/PhoneProvider.ts` - Multi-tenant phone provider configs (with encryption)
-- `/src/models/CalendarConnection.ts` - Calendar integrations
-- `/src/models/PendingAppointment.ts` - Appointment booking workflow
-- `/src/models/Assistant.ts` - AI assistant configurations and VAPI integration
-- `/src/models/CallSummary.ts` - Call data extraction with structured data and stereo recording URLs
-- `/src/models/Credit.ts` - Usage-based billing system with transaction tracking
-- `/src/models/Admin.ts` - Separate admin authentication system
+## Stack
 
-### Core Services
-- `/src/lib/tenantVapi.ts` - **Primary Vapi service** (tenant-specific with phone provider integration, conversation flow optimization)
-- `/src/lib/vapi.ts` - Basic Vapi service (simpler, global)
-- `/src/lib/mongodb.ts` - Database connection with caching
-- `/src/lib/logger.ts` - Structured logging system
-- `/src/lib/usageValidator.ts` - Credit-based usage tracking and billing validation
-- `/src/lib/csvProcessor.ts` - Lead file processing and validation
-- `/src/lib/calendar/` - Calendar provider abstractions
+- Next.js 15 (App Router, React 19, Turbopack), TypeScript
+- Tailwind CSS 4, shadcn/ui (new-york), Aceternity components, `motion`
+- MongoDB with Mongoose
+- Clerk for customer auth; a separate JWT + bcrypt admin login
+- Vapi for calls; Twilio, Plivo and Vonage as per-account phone providers
+- Google Calendar; PayPal for credit top-ups; OpenRouter for prompt generation
+- driver.js (setup guide), recharts via shadcn chart, three-globe (landing)
+- Sentry, Vercel Analytics, Google Tag Manager
 
-### API Routes Structure
-- `/src/app/api/leads/` - Lead CRUD and CSV upload
-- `/src/app/api/phone-providers/` - Phone provider management
-- `/src/app/api/assistants/` - **AI assistant creation and management**
-- `/src/app/api/webhooks/vapi/` - **Core webhook handler** (call status updates, data extraction, stereo recording processing)
-- `/src/app/api/calendar/` - Calendar authentication and management
-- `/src/app/api/appointments/` - Appointment confirmation/rejection
-- `/src/app/api/call-summaries/` - Call data extraction and structured information display
-- `/src/app/api/admin/` - Separate admin system with user management and credit adjustments
-- `/src/app/api/paypal/` - PayPal payment processing and subscription management
+## Where things are
 
-### Key Components
-- `/src/components/PromptWizard.tsx` - **10-step AI prompt generation wizard**
-- `/src/components/AssistantForm.tsx` - Assistant creation interface with wizard integration
-- `/src/components/DashboardClient.tsx` - Main dashboard with getting started flow
+### Models (`src/models/`)
+- `Account.ts` — the business: balance, per-minute rate, onboarding answers, status
+- `Membership.ts` — Clerk user → account
+- `CreditLedger.ts` — every movement of money, with a unique `ref`
+- `PendingTransaction.ts` — PayPal orders awaiting capture
+- `Assistant.ts` — assistant config, `serviceConfig`, Vapi id
+- `Lead.ts`, `CallSummary.ts`, `Appointment.ts`
+- `PhoneProvider.ts` (encrypted credentials), `CalendarConnection.ts`
+- `Admin.ts`, `SystemSettings.ts`, `SupportTicket.ts`, `ContactSubmission.ts`
 
-### Key Pages
-- `/src/app/leads/page.tsx` - **Main lead management interface**
-- `/src/app/dashboard/page.tsx` - Enhanced dashboard with assistant management
-- `/src/app/settings/page.tsx` - Phone provider and calendar setup
-- `/src/app/pricing/page.tsx` - PayPal subscription plans
-- `/src/app/blogs/page.tsx` - Blog system with markdown file processing
-- `/src/app/admin/` - Admin dashboard for user and system management
+### Core modules (`src/lib/`)
+- `account.ts` — `getAccountAuth()`: the only place the tenant is resolved; provisions on first sign-in
+- `billing.ts` — the only place a balance changes (`applyMovement`, `chargeCall`, `chargeAssistant`, `canPlaceCall`, `getRate`)
+- `tenantVapi.ts` — the Vapi service to use (`vapi.ts` is the older, simpler one)
+- `speedToLead/` — `verticals.ts`, `promptGenerator.ts`, `tools.ts`, `vapiToolBridge.ts`, `callVariables.ts`
+- `calendar/` — calendar providers; `formatAppointment.ts` renders times in the business's zone
+- `links.ts` (`DEMO_URL`), `seo.ts`, `clerkAppearance.ts`, `logger.ts`, `mongodb.ts`, `csvProcessor.ts`, `adminAuth.ts`
+- `usageValidator.ts` — thin leftover shim; new logic goes in `billing.ts`
 
-## Important Patterns & Conventions
+### API routes (`src/app/api/`)
+- `account` — account summary, onboarding, tour dismissal
+- `credits`, `paypal/create-order`, `paypal/capture-order`
+- `assistants` (+ `generate-prompt`, `[id]/test`, `[id]/resync`)
+- `leads`, `call-summaries` (+ `[id]/recording`), `appointments`
+- `webhooks/vapi` — call status, charging, summaries
+- `webhooks/lead-intake/[assistantId]` — starts a call for a new lead
+- `webhooks/clerk`, `vapi/calendar/...` (in-call availability and booking tools)
+- `calendar`, `phone-providers`, `contact`, `support`
+- `admin/accounts` (+ `[id]`), `admin/dashboard/stats`
 
-### Authentication Flow
-- Uses Clerk middleware in `/src/middleware.ts`
-- Protected routes pattern: `/dashboard(.*)` 
-- User ID from `auth()` function, not session-based
+### Pages (`src/app/`)
+- Public: `/` (landing), `/lead-reactivation`, `/speed-to-lead`, `/instant-lead-follow-up`, `/compare`, `/justcall-alternative`, `/nooks-alternative`, `/blogs`, `/contact`, `/privacy`, `/terms`, `/status`
+- Auth: `/sign-in`, `/sign-up`, `/onboarding`
+- Portal: `/dashboard`, `/assistants`, `/leads`, `/appointments`, `/call-summary`, `/integrations`, `/settings`, `/support`
+- Admin: `/admin/...` (`/admin/users` is the Accounts screen)
+- Redirected in `next.config.ts`: `/features`, `/pricing`, `/about`, `/case-studies`, `/sdr`, `/blog`
 
-### Database Patterns
-- All models include `userId` field for multi-tenancy
-- Pre-save hooks for `updatedAt` timestamps
-- Encrypted credentials in PhoneProvider model
-- Proper indexing for performance (userId + createdAt, status, etc.)
+### Components (`src/components/`)
+- `landing/` — the public page kit: `primitives.tsx` (`Shell`, `Section`, `SectionHeader`, `Reveal`, `DemoCta`), `site-nav.tsx`, `hero.tsx`, `sections.tsx`, `features.tsx`, `roi.tsx`, `pricing.tsx`, `cta.tsx`, `reactivation.tsx`, `solution.tsx` (`SOLUTIONS`: content for `/speed-to-lead` and `/instant-lead-follow-up`), `product-tiles.tsx` (`HERO_TILES`), `providers.tsx` (`useRate()`)
+- `portal/` — `portal-shell.tsx` (sidebar, account gate, `PORTAL_ROUTES`, `DARK_ROUTES`), `account-context.tsx` (`useAccount()`), `setup-guide.tsx`, `page.tsx` (`PortalPage`, `PageHeader`)
+- `dashboard/` — panels, account cards, charts
+- `auth/auth-shell.tsx`, `brand/logo-mark.tsx`
+- `SpeedToLeadWizard.tsx` (assistant creation), `SpeedToLeadIntegration.tsx` (intake snippets, including the Google Forms script), `AssistantForm.tsx`, `AssistantWebTest.tsx`
+- `ClientLayoutWrapper.tsx` — picks the frame by pathname (portal shell, dark marketing root, or plain)
+- `ui/` — shadcn and Aceternity components
 
-### Vapi Integration
-- **Use TenantVapiService** for new features (not basic VapiService)
-- Webhook handling pattern in `/src/app/api/webhooks/vapi/route.ts`
-- Lead status flow: `pending → calling → completed/failed`
-- Call results stored in nested `callResults` object on Lead model
+Leftovers that are not used and should not be built on: `PromptWizard.tsx`,
+`src/lib/promptWizard/`, the capitalised files in `components/landing/`
+(`CallMap`, `HeroPanel`, `ScrollFx`, …), `src/app/landing.css`,
+`src/app/page-broken.tsx`.
 
-### Logging System
-- Structured logging with operation codes (e.g., 'CSV_UPLOAD_START')
-- Context-aware logs with userId, leadId, vapiCallId
-- File-based logging with date rotation in `/logs/` directory
-- Separate webhook and error log files
+## Rules in the code
 
-### Phone Provider Architecture
-- Multi-tenant: each user can have their own Twilio/Plivo/Nexmo credentials
-- Credential encryption using crypto module
-- Vapi phone number creation via provider APIs
-- Validation of phone numbers in provider accounts
+1. **Tenancy:** resolve the tenant with `getAccountAuth()` and query by `accountId`. Never query customer data by Clerk `userId`.
+2. **Money:** change a balance only through `src/lib/billing.ts`. It writes a ledger row with a unique `ref` (`call:<id>`, `order:<id>`) and then an atomic increment, which makes retries harmless.
+3. **Calls:** start every call through `TenantVapiService.initiateCall` with `buildCallVariables()`. It refuses to dial at zero balance. Calls are charged per second.
+4. **Vapi updates:** `analysisPlan` and `model` are replaced, not merged. Always send the full analysis plan and the tools.
+5. **Lead status:** `pending → calling → completed/failed` is driven by the Vapi webhook. Do not set `calling` by hand.
+6. **Appointments:** count bookings from the `appointments` collection; cancelling sets `status: 'cancelled'` and never deletes.
+7. **Prompts:** the wizard's LLM never writes tool names or `{{ }}` template syntax; those lines are appended in code.
+8. **Credentials:** `PhoneProvider` encrypts sensitive fields; read them through its getters.
+9. **Phone numbers:** E.164 (`+1234567890`).
+10. **API routes:** auth check, `connectToDatabase()`, structured logging with an operation code and `accountId` in the context.
 
-### Credit System Architecture
-- Credit-based usage tracking for calls and features
-- PayPal subscription integration with automatic credit allocation
-- Manual credit adjustments through admin system
-- Usage validation before expensive operations (calls, CSV uploads)
-- Credit transactions logged in `AdminCreditTransaction` model
+## Design
 
-### Admin System Architecture
-- Separate authentication system from user-facing Clerk auth
-- JWT-based admin sessions with bcrypt password hashing
-- Admin-only routes under `/admin/` with middleware protection
-- User management, credit adjustments, and support ticket handling
-- System settings management and platform statistics
+- Black, white and greys with one accent, blue `#2D6AFF` (`--brand`). No multi-colour gradients. Green, amber and red only as status dots and labels.
+- Tailwind utilities, shadcn/ui and Aceternity only. No new CSS files; colour tokens live in `src/app/globals.css`.
+- Dark is opt-in through a `dark` class on a page root. `body:not(:has(.dark))` keeps other pages light; keep that guard.
+- Clerk is themed through `src/lib/clerkAppearance.ts`, not CSS rules.
+- `Design.md` in the repo root is the full plan.
 
-## Development Commands
+## Commands
 
 ```bash
-npm run dev          # Next.js development server with Turbopack
-npm run build        # Production build
-npm start            # Production server
+npm run dev          # dev server (Turbopack)
+npm run build        # production build
+npm start            # production server
 npm run lint         # ESLint
-npm install          # Install dependencies
+npx tsc --noEmit     # type check (no dedicated script)
 
-# TypeScript checking (manual, no dedicated script)
-npx tsc --noEmit      # Type check without output
+# Dev server beside a production build on port 3000
+NEXT_DIST_DIR=.next-dev npx next dev --turbopack -p 3100
+
+# Drop customer collections (dry run unless --apply)
+node scripts/reset-accounts.mjs
 ```
 
-## Environment Variables
+There is no test framework; verification is manual (load the page, call the
+route, use the assistant's browser test call).
 
-**Required for core functionality:**
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY`
-- `MONGODB_URI`
-- `VAPI_API_KEY` / `VAPI_ASSISTANT_ID`
-- `PHONE_PROVIDER_ENCRYPTION_KEY` (for credential encryption)
+## Environment
 
-**Optional:**
-- PayPal: `NEXT_PUBLIC_PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` / `NEXT_PUBLIC_PAYPAL_ENVIRONMENT`
-- Google Calendar: OAuth credentials
-- Sentry: `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_ORG` / `SENTRY_PROJECT` / `SENTRY_AUTH_TOKEN`
-- Application: `NEXT_PUBLIC_APP_URL`
+Required: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`,
+`MONGODB_URI`, `VAPI_API_KEY`, `PHONE_PROVIDER_ENCRYPTION_KEY`,
+`NEXT_PUBLIC_APP_URL`.
 
-## Common Gotchas
+Also used: `NEXT_PUBLIC_VAPI_PUBLIC_KEY` (browser test calls),
+`VAPI_WEBHOOK_URL`, OpenRouter key (prompt generation), Google OAuth
+credentials, `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`,
+`NEXT_PUBLIC_PAYPAL_ENVIRONMENT`, Sentry variables, `NEXT_PUBLIC_GTM_ID`.
 
-1. **Two Vapi Services**: Use `TenantVapiService` for new features - it handles multi-tenant phone providers
-2. **Phone Number Format**: Must be E.164 format (e.g., +1234567890)
-3. **Lead Status Management**: Don't manually set to 'calling' - let webhook handlers manage state transitions
-4. **Logging Context**: Always include userId in log context for multi-tenant debugging
-5. **Credential Security**: PhoneProvider model auto-encrypts sensitive fields - access via getters
-6. **Database Connection**: Use `connectToDatabase()` in API routes - handles connection caching
-7. **TypeScript Configuration**: Build ignores TypeScript errors (`ignoreBuildErrors: true`) and ESLint errors during builds
-8. **Admin System**: Separate admin authentication system - don't confuse with user Clerk auth
-9. **Call Data Extraction**: Use `generateStructuredDataPrompt` in PromptWizard.tsx to include context for better extraction
-10. **Stereo Recording URLs**: Available in call summaries via webhook artifact data (`stereoRecordingUrl` field)
-11. **Blog Directory**: Requires `/blogs/` directory at project root with markdown files for build to succeed
+`.env.local` is a development config and its database is not production.
+Production values live in Vercel.
 
-## File Upload Patterns
+## Gotchas
 
-- CSV upload uses `formidable` for file parsing
-- CSV processing in `/src/lib/csvProcessor.ts`
-- Validation before Lead creation
-- Comprehensive error reporting and logging
+1. The build ignores TypeScript and ESLint errors, and the repo has a baseline of old type errors. Judge a change by whether the files it touched are clean.
+2. Calls are webhook-driven. Without a working public URL in `VAPI_WEBHOOK_URL`, a local call dials but the lead stays in `calling`.
+3. Tool URLs and the server URL are stored on the Vapi assistant when it is saved. After changing the app URL, resync the assistant.
+4. Vapi retires voices and then rejects assistant creation. Voice ids in `AssistantForm.tsx` must be current; `RETIRED_VAPI_VOICES` in `tenantVapi.ts` maps old ones.
+5. Google Calendar booking and availability need different scopes; older connections must reconnect once.
+6. Stored recording URLs expire. Fetch a fresh one at view time through `api/call-summaries/[id]/recording`.
+7. Radix components that render in a portal (Select, Sheet, Tooltip, Dialog) sit outside a page's dark root and need the `dark` class passed in.
+8. The build needs the `/blogs/` directory at the repo root with markdown files.
+9. Console statements are removed in production builds.
 
-## UI Components Architecture
+## When adding features
 
-- `/src/components/ui/` - shadcn/ui base components
-- `/src/components/` - Custom business components
-- ConditionalNavbar pattern for auth-based navigation
-- Three.js components for landing page animations
-
-## Testing Approach
-
-- **No formal testing framework configured** - manual testing approach
-- Phone provider testing via `/src/app/api/phone-providers/[id]/test/`
-- Assistant testing via `/src/app/api/assistants/[id]/test/`
-- Webhook testing with dedicated logging in `/logs/webhooks-*.log`
-- CSV validation with error collection
-- Vapi call retry mechanism for failed calls
-- Admin system testing routes in `/src/app/api/test-*`
-
-## When Adding New Features
-
-1. **Lead-related**: Extend Lead model, update webhook handlers in `/src/app/api/webhooks/vapi/route.ts`
-2. **Phone providers**: Follow encryption pattern in PhoneProvider model
-3. **Calendar**: Implement CalendarProvider interface
-4. **API routes**: Include proper auth checks, logging, and error handling
-5. **UI**: Use existing Tailwind + shadcn/ui pattern with Framer Motion
-6. **Logging**: Add structured logging with operation codes
-7. **Call data processing**: Update CallSummary model and webhook extraction logic
-8. **Credit system**: Extend usage tracking in `usageValidator.ts` for new billable features
-9. **Prompt generation**: Enhance PromptWizard.tsx for new data extraction requirements
-
-## Architecture Notes
-
-### Build Configuration
-- **Turbopack** enabled for fast development builds
-- **Console statements removed** in production via Next.js config
-- **Security headers** configured (X-Frame-Options, X-Content-Type-Options)
-- **TypeScript/ESLint errors ignored** during builds for deployment flexibility
-
-### Data Flow Patterns
-- **Webhook-driven architecture**: Call status managed entirely through Vapi webhooks
-- **Structured data extraction**: AI prompts enhanced with business context for better results
-- **Multi-tenant isolation**: All data segregated by userId with proper indexing
-- **Credit-based billing**: Usage tracked in real-time with overage protection
-
-This is a mature platform with established patterns - follow existing conventions rather than introducing new ones.
+1. Read a neighbouring route or page and match it.
+2. Tenant data: add `accountId`, index it, resolve it with `getAccountAuth()`.
+3. Anything billable: add a movement type in `billing.ts` with a unique `ref`.
+4. Call data: extend `CallSummary` and the extraction in `webhooks/vapi`.
+5. Public pages: build from `components/landing/`, add the route to `MARKETING_ROUTES` in `ClientLayoutWrapper.tsx`, and add it to the sitemap.
+6. Portal pages: add to the nav in `portal-shell.tsx` and use `PortalPage`.
+7. Update this file if the change alters anything it describes.
+8. Add an entry to `work-timeline.md`.
