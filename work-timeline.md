@@ -213,3 +213,8 @@ Times are the machine's local time (`date '+%Y-%m-%d %H:%M'`).
 - **What:** everything in the "Hardening brief built" entry above is committed and pushed to `main` ("Harden lead calling…"). A production build passed locally first.
 - **Why:** the owner approved it and reports the Vercel variables and the cron-job.org header are in place.
 - **Status:** pushed; live once Vercel finishes deploying. Still to do after the deploy: confirm the cron job is switched on and `/api/cron/tick` answers it, one real Google Form submission, and the brief's real-call checks. The unrelated `.gitignore` change in the working tree was left out.
+
+### 2026-10-12 11:58 · dev · Hardening work is live; wake-up confirmed on production
+- **What:** `e5823d6` deployed. On `www.laycal.com`: `/api/cron/tick` answers 401 without the secret and 200 with it; the watchdog reports the wake-up as alive. The first run found 3 production leads stuck on "calling" and resolved them (looked up at the phone system; any that had ended uncharged were charged once).
+- **Why:** to confirm the deploy and that `CRON_SECRET` in Vercel matches.
+- **Status:** live. Not yet done: one real Google Form submission, the brief's real-call checks, a real email through the owner's mailbox. Whether the cron-job.org job is switched on was not checked from here.
