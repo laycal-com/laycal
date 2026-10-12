@@ -28,6 +28,15 @@ export interface IAccount extends Document {
   /** Lifetime count, never decremented, so deleting an assistant cannot earn another free one. */
   assistantsCreatedTotal: number;
 
+  /** Email notifications. Absent means: all on, sent to `email`. */
+  notifications?: {
+    email?: string;
+    booked?: boolean;
+    unreached?: boolean;
+    stopped?: boolean;
+    low?: boolean;
+  };
+
   onboardedAt?: Date;
   tourDismissedAt?: Date;
   createdBy: 'admin' | 'self';
@@ -49,6 +58,17 @@ const AccountSchema = new Schema<IAccount>(
     ratePerMinute: { type: Number, default: null, min: 0 },
     creditBalance: { type: Number, default: 0 },
     assistantsCreatedTotal: { type: Number, default: 0 },
+    notifications: {
+      type: {
+        email: { type: String, lowercase: true, trim: true },
+        booked: { type: Boolean, default: true },
+        unreached: { type: Boolean, default: true },
+        stopped: { type: Boolean, default: true },
+        low: { type: Boolean, default: true },
+      },
+      default: undefined,
+      _id: false,
+    },
     onboardedAt: { type: Date },
     tourDismissedAt: { type: Date },
     createdBy: { type: String, enum: ['admin', 'self'], default: 'self' },

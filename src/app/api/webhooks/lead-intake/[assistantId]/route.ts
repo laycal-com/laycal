@@ -3,12 +3,12 @@ import mongoose from 'mongoose';
 import { connectToDatabase } from '@/lib/mongodb';
 import Lead from '@/models/Lead';
 import Assistant from '@/models/Assistant';
-import { TenantVapiService } from '@/lib/tenantVapi';
+import IntakeGuard from '@/models/IntakeGuard';
+import { callOrHold } from '@/lib/leadCalls';
 import { logger } from '@/lib/logger';
 import { validatePhoneNumber, normalizePhoneNumber } from '@/lib/csvProcessor';
 import { getVertical } from '@/lib/speedToLead/verticals';
 import { rateLimit } from '@/lib/speedToLead/vapiToolBridge';
-import { buildCallVariables } from '@/lib/speedToLead/callVariables';
 
 /**
  * Speed-to-lead intake.
@@ -23,6 +23,52 @@ import { buildCallVariables } from '@/lib/speedToLead/callVariables';
  */
 
 const MAX_RETRIES = 3;
+/** A repeat of the same number to the same assistant inside this window is the same request. */
+const DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
+
+const guardKey = (assistantId: string, phone: string) => `${assistantId}:${phone}`;
+
+/**
+ * Returns the earlier lead's id when this submission repeats one (an empty
+ * string when that lead is not saved yet), or null when it is a new request.
+ *
+ * Two checks, because they catch different cases. The lead lookup covers a
+ * repeat while the first lead is still being called or is waiting for a call,
+ * however long ago it arrived. The guard row covers two requests landing in the
+ * same instant, before either has saved a lead for the other to find.
+ */
+async function findDuplicate(assistantId: string, phone: string): Promise<string | null> {
+  const since = new Date(Date.now() - DUPLICATE_WINDOW_MS);
+  const existing = await Lead.findOne({
+    assignedAssistantId: assistantId,
+    phoneNumber: phone,
+    $or: [
+      { createdAt: { $gte: since } },
+      { status: 'calling' },
+      { status: 'pending', nextCallAt: { $ne: null } },
+    ],
+  })
+    .sort({ createdAt: -1 })
+    .select('_id')
+    .lean<{ _id: unknown }>();
+  if (existing) return String(existing._id);
+
+  const key = guardKey(assistantId, phone);
+  try {
+    await IntakeGuard.create({ key, expireAt: new Date(Date.now() + DUPLICATE_WINDOW_MS) });
+    return null;
+  } catch (error: any) {
+    if (error?.code !== 11000) throw error;
+  }
+
+  // A guard row exists but no lead matched above. Either its lead is finished
+  // and old (the row has outlived its ten minutes: the database clears expired
+  // rows about once a minute), or another request is creating the lead now.
+  const guard = await IntakeGuard.findOne({ key }).lean<{ leadId?: string; expireAt: Date }>();
+  if (guard && guard.expireAt.getTime() > Date.now()) return guard.leadId || '';
+  await IntakeGuard.updateOne({ key }, { $set: { expireAt: new Date(Date.now() + DUPLICATE_WINDOW_MS) }, $unset: { leadId: 1 } }, { upsert: true });
+  return null;
+}
 const RATE_LIMIT = 60;
 const RATE_WINDOW_MS = 60_000;
 
@@ -76,6 +122,20 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ assistantI
         accountId: assistant.accountId,
         data: { assistantId, phone },
       });
+      // Saved so the business sees the request on its Leads page; nobody can be called.
+      await Lead.create({
+        accountId: assistant.accountId,
+        name: `${firstName} ${lastName}`.trim() || 'there',
+        phoneNumber: phone,
+        email: email || null,
+        address: address || null,
+        details: details || null,
+        notes: details || null,
+        status: 'failed',
+        outcome: 'invalid_number',
+        source: 'form',
+        assignedAssistantId: assistant._id,
+      });
       return NextResponse.json({ error: 'Invalid phone number format' }, { status: 400 });
     }
 
@@ -84,6 +144,20 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ assistantI
     const cfg = assistant.serviceConfig;
     const resolvedService =
       serviceType || (cfg?.vertical ? getVertical(cfg.vertical).label : '') || 'service';
+
+    // The same form sent twice (a double click, or the form retrying after an
+    // error) must be one lead and one call. The form still gets a success.
+    const duplicateOf = await findDuplicate(assistant._id.toString(), normalizedPhone);
+    if (duplicateOf !== null) {
+      logger.info('INTAKE_DUPLICATE', 'Repeated submission ignored', {
+        accountId: assistant.accountId,
+        data: { assistantId, leadId: duplicateOf || undefined },
+      });
+      return NextResponse.json(
+        { success: true, duplicate: true, ...(duplicateOf && { leadId: duplicateOf }) },
+        { status: 200 }
+      );
+    }
 
     const lead = new Lead({
       accountId: assistant.accountId,
@@ -95,10 +169,12 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ assistantI
       availability: availability || null,
       serviceType: resolvedService,
       notes: details || null,
-      status: 'calling',
+      status: 'pending',
+      source: 'form',
       assignedAssistantId: assistant._id,
     });
     await lead.save();
+    await IntakeGuard.updateOne({ key: guardKey(assistant._id.toString(), normalizedPhone) }, { $set: { leadId: lead._id.toString() } });
 
     logger.info('INTAKE_LEAD_CREATED', 'Speed-to-lead intake received', {
       accountId: assistant.accountId,
@@ -106,75 +182,43 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ assistantI
       data: { assistantId, service: resolvedService, hasAddress: !!address },
     });
 
-    // Everything the generated prompt interpolates. These MUST go through
-    // variableValues — Vapi rejects unknown keys on the customer object.
-    const variableValues = buildCallVariables(assistant, {
-      address,
-      details,
-      availability,
-      serviceType: resolvedService,
-    });
+    // A transient failure reaching the phone system is retried; an empty
+    // balance or a bad number is not, since trying again cannot help.
+    const result = await callOrHold(lead, assistant, { transientRetries: MAX_RETRIES });
+    const leadId = lead._id.toString();
 
-    let lastError: Error | null = null;
-
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        const vapi = new TenantVapiService();
-        const call = await vapi.initiateCall({
-          accountId: assistant.accountId,
-          phoneNumber: normalizedPhone,
-          assistantId: assistant.vapiAssistantId,
-          customer: { name: fullName, ...(email && { email }) },
-          variableValues,
-          metadata: {
-            leadId: lead._id.toString(),
-            assistantId: assistant._id.toString(),
-            source: 'speed_to_lead_intake',
-            timestamp: new Date().toISOString(),
-          },
-        });
-
-        lead.vapiCallId = call.id;
-        lead.calledAt = new Date();
-        await lead.save();
-
-        assistant.lastUsed = new Date();
-        await assistant.save();
-
-        logger.info('INTAKE_CALL_STARTED', 'Speed-to-lead call initiated', {
-          accountId: assistant.accountId,
-          leadId: lead._id.toString(),
-          vapiCallId: call.id,
-          data: { attempt },
-        });
-
-        return NextResponse.json(
-          { success: true, leadId: lead._id.toString(), callId: call.id },
-          { status: 200 }
-        );
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error('Unknown error');
-        logger.error('INTAKE_CALL_ERROR', `Call attempt ${attempt}/${MAX_RETRIES} failed`, {
-          accountId: assistant.accountId,
-          leadId: lead._id.toString(),
-          error: lastError,
-        });
-        if (attempt < MAX_RETRIES) {
-          await new Promise((r) => setTimeout(r, 1500 * attempt));
-        }
-      }
+    if (result.ok && 'held' in result) {
+      // Outside the assistant's calling hours: the lead waits and is called when they open.
+      return NextResponse.json({ success: true, leadId, held: true, callAt: result.callAt.toISOString() }, { status: 200 });
     }
 
-    lead.status = 'failed';
-    await lead.save();
+    if (result.ok) {
+      return NextResponse.json({ success: true, leadId, callId: result.callId }, { status: 200 });
+    }
+
+    if (result.code === 'no_credits') {
+      // Not a server error: the request was understood and the lead is saved,
+      // but the account's balance is empty, so nobody was called.
+      return NextResponse.json(
+        {
+          success: false,
+          leadId,
+          code: 'no_credits',
+          error: 'The Laycal balance is empty, so this lead was not called. Add credits and calls start again.',
+        },
+        { status: 402 }
+      );
+    }
+
+    if (result.code === 'invalid_number') {
+      return NextResponse.json(
+        { success: false, leadId, code: 'invalid_number', error: 'Invalid phone number format' },
+        { status: 400 }
+      );
+    }
 
     return NextResponse.json(
-      {
-        success: false,
-        leadId: lead._id.toString(),
-        error: 'Could not start the call',
-        details: lastError?.message,
-      },
+      { success: false, leadId, code: result.code, error: 'Could not start the call' },
       { status: 500 }
     );
   } catch (error) {

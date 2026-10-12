@@ -7,18 +7,10 @@ import CallSummary from '@/models/CallSummary';
 import { usageValidator } from '@/lib/usageValidator';
 import { logger } from '@/lib/logger';
 import { calendarManager } from '@/lib/calendar/manager';
-
 // Official Vapi endedReason values that indicate the call was not answered
-// Based on https://docs.vapi.ai/calls/call-ended-reason
-const NOT_ANSWERED_REASONS = [
-  'customer-busy',
-  'customer-did-not-answer', 
-  'voicemail',
-  'twilio-failed-to-connect-call',
-  'vonage-failed-to-connect-call',
-  'manually-canceled',
-  'customer-did-not-give-microphone-permission'
-] as const;
+// (https://docs.vapi.ai/calls/call-ended-reason) live with the call logic.
+import { NOT_ANSWERED_REASONS, isTrackedCall, recordCallEnded } from '@/lib/leadCalls';
+import { notifyBooked } from '@/lib/notifications';
 
 export async function POST(request: NextRequest) {
   let payload: any = null;
@@ -66,17 +58,14 @@ export async function POST(request: NextRequest) {
       lead = await Lead.findOne({ vapiCallId: call.id }).populate('assignedAssistantId');
     }
 
-    // If still no lead found, try to match by phone number for appointment processing
-    if (!lead && call.phoneNumber) {
-      lead = await Lead.findOne({ phoneNumber: call.phoneNumber }).populate('assignedAssistantId');
-      if (lead) {
-        logger.info('LEAD_MATCHED_BY_PHONE', 'Matched lead by phone number', {
-          leadId: lead._id.toString(),
-          phoneNumber: call.phoneNumber,
-          vapiCallId: call.id
-        });
-      }
-    }
+    // A lead is never matched by phone number alone: the same number can be a
+    // lead of several accounts, and a report must only ever reach its own.
+
+    // Every call placed through lib/leadCalls is recorded on the lead as a try.
+    // For those, lib/leadCalls owns the lead's status (it may schedule another
+    // try), and a report for an earlier try must not overwrite a later one.
+    const tracked = !!lead && isTrackedCall(lead, call.id);
+    const current = !!lead && (!tracked || lead.vapiCallId === call.id);
 
     if (!lead) {
       logger.webhook.leadNotFound(call.id);
@@ -134,15 +123,18 @@ export async function POST(request: NextRequest) {
           reportStatus = 'failed';
         }
 
-        lead.status = reportStatus;
-        lead.callResults = {
-          ...lead.callResults,
-          ...reportResults
-        };
-        await lead.save();
+        if (current) {
+          if (!tracked) lead.status = reportStatus;
+          lead.callResults = {
+            ...lead.callResults,
+            ...reportResults
+          };
+          await lead.save();
+        }
 
-        // CRITICAL: Track usage for billing
-        await trackCallUsage(lead, message);
+        // CRITICAL: Track usage for billing. Keyed on this call's own id, so
+        // each try is charged once however often or late it is reported.
+        await trackCallUsage(lead, message, call.id);
 
         // Update assistant lastUsed timestamp if assigned
         if (lead.assignedAssistantId) {
@@ -168,6 +160,16 @@ export async function POST(request: NextRequest) {
         
         // Create call summary for data extraction and display
         await createCallSummary(call, message, lead, payload);
+
+        // Decide what happens to the lead now: done, or another try later.
+        if (tracked) {
+          await recordCallEnded({ leadId: lead._id.toString(), callId: call.id, endedReason: message.endedReason });
+        }
+
+        // Tell the business about a meeting booked on this call. Sent now, not
+        // at the moment of booking: the lead may have changed the time before
+        // hanging up, and the summary only exists once the call has ended.
+        await sendBookedEmail(lead, call.id, reportResults.summary);
         break;
 
       case 'status-update':
@@ -181,7 +183,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Update lead status based on the status update
-        if (message.status === 'ended') {
+        if (message.status === 'ended' && !tracked) {
           // Don't change to completed here, wait for end-of-call-report
           // Just log that the call ended
           lead.status = message.endedReason === 'assistant-ended-call' ? 'calling' : 'failed';
@@ -201,8 +203,10 @@ export async function POST(request: NextRequest) {
           vapiCallId: call.id,
           data: { leadName: lead.name, phoneNumber: lead.phoneNumber }
         });
-        lead.status = 'calling';
-        await lead.save();
+        if (!tracked) {
+          lead.status = 'calling';
+          await lead.save();
+        }
         logger.webhook.leadUpdate(lead._id.toString(), 'calling', call.id);
         break;
 
@@ -235,12 +239,14 @@ export async function POST(request: NextRequest) {
         }
 
         // Update lead with call results
-        lead.status = finalStatus;
-        lead.callResults = callResults;
-        await lead.save();
+        if (current) {
+          if (!tracked) lead.status = finalStatus;
+          lead.callResults = callResults;
+          await lead.save();
+        }
 
         // CRITICAL: Track usage for billing
-        await trackCallUsage(lead, { durationSeconds: call.duration });
+        await trackCallUsage(lead, { durationSeconds: call.duration }, call.id);
 
         logger.webhook.leadUpdate(lead._id.toString(), finalStatus, call.id);
         logger.info('CALL_RESULTS_SAVED', `Saved call results for lead: ${lead.name}`, {
@@ -312,6 +318,28 @@ export async function POST(request: NextRequest) {
       error: 'Failed to process webhook',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
+  }
+}
+
+/** Emails the business when the call that just ended booked a meeting. Never throws. */
+async function sendBookedEmail(lead: any, callId: string, summary?: string | null) {
+  try {
+    const booking = await Appointment.findOne({ vapiCallId: callId, status: 'booked' }).lean<any>();
+    const startTime = booking?.appointmentData?.startTime ? new Date(booking.appointmentData.startTime) : null;
+    if (!booking || !startTime || Number.isNaN(startTime.getTime())) return;
+
+    // `assignedAssistantId` is populated on the lead this handler loaded.
+    const assistant = lead.assignedAssistantId;
+    await notifyBooked({
+      lead: lead.toObject ? lead.toObject() : lead,
+      callId,
+      startTime,
+      timezone: booking.timezone || assistant?.serviceConfig?.timezone,
+      assistantName: assistant?.name,
+      summary,
+    });
+  } catch (error) {
+    logger.error('BOOKED_EMAIL_ERROR', 'Could not prepare the booked email', { leadId: lead?._id?.toString(), error });
   }
 }
 
@@ -768,7 +796,7 @@ async function processStandaloneAppointment(payload: any, call: any, message: an
 
 // Handle GET requests for webhook verification
 // Track call usage for billing purposes
-async function trackCallUsage(lead: any, message: any) {
+async function trackCallUsage(lead: any, message: any, callId?: string) {
   try {
     if (!lead.assignedAssistantId || !lead.accountId) return;
     
@@ -785,8 +813,10 @@ async function trackCallUsage(lead: any, message: any) {
       lead.assignedAssistantId.toString(),
       assistantName,
       durationSeconds,
-      // The call id is what stops a repeated webhook from charging twice.
-      lead.vapiCallId || message?.call?.id
+      // The call id is what stops a repeated webhook from charging twice. It
+      // is the reported call's own id: a lead can have several calls, and
+      // `lead.vapiCallId` only ever names the latest.
+      callId || message?.call?.id || lead.vapiCallId
     );
     
     logger.info('USAGE_TRACKED', 'Call usage tracked for billing', {

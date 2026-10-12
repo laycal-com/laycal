@@ -1,135 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAccountAuth } from '@/lib/account';
-import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
+import { logger } from '@/lib/logger';
+import { startLeadCall } from '@/lib/leadCalls';
 import Lead from '@/models/Lead';
-import { vapiService } from '@/lib/vapi';
-import { tenantVapiService } from '@/lib/tenantVapi';
-import PhoneProvider from '@/models/PhoneProvider';
-import Assistant from '@/models/Assistant';
-import { buildCallVariables } from '@/lib/speedToLead/callVariables';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+/**
+ * Retry on a finished lead, and Call now on a waiting one. Both go through the
+ * same call starter as every other call, so the credit check and the lead's own
+ * assistant always apply.
+ */
+export async function POST(_request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
     const { accountId } = await getAccountAuth();
+    if (!accountId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!accountId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const leadId = params.id;
-
-    // Connect to database
+    const { id } = await ctx.params;
     await connectToDatabase();
 
-    // Find the lead
-    const lead = await Lead.findOne({ _id: leadId, accountId });
+    const result = await startLeadCall(id, { mode: 'manual', accountId });
 
-    if (!lead) {
-      return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
-    }
-
-    // Check if lead can be retried
-    if (lead.status === 'calling') {
-      return NextResponse.json({ 
-        error: 'Cannot retry while call is in progress' 
-      }, { status: 400 });
-    }
-
-    try {
-      // Reset call results
-      lead.callResults = undefined;
-      lead.vapiCallId = undefined;
-      lead.status = 'pending';
-      
-      // Check if user has a configured phone provider
-      const phoneProvider = await PhoneProvider.findOne({
-        accountId,
-        isActive: true,
-        isDefault: true
-      });
-
-      // Initiate new Vapi call - use tenant service if provider is configured, fallback to system default
-      let vapiResponse;
-      
-      if (phoneProvider) {
-        // Use tenant-specific provider
-        const retryAssistant = lead.assignedAssistantId
-          ? await Assistant.findById(lead.assignedAssistantId)
-          : null;
-
-        vapiResponse = await tenantVapiService.initiateCall({
-          accountId,
-          phoneNumber: lead.phoneNumber,
-          ...(retryAssistant?.vapiAssistantId && { assistantId: retryAssistant.vapiAssistantId }),
-          customer: {
-            name: lead.name,
-            email: lead.email,
-          },
-          // Keeps a retry identical to the original attempt — otherwise the
-          // prompt's variables come back empty the second time around.
-          variableValues: buildCallVariables(retryAssistant, lead),
-          metadata: {
-            leadId: lead._id.toString(),
-            accountId: accountId,
-            company: lead.company,
-            retry: true,
-          }
-        });
-      } else {
-        // Fallback to system default (existing behavior)
-        vapiResponse = await vapiService.initiateCall({
-          phoneNumber: lead.phoneNumber,
-          customer: {
-            name: lead.name,
-            email: lead.email,
-          },
-          metadata: {
-            leadId: lead._id.toString(),
-            accountId: accountId,
-            company: lead.company,
-            retry: true,
-          }
-        });
-      }
-
-      // Update lead with new Vapi call ID
-      lead.vapiCallId = vapiResponse.id;
-      lead.status = 'calling';
-      lead.calledAt = new Date();
-      await lead.save();
-
+    if (result.ok) {
+      const lead = await Lead.findOne({ _id: id, accountId }).select('status').lean<{ status: string }>();
       return NextResponse.json({
         success: true,
-        message: 'Call retry initiated successfully',
-        data: {
-          leadId: lead._id,
-          vapiCallId: vapiResponse.id,
-          status: lead.status,
-        }
+        message: 'Call started',
+        data: { leadId: id, vapiCallId: result.callId, status: lead?.status || 'calling' },
       });
-
-    } catch (vapiError) {
-      console.error('Vapi call retry failed:', vapiError);
-      
-      // Update lead status to failed
-      lead.status = 'failed';
-      await lead.save();
-
-      return NextResponse.json({
-        error: 'Failed to initiate retry call',
-        details: vapiError instanceof Error ? vapiError.message : 'Vapi error'
-      }, { status: 500 });
     }
 
+    const status = { not_found: 404, in_progress: 400, no_credits: 402, invalid_number: 400, not_placed: 500 }[result.code];
+    const error = result.code === 'in_progress' ? 'Cannot retry while call is in progress' : result.message;
+    return NextResponse.json({ error, code: result.code, ...(result.code === 'no_credits' && { needsCredits: true }) }, { status });
   } catch (error) {
-    console.error('Retry request error:', error);
-    return NextResponse.json({
-      error: 'Failed to process retry request',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    logger.error('LEAD_RETRY_ERROR', 'Retry request failed', { error });
+    return NextResponse.json({ error: 'Failed to process retry request' }, { status: 500 });
   }
 }

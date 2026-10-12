@@ -228,7 +228,8 @@ function buildAnalysisPlan(config: VapiAssistantConfig): Record<string, any> | u
 
 export class TenantVapiService {
   private apiKey: string;
-  private baseUrl = 'https://api.vapi.ai';
+  // Overridable so the call flow can be exercised against a stand-in without ringing a phone.
+  private baseUrl = process.env.VAPI_BASE_URL || 'https://api.vapi.ai';
 
   constructor(apiKey?: string) {
     this.apiKey = apiKey || VAPI_API_KEY || '';

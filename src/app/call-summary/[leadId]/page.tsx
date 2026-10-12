@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Panel, PanelHeader, EmptyState, Reveal } from '@/components/dashboard/panels';
 import { formatVisit, zoneLabel } from '@/lib/formatAppointment';
+import { LeadCallHistory } from '@/components/LeadCallHistory';
 
 /**
  * One call, in full: transcript, recording, what the agent extracted, and the
@@ -242,11 +243,12 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
           >
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
+          <LeadCallHistory leadId={leadId} className="mb-4" />
           <Panel>
             <EmptyState
               icon={PhoneOff}
-              title="No call recorded yet"
-              body="Once this lead has been called, the transcript, recording and everything the agent captured will appear here."
+              title="No conversation recorded yet"
+              body="Once a call with this lead is answered, the transcript, recording and everything the agent captured will appear here."
               action={
                 <Link href="/leads" className="text-xs font-medium text-foreground underline-offset-4 hover:underline">
                   Back to leads →
@@ -285,6 +287,8 @@ export default function CallSummaryPage({ params }: { params: Promise<{ leadId: 
             {callData.status.replace('-', ' ')}
           </span>
         </div>
+
+        <LeadCallHistory leadId={leadId} className="mb-4" />
 
         {/* Call metadata — already on the model, never previously shown. */}
         <Reveal>

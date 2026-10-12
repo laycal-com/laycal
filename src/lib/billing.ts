@@ -3,6 +3,7 @@ import Account, { type IAccount } from '@/models/Account';
 import CreditLedger, { type ICreditLedger } from '@/models/CreditLedger';
 import { PricingService } from '@/lib/pricing';
 import { logger } from '@/lib/logger';
+import { notifyLowBalance } from '@/lib/notifications';
 
 /**
  * All money movement goes through here.
@@ -113,7 +114,27 @@ export async function chargeCall(input: {
       vapiCallId: input.vapiCallId,
       data: { accountId: input.accountId, seconds, ratePerMinute, cost, balance: result.balance },
     });
+
+    // Tell the business once when this charge takes the balance to the low
+    // line: the same line that turns the balance amber in the portal. The
+    // money has already moved; nothing the email does can undo or repeat it.
+    if (result.balance !== null) {
+      try {
+        const line = await getLowBalanceLine();
+        if (result.balance <= line && result.balance + cost > line) {
+          await notifyLowBalance({ accountId: input.accountId, balance: result.balance });
+        }
+      } catch (error) {
+        logger.error('LOW_BALANCE_CHECK_ERROR', 'Could not check the low balance line', { error });
+      }
+    }
   }
+}
+
+/** The balance at or below which the portal shows the balance as low. */
+export async function getLowBalanceLine(): Promise<number> {
+  const pricing = await PricingService.getPricing();
+  return pricing.minimum_topup_amount || 5;
 }
 
 /** Whether the account can create another assistant, and what it will cost. */

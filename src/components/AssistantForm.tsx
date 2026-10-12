@@ -14,6 +14,8 @@ import { SpeedToLeadWizard, type SpeedToLeadResult } from './SpeedToLeadWizard';
 import { SPEED_TO_LEAD_SUMMARY_PROMPT } from '@/lib/speedToLead/tools';
 
 
+import { CallingRules } from '@/components/CallingRules';
+
 interface AssistantFormProps {
   assistant?: any;
   onSuccess: () => void;
@@ -403,6 +405,7 @@ export function AssistantForm({ assistant, onSuccess, onCancel }: AssistantFormP
             </Button>
           </div>
         </form>
+        {assistant?._id && <CallingRules assistantId={assistant._id} />}
         </CardContent>
       </Card>
 

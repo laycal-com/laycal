@@ -10,7 +10,7 @@ model, route, page or core module; a changed rule about tenancy, billing,
 calls or design; a new command or environment variable. Do the same for the
 `laycal-dev` skill (`~/.claude/skills/laycal-dev/`) when the change touches
 what it covers. Do not log completed work here; record only what a future
-session needs to know. Last reviewed: 2026-10-11.
+session needs to know. Last reviewed: 2026-10-12.
 
 ## Log your work in `work-timeline.md`
 
@@ -61,18 +61,21 @@ search work, `laycal-seo`.
 - Clerk for customer auth; a separate JWT + bcrypt admin login
 - Vapi for calls; Twilio, Plivo and Vonage as per-account phone providers
 - Google Calendar; PayPal for credit top-ups; OpenRouter for prompt generation
+- nodemailer (notification emails); cron-job.org (the every-minute wake-up)
 - driver.js (setup guide), recharts via shadcn chart, three-globe (landing)
 - Sentry, Vercel Analytics, Google Tag Manager
 
 ## Where things are
 
 ### Models (`src/models/`)
-- `Account.ts` — the business: balance, per-minute rate, onboarding answers, status
+- `Account.ts` — the business: balance, per-minute rate, onboarding answers, status, `notifications` (address and four switches)
 - `Membership.ts` — Clerk user → account
 - `CreditLedger.ts` — every movement of money, with a unique `ref`
 - `PendingTransaction.ts` — PayPal orders awaiting capture
-- `Assistant.ts` — assistant config, `serviceConfig`, Vapi id
-- `Lead.ts`, `CallSummary.ts`, `Appointment.ts`
+- `Assistant.ts` — assistant config, `serviceConfig`, Vapi id, `callingRules` (retry, calls in total, hold outside calling hours)
+- `Lead.ts` — also `source` (form / upload), `outcome` (why it was not reached), `tries`, `attempts` (one per call) and `nextCallAt` (set while waiting for a call)
+- `CallSummary.ts`, `Appointment.ts`
+- `NotificationLog.ts` (one row per email, unique key), `IntakeGuard.ts` (stops double submissions), `Heartbeat.ts` (last run of the wake-up)
 - `PhoneProvider.ts` (encrypted credentials), `CalendarConnection.ts`
 - `Admin.ts`, `SystemSettings.ts`, `SupportTicket.ts`, `ContactSubmission.ts`
 
@@ -80,16 +83,22 @@ search work, `laycal-seo`.
 - `account.ts` — `getAccountAuth()`: the only place the tenant is resolved; provisions on first sign-in
 - `billing.ts` — the only place a balance changes (`applyMovement`, `chargeCall`, `chargeAssistant`, `canPlaceCall`, `getRate`)
 - `tenantVapi.ts` — the Vapi service to use (`vapi.ts` is the older, simpler one)
+- `leadCalls.ts` — the one way a call to a lead starts (`startLeadCall`, `callOrHold`, `queueLead`) and the one place that decides what happens when it ends (`recordCallEnded`: done, or another try later); also `runDueCalls` and `reconcileStuckCalls` for the wake-up
+- `callingRules.ts` — an assistant's calling rules with defaults, calling-hours and time-zone maths, retry timing
+- `notifications.ts` + `mail.ts` — the four emails to the business (booked, unreached, calls stopped, balance low), sent through the owner's mailbox
+- `cron.ts` — the cron secret check and the wake-up heartbeat
+- `leadStatus.ts` — the wording for a lead's state, shared by the Leads page and the lead's page
 - `speedToLead/` — `verticals.ts`, `promptGenerator.ts`, `tools.ts`, `vapiToolBridge.ts`, `callVariables.ts`
 - `calendar/` — calendar providers; `formatAppointment.ts` renders times in the business's zone
 - `links.ts` (`DEMO_URL`), `seo.ts`, `clerkAppearance.ts`, `logger.ts`, `mongodb.ts`, `csvProcessor.ts`, `adminAuth.ts`
 - `usageValidator.ts` — thin leftover shim; new logic goes in `billing.ts`
 
 ### API routes (`src/app/api/`)
-- `account` — account summary, onboarding, tour dismissal
+- `account` — account summary, onboarding, tour dismissal; `account/notifications` — email settings
 - `credits`, `paypal/create-order`, `paypal/capture-order`
-- `assistants` (+ `generate-prompt`, `[id]/test`, `[id]/resync`)
-- `leads`, `call-summaries` (+ `[id]/recording`), `appointments`
+- `assistants` (+ `generate-prompt`, `[id]/test`, `[id]/resync`, `[id]/calling-rules`)
+- `leads` (+ `[id]`, `[id]/retry` for Retry and Call now, `[id]/stop`), `call-summaries` (+ `[id]/recording`), `appointments`
+- `cron/tick` — the wake-up, called every minute by cron-job.org with the cron secret; `cron/watchdog` — Vercel's daily job (`vercel.json`) that raises an error if the wake-up has stopped
 - `webhooks/vapi` — call status, charging, summaries
 - `webhooks/lead-intake/[assistantId]` — starts a call for a new lead
 - `webhooks/clerk`, `vapi/calendar/...` (in-call availability and booking tools)
@@ -123,14 +132,16 @@ Leftovers that are not used and should not be built on: `PromptWizard.tsx`,
 
 1. **Tenancy:** resolve the tenant with `getAccountAuth()` and query by `accountId`. Never query customer data by Clerk `userId`.
 2. **Money:** change a balance only through `src/lib/billing.ts`. It writes a ledger row with a unique `ref` (`call:<id>`, `order:<id>`) and then an atomic increment, which makes retries harmless.
-3. **Calls:** start every call through `TenantVapiService.initiateCall` with `buildCallVariables()`. It refuses to dial at zero balance. Calls are charged per second.
+3. **Calls:** every call to a lead starts through `startLeadCall` in `src/lib/leadCalls.ts` (or `callOrHold` / `queueLead` for a new lead). It claims the lead atomically, checks credit, uses the lead's own assistant and records the try. Do not call `initiateCall` for a lead directly; only the assistant's test call does. Calls are charged per second, keyed on each call's own id.
 4. **Vapi updates:** `analysisPlan` and `model` are replaced, not merged. Always send the full analysis plan and the tools.
-5. **Lead status:** `pending → calling → completed/failed` is driven by the Vapi webhook. Do not set `calling` by hand.
+5. **Lead status:** `pending → calling → completed/failed`. For calls placed through `leadCalls`, `recordCallEnded` owns the status (it may put the lead back to `pending` with `nextCallAt` for another try); the Vapi webhook must not set it. A lead with `status: 'pending'` and `nextCallAt` is waiting for the wake-up. Do not set `calling` by hand.
 6. **Appointments:** count bookings from the `appointments` collection; cancelling sets `status: 'cancelled'` and never deletes.
 7. **Prompts:** the wizard's LLM never writes tool names or `{{ }}` template syntax; those lines are appended in code.
 8. **Credentials:** `PhoneProvider` encrypts sensitive fields; read them through its getters.
 9. **Phone numbers:** E.164 (`+1234567890`).
-10. **API routes:** auth check, `connectToDatabase()`, structured logging with an operation code and `accountId` in the context.
+10. **Emails:** send through `src/lib/notifications.ts` only. Each email has a unique key in `NotificationLog`, written before the send, so one event sends one email; a mail failure is recorded there and never reaches the caller.
+11. **Later calls depend on the wake-up.** Anything scheduled (a next try, a held lead, a queued upload) is placed by `/api/cron/tick`. Leaving a lead waiting must go through `leadCalls`, which also checks the wake-up is alive.
+12. **API routes:** auth check, `connectToDatabase()`, structured logging with an operation code and `accountId` in the context.
 
 ## Design
 
@@ -155,6 +166,9 @@ NEXT_DIST_DIR=.next-dev npx next dev --turbopack -p 3100
 # Redraw the blog post banners into public/assets/blogs/
 node scripts/make-blog-banners.js
 
+# Run the wake-up once by hand (what cron-job.org does every minute)
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3100/api/cron/tick
+
 # Drop customer collections (dry run unless --apply)
 node scripts/reset-accounts.mjs
 ```
@@ -170,7 +184,11 @@ Required: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`,
 
 Also used: `NEXT_PUBLIC_VAPI_PUBLIC_KEY` (browser test calls),
 `VAPI_WEBHOOK_URL`, OpenRouter key (prompt generation), Google OAuth
-credentials, `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`,
+credentials, `CRON_SECRET` (the wake-up and watchdog; must also be the
+`Authorization: Bearer` header on the cron-job.org job), `CONTACT_EMAIL`,
+`CONTACT_EMAIL_PASS`, `SMTP_SERVER`, `SMTP_PORT` (notification emails; without
+them emails are skipped, not failed), `RETRY_DELAYS_SECONDS` and
+`VAPI_BASE_URL` (testing only), `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`,
 `NEXT_PUBLIC_PAYPAL_ENVIRONMENT`, Sentry variables, `NEXT_PUBLIC_GTM_ID`.
 
 `.env.local` is a development config and its database is not production.
@@ -187,6 +205,9 @@ Production values live in Vercel.
 7. Radix components that render in a portal (Select, Sheet, Tooltip, Dialog) sit outside a page's dark root and need the `dark` class passed in.
 8. The `blogs/` directory at the repo root holds blog posts as markdown. The loaders return an empty list if it is empty or missing.
 9. Console statements are removed in production builds.
+10. After changing a Mongoose schema, restart the dev server: the compiled model is cached and new fields are silently dropped until then.
+11. Vercel's free plan only schedules daily, so the every-minute wake-up comes from cron-job.org. If it stops, waiting leads are not called; `WAKEUP_STOPPED` is logged, sent to Sentry and emailed to `CONTACT_EMAIL`.
+12. To exercise call flows without ringing a phone, run a second dev server with `VAPI_BASE_URL` pointing at a stand-in that answers `POST /call` and `GET /call/:id`, and post end-of-call reports to `/api/webhooks/vapi` by hand.
 
 ## When adding features
 

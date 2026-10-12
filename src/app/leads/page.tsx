@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from 'sonner';
-import { ArrowUpRight, ChevronLeft, ChevronRight, Loader2, RotateCw, Search, Upload, Users } from 'lucide-react';
+import { ArrowUpRight, ChevronLeft, ChevronRight, CircleSlash, Loader2, RotateCw, Search, Upload, Users } from 'lucide-react';
 import CsvUpload from "@/components/CsvUpload";
 import { PaymentGateWrapper } from "@/components/PaymentGateWrapper";
 import { PageHeader, PortalPage } from '@/components/portal/page';
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { leadStatus } from '@/lib/leadStatus';
 
 interface Lead {
   _id: string;
@@ -60,6 +61,10 @@ interface CallSummary {
     endTime?: string;
     confirmed?: boolean;
   };
+  outcome?: 'no_answer' | 'no_credits' | 'not_placed' | 'invalid_number' | 'stopped' | null;
+  tries?: number;
+  maxCalls?: number;
+  nextCallAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -85,19 +90,12 @@ interface LeadsResponse {
 
 const PAGE_SIZE = 20;
 
-const STATUS: Record<Lead['status'], { label: string; dot: string; pulse?: boolean }> = {
-  pending: { label: 'Queued', dot: 'bg-muted-foreground/50' },
-  calling: { label: 'Calling', dot: 'bg-primary', pulse: true },
-  completed: { label: 'Completed', dot: 'bg-green-500' },
-  failed: { label: 'Failed', dot: 'bg-red-500' },
-};
-
 const FILTERS: { value: 'all' | Lead['status']; label: string; count: keyof StatusCounts }[] = [
   { value: 'all', label: 'All', count: 'total' },
   { value: 'pending', label: 'Queued', count: 'pending' },
   { value: 'calling', label: 'Calling', count: 'calling' },
   { value: 'completed', label: 'Completed', count: 'completed' },
-  { value: 'failed', label: 'Failed', count: 'failed' },
+  { value: 'failed', label: 'Not reached', count: 'failed' },
 ];
 
 const formatDuration = (seconds?: number) => {
@@ -190,20 +188,40 @@ export default function LeadsPage() {
       // Refresh leads to show updated status
       await fetchLeads();
 
-      toast.success('Call retry started', {
-        description: 'The lead is being called again.'
-      });
+      toast.success('Call started');
 
     } catch (error) {
       console.error('Retry error:', error);
-      toast.error('Retry failed', {
-        description: error instanceof Error ? error.message : 'Unknown error occurred'
-      });
+      // The reason is the message: "No credits left. Add credits to place calls."
+      toast.error(error instanceof Error ? error.message : 'The call could not be started');
+      await fetchLeads();
     } finally {
       setRetryingLeads(prev => {
         const newSet = new Set(prev);
         newSet.delete(leadId);
         return newSet;
+      });
+    }
+  };
+
+  const handleStopCalling = async (lead: Lead) => {
+    if (retryingLeads.has(lead._id)) return;
+    setRetryingLeads((prev) => new Set(prev).add(lead._id));
+    try {
+      const response = await fetch(`/api/leads/${lead._id}/stop`, { method: 'POST' });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Could not stop calling this lead');
+      }
+      await fetchLeads();
+      toast.success(`Laycal will not call ${lead.name}.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not stop calling this lead');
+    } finally {
+      setRetryingLeads((prev) => {
+        const next = new Set(prev);
+        next.delete(lead._id);
+        return next;
       });
     }
   };
@@ -317,7 +335,7 @@ export default function LeadsPage() {
               </TableHeader>
               <TableBody>
                 {leads.map((lead) => {
-                  const status = STATUS[lead.status] ?? STATUS.pending;
+                  const status = leadStatus(lead);
                   const retrying = retryingLeads.has(lead._id);
                   const duration = formatDuration(lead.callResults?.duration);
                   const secondary = [lead.company, lead.email].filter(Boolean).join(' · ');
@@ -330,9 +348,9 @@ export default function LeadsPage() {
                       <TableCell className="px-5 py-3.5 font-mono text-xs tabular-nums text-muted-foreground">
                         {lead.phoneNumber}
                       </TableCell>
-                      <TableCell className="px-5 py-3.5">
-                        <span className="flex items-center gap-2 text-[13px] text-foreground">
-                          <span className="relative flex size-1.5">
+                      <TableCell className="whitespace-normal px-5 py-3.5">
+                        <span className="flex min-w-[9rem] max-w-[15rem] items-start gap-2 text-[13px] leading-5 text-foreground">
+                          <span className="relative mt-[7px] flex size-1.5 shrink-0">
                             {status.pulse && <span className={cn('absolute inline-flex size-full animate-ping rounded-full opacity-70', status.dot)} />}
                             <span className={cn('relative inline-flex size-1.5 rounded-full', status.dot)} />
                           </span>
@@ -363,7 +381,19 @@ export default function LeadsPage() {
                               className="h-8 gap-1.5 rounded-lg px-2.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                             >
                               {retrying ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCw className="size-3.5" />}
-                              {retrying ? 'Retrying' : lead.status === 'pending' ? 'Call now' : 'Retry'}
+                              {retrying ? 'Calling' : lead.status === 'pending' ? 'Call now' : 'Retry'}
+                            </Button>
+                          )}
+                          {status.waiting && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleStopCalling(lead)}
+                              disabled={retrying}
+                              className="h-8 gap-1.5 rounded-lg px-2.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                            >
+                              <CircleSlash className="size-3.5" />
+                              Stop calling
                             </Button>
                           )}
                           <Button

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from 'sonner';
 import { PaymentGateWrapper } from '@/components/PaymentGateWrapper';
+import { NotificationSettings } from '@/components/NotificationSettings';
 
 interface PhoneProvider {
   id: string;
@@ -607,6 +608,8 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
+
+        <NotificationSettings />
 
         {/* Add/Edit Provider Form */}
         {showAddForm && (

@@ -32,6 +32,18 @@ export interface IAssistant extends Document {
     diagnosticFee?: string;
   };
 
+  /**
+   * When and how often leads are called. Optional: assistants created before
+   * this existed read as the defaults (see `callingRulesOf`).
+   */
+  callingRules?: {
+    retry?: boolean;
+    maxCalls?: number;
+    holdOutsideHours?: boolean;
+    callFrom?: string;
+    callUntil?: string;
+  };
+
   phoneNumbers: Array<{
     phoneNumber: string;
     phoneProviderId: ObjectId;
@@ -112,6 +124,19 @@ const AssistantSchema = new Schema<IAssistant>({
     },
     required: false,
     default: undefined
+  },
+  callingRules: {
+    type: {
+      retry: { type: Boolean, default: true },
+      maxCalls: { type: Number, default: 3, min: 1, max: 3 },
+      holdOutsideHours: { type: Boolean, default: false },
+      // 24-hour "HH:MM" in the assistant's time zone.
+      callFrom: { type: String, default: '08:00', match: /^([01]\d|2[0-3]):[0-5]\d$/ },
+      callUntil: { type: String, default: '21:00', match: /^([01]\d|2[0-3]):[0-5]\d$/ }
+    },
+    required: false,
+    default: undefined,
+    _id: false
   },
   phoneNumbers: [{
     phoneNumber: {

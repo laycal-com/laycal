@@ -3,6 +3,8 @@ import { getAccountAuth } from '@/lib/account';
 import { auth } from '@clerk/nextjs/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Lead from '@/models/Lead';
+import Assistant from '@/models/Assistant';
+import { callingRulesOf } from '@/lib/callingRules';
 
 export async function GET(request: NextRequest) {
   try {
@@ -51,6 +53,17 @@ export async function GET(request: NextRequest) {
       Lead.countDocuments(query)
     ]);
 
+    // How many calls each lead's assistant allows, for "(2 of 3)" on a waiting lead.
+    const assistantIds = [...new Set(leads.map((l: any) => l.assignedAssistantId?.toString()).filter(Boolean))];
+    const assistants = assistantIds.length
+      ? await Assistant.find({ _id: { $in: assistantIds }, accountId }).select('callingRules').lean<any[]>()
+      : [];
+    const maxCallsById = new Map(assistants.map((a) => [a._id.toString(), callingRulesOf(a).maxCalls]));
+    const leadsOut = leads.map((l: any) => ({
+      ...l,
+      maxCalls: maxCallsById.get(l.assignedAssistantId?.toString()) ?? 3,
+    }));
+
     // Get status counts for dashboard
     const statusCounts = await Lead.aggregate([
       { $match: { accountId } },
@@ -63,7 +76,7 @@ export async function GET(request: NextRequest) {
     }, {} as Record<string, number>);
 
     return NextResponse.json({
-      leads,
+      leads: leadsOut,
       pagination: {
         page,
         limit,

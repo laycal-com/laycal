@@ -11,7 +11,10 @@ import PhoneProvider from '@/models/PhoneProvider';
 import { getPhoneProviderOrDefault, getNoPhoneProviderErrorMessage, isUSPhoneNumber } from '@/lib/defaultPhoneProvider';
 import { usageValidator } from '@/lib/usageValidator';
 import { logger } from '@/lib/logger';
-import { buildCallVariables } from '@/lib/speedToLead/callVariables';
+import { callOrHold, queueLead } from '@/lib/leadCalls';
+
+/** Leads from one upload that are called before the request returns. */
+const INLINE_CALLS = 5;
 
 export async function POST(request: NextRequest) {
   try {
@@ -123,6 +126,7 @@ export async function POST(request: NextRequest) {
     
     // Round-robin through available providers if user has them
     let phoneIndex = 0;
+    let calledInline = 0;
 
     for (const leadData of csvResult.leads) {
       try {
@@ -164,9 +168,15 @@ export async function POST(request: NextRequest) {
           email: leadData.email,
           company: leadData.company,
           notes: leadData.notes,
+          // The agent's script reads these, on the first call and on later tries.
+          address: (leadData as any).address || null,
+          details: leadData.notes || null,
           status: 'pending',
+          source: 'upload',
           assignedAssistantId: assistant._id,
-          assignedPhoneNumber: assignedPhoneNumber
+          assignedPhoneNumber: assignedPhoneNumber,
+          // Later tries go out from the same number as the first.
+          phoneProviderId: phoneProviderId
         });
 
         await lead.save();
@@ -174,54 +184,28 @@ export async function POST(request: NextRequest) {
         
         logger.leadCreation.success(accountId, lead._id.toString(), leadData.name);
 
-        // Initiate Vapi call using the selected assistant and phone provider
+        // The first few are called now, so a small list starts ringing at once.
+        // The rest wait for the wake-up, which works through them every minute:
+        // dialling a long list inside this request would time out.
         try {
-          logger.vapiCall.initiate(accountId, lead._id.toString(), leadData.phoneNumber);
-          
-          // Use tenant service with specific assistant and phone provider
-          const vapiResponse = await tenantVapiService.initiateCall({
-            accountId,
-            phoneNumber: leadData.phoneNumber,
-            assistantId: assistant.vapiAssistantId,
-            phoneProviderId: phoneProviderId,
-            customer: {
-              name: leadData.name,
-              email: leadData.email,
-            },
-            // CSV leads run the same prompt as form leads, so they need the
-            // same variables or {{client_company}} renders empty.
-            variableValues: buildCallVariables(assistant, {
-              address: (leadData as any).address,
-              details: leadData.notes,
-              company: leadData.company,
-            }),
-            metadata: {
-              leadId: lead._id.toString(),
-              accountId: accountId,
-              company: leadData.company,
-              assistantId: assistant._id.toString(),
-              assistantName: assistant.name
-            }
-          });
+          const result =
+            calledInline < INLINE_CALLS ? await callOrHold(lead, assistant) : await queueLead(lead, assistant);
+          calledInline++;
 
-          // Update lead with Vapi call ID
-          lead.vapiCallId = vapiResponse.id;
-          lead.status = 'calling';
-          lead.calledAt = new Date();
-          await lead.save();
-
-          logger.vapiCall.success(accountId, lead._id.toString(), vapiResponse.id, leadData.phoneNumber);
-
+          if (!result.ok) {
+            vapiErrors.push({ leadName: leadData.name, error: result.message });
+          }
+          const fresh = await Lead.findById(lead._id).select('status vapiCallId').lean<any>();
+          if (fresh) {
+            lead.status = fresh.status;
+            lead.vapiCallId = fresh.vapiCallId;
+          }
         } catch (vapiError) {
           logger.vapiCall.error(accountId, lead._id.toString(), vapiError, leadData.phoneNumber);
           vapiErrors.push({
             leadName: leadData.name,
-            error: vapiError instanceof Error ? vapiError.message : 'Unknown Vapi error'
+            error: vapiError instanceof Error ? vapiError.message : 'Unknown error'
           });
-          
-          // Keep lead as pending if Vapi call fails
-          lead.status = 'failed';
-          await lead.save();
         }
       } catch (dbError) {
         logger.leadCreation.error(accountId, dbError, leadData.name);
