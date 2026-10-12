@@ -15,7 +15,7 @@ someone else's work.
 Entry format:
 
 ```
-### YYYY-MM-DD HH:MM · <who: dev / seo / gtm / owner> · <short title>
+### YYYY-MM-DD HH:MM · <who: dev / seo / gtm / product / owner> · <short title>
 - **What:** what changed, with the main paths.
 - **Why:** the reason, in a sentence.
 - **Status:** committed (hash) / uncommitted / removed. Anything the next person must know.
@@ -195,3 +195,10 @@ Times are the machine's local time (`date '+%Y-%m-%d %H:%M'`).
 - **What:** added `sameAs` (Crunchbase, G2, Capterra, GetApp, Software Advice) and a one-line description to the Organization data in `src/components/landing/structured-data.tsx` (`PROFILES` list). The LinkedIn page exists but its URL was not provided, so it is not in the list yet.
 - **Why:** tells search engines those profiles belong to Laycal, which helps Google recognise the company. The owner asked why Google says nothing for a "laycal" search.
 - **Status:** committed, pushed. The profile sites block automated requests (403), so the URLs are as the owner gave them and were not opened by me. **SEO work is paused at the owner's request until early November 2026.** Then: re-read Search Console against the 2026-10-11 baseline (86 clicks and 5.3k impressions in 16 months; 99 AI-feature impressions in 3 months), check whether `/speed-to-lead` and `/instant-lead-follow-up` rank again, and decide the next content from that. Still open, not urgent: AlternativeTo listing, LinkedIn URL into `PROFILES`, an About page, `/status` placeholder data, mobile check of the pages built today.
+
+## 2026-10-12
+
+### 2026-10-12 10:32 · product · `laycal-product` skill
+- **What:** created `~/.claude/skills/laycal-product/`: product manager (what to build and in what order, discovery, competitor and market research, the roadmap), product owner (specs, stories, acceptance criteria, an edge-case checklist for this product) and product designer (task-based UX reviews, onboarding, accessibility), with `references/product-management.md`, `specs.md` and `design-review.md`. `CLAUDE.md` now points to it and to `laycal-gtm`; `product` added to the "who" list above.
+- **Why:** the owner asked for a product role beside dev, SEO and GTM.
+- **Status:** committed on branch `worktree-product-skill-docs`, pushed, not merged (docs only, no site change). The skill lives outside the repo. Its working folder, `~/Desktop/SaaSs/laycal-product/` (roadmap, backlog, specs, audits, research), does not exist yet; the first product session creates it and seeds the backlog from `laycal-gtm/strategy.md` section 6. Buyer and positioning stay in `laycal-gtm/strategy.md`, not duplicated. The skill has not been through a test round yet. Approved specs and changes to the roadmap's Now will be logged here.

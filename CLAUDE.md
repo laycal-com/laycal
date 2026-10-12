@@ -10,7 +10,7 @@ model, route, page or core module; a changed rule about tenancy, billing,
 calls or design; a new command or environment variable. Do the same for the
 `laycal-dev` skill (`~/.claude/skills/laycal-dev/`) when the change touches
 what it covers. Do not log completed work here; record only what a future
-session needs to know. Last reviewed: 2026-10-11.
+session needs to know. Last reviewed: 2026-10-12.
 
 ## Log your work in `work-timeline.md`
 
@@ -36,7 +36,9 @@ summary.
 assistant calls each one.
 
 For detailed rules and the traps already met, load the `laycal-dev` skill; for
-search work, `laycal-seo`.
+search work, `laycal-seo`; for marketing, `laycal-gtm`; for what to build and
+why (roadmap, specs, design reviews), `laycal-product`. The roadmap, backlog,
+specs and audits live outside the repo in `~/Desktop/SaaSs/laycal-product/`.
 
 ## Product rules
 
