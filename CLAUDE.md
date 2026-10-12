@@ -83,7 +83,8 @@ specs and audits live outside the repo in `~/Desktop/SaaSs/laycal-product/`.
 - `billing.ts` — the only place a balance changes (`applyMovement`, `chargeCall`, `chargeAssistant`, `canPlaceCall`, `getRate`)
 - `tenantVapi.ts` — the Vapi service to use (`vapi.ts` is the older, simpler one)
 - `speedToLead/` — `verticals.ts`, `promptGenerator.ts`, `tools.ts`, `vapiToolBridge.ts`, `callVariables.ts`
-- `calendar/` — calendar providers; `formatAppointment.ts` renders times in the business's zone
+- `calendar/` — calendar providers
+- `formatAppointment.ts` — renders appointment times in the business's zone
 - `links.ts` (`DEMO_URL`), `seo.ts`, `clerkAppearance.ts`, `logger.ts`, `mongodb.ts`, `csvProcessor.ts`, `adminAuth.ts`
 - `usageValidator.ts` — thin leftover shim; new logic goes in `billing.ts`
 
