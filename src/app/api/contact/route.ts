@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import ContactSubmission from '@/models/ContactSubmission';
 import { logger } from '@/lib/logger';
+import { postContactToSlack } from '@/lib/slack';
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,6 +68,21 @@ export async function POST(request: NextRequest) {
       hasCompany: !!company,
       hasPhone: !!phone,
       ipAddress
+    });
+
+    // Tell the owner in Slack. Awaited, because a serverless function can be
+    // stopped once the response is sent; it gives up after five seconds and
+    // never fails the submission.
+    await postContactToSlack({
+      id: contactSubmission._id.toString(),
+      name: contactSubmission.name,
+      email: contactSubmission.email,
+      phone: contactSubmission.phone,
+      company: contactSubmission.company,
+      message: contactSubmission.message,
+      type: contactSubmission.type,
+      priority: contactSubmission.priority,
+      createdAt: contactSubmission.createdAt,
     });
 
     // TODO: Send notification email to admins

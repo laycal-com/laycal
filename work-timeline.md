@@ -218,3 +218,23 @@ Times are the machine's local time (`date '+%Y-%m-%d %H:%M'`).
 - **What:** `e5823d6` deployed. On `www.laycal.com`: `/api/cron/tick` answers 401 without the secret and 200 with it; the watchdog reports the wake-up as alive. The first run found 3 production leads stuck on "calling" and resolved them (looked up at the phone system; any that had ended uncharged were charged once).
 - **Why:** to confirm the deploy and that `CRON_SECRET` in Vercel matches.
 - **Status:** live. Not yet done: one real Google Form submission, the brief's real-call checks, a real email through the owner's mailbox. Whether the cron-job.org job is switched on was not checked from here.
+
+### 2026-10-12 12:03 · dev · Google Form confirmed working on production after the hardening deploy
+- **What:** the owner submitted their real Google Form and received the call.
+- **Why:** the owner's condition for this work was that the Google Form must not break.
+- **Status:** confirmed by the owner; I did not see the call myself. Still unconfirmed on production: the notification emails from the owner's mailbox, a second try after an unanswered call, and whether the cron-job.org job is switched on. This entry is uncommitted.
+
+### 2026-10-12 12:07 · dev · cron-job.org wake-up running on production
+- **What:** the job was switched on without its header and got 401 every minute. The owner added `Authorization: Bearer <CRON_SECRET>` under Advanced → Headers and reports it now works.
+- **Why:** later tries, held leads and queued uploads are only called while this job succeeds.
+- **Status:** confirmed by the owner; no repo change. If it ever returns 401 again, check the header was saved on the job before suspecting the secret in Vercel. This entry and the one above are uncommitted.
+
+### 2026-10-12 14:58 · dev · Retries and the "couldn't reach" email confirmed on production
+- **What:** the owner let a real Google Form lead ring out: three calls arrived, then the "We couldn't reach …" email arrived from the owner's mailbox.
+- **Why:** these were the checks from the hardening brief that needed a real phone and the real mail details.
+- **Status:** confirmed by the owner on production: form intake, three tries, the wake-up, and one of the four emails (so the mail details in Vercel work). Not yet seen on production: the booked, calls-stopped and balance-low emails, holding outside calling hours, and a stuck call being charged late. No repo change; this and the two entries above are uncommitted.
+
+### 2026-10-16 10:45 · dev · /contact submissions posted to the owner's Slack
+- **What:** `src/lib/slack.ts` posts each `/contact` submission to a Slack Workflow Builder webhook (`SLACK_CONTACT_WEBHOOK_URL`, kept out of the repo). The workflow takes `name`, `email` and `details` (the owner removed `phone`: the form does not ask for one); company, message, type, priority, time and an admin link go into `details`. Called from `api/contact` after the submission is saved; a Slack failure is logged and never fails the form.
+- **Why:** the owner asked to be told in Slack whenever someone fills in the website contact form.
+- **Status:** committed and pushed to `main` with this entry ("Post /contact submissions to Slack"); `SLACK_CONTACT_WEBHOOK_URL` is in Vercel (owner). Tested: one direct post to the webhook and one submission through the local contact route both reached Slack (both labelled as tests; the local test submission was deleted). Needs `SLACK_CONTACT_WEBHOOK_URL` in Vercel before it works in production.

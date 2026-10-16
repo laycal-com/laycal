@@ -102,7 +102,7 @@ search work, `laycal-seo`.
 - `webhooks/vapi` — call status, charging, summaries
 - `webhooks/lead-intake/[assistantId]` — starts a call for a new lead
 - `webhooks/clerk`, `vapi/calendar/...` (in-call availability and booking tools)
-- `calendar`, `phone-providers`, `contact`, `support`
+- `calendar`, `phone-providers`, `contact` (saves a `ContactSubmission` and posts it to the owner's Slack via `src/lib/slack.ts`), `support`
 - `admin/accounts` (+ `[id]`), `admin/dashboard/stats`
 
 ### Pages (`src/app/`)
@@ -188,7 +188,9 @@ credentials, `CRON_SECRET` (the wake-up and watchdog; must also be the
 `Authorization: Bearer` header on the cron-job.org job), `CONTACT_EMAIL`,
 `CONTACT_EMAIL_PASS`, `SMTP_SERVER`, `SMTP_PORT` (notification emails; without
 them emails are skipped, not failed), `RETRY_DELAYS_SECONDS` and
-`VAPI_BASE_URL` (testing only), `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`,
+`VAPI_BASE_URL` (testing only), `SLACK_CONTACT_WEBHOOK_URL` (Slack
+Workflow Builder webhook for `/contact` submissions; variables `name`, `email`,
+`details`; without it the post is skipped), `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`,
 `NEXT_PUBLIC_PAYPAL_ENVIRONMENT`, Sentry variables, `NEXT_PUBLIC_GTM_ID`.
 
 `.env.local` is a development config and its database is not production.
