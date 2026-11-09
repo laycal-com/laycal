@@ -8,14 +8,14 @@ import { SolutionClose, SolutionIntro } from '@/components/landing/solution';
 import { OG_IMAGE } from '@/lib/seo';
 
 const description =
-  'When someone fills in your form, Laycal’s AI voice agent calls them within a minute, asks your qualifying questions, handles objections and books the meeting on your calendar.';
+  'Automated lead follow-up by phone: when someone fills in your form, Laycal’s AI voice agent calls them within a minute, asks your qualifying questions and books the meeting on your calendar.';
 
 export const metadata: Metadata = {
-  title: 'Instant Lead Follow-Up: AI That Calls Web Leads Within a Minute',
+  title: 'AI Lead Follow-Up That Calls Web Leads Within a Minute',
   description,
   alternates: { canonical: '/instant-lead-follow-up' },
   openGraph: {
-    title: 'Instant Lead Follow-Up: AI That Calls Web Leads Within a Minute | Laycal',
+    title: 'AI Lead Follow-Up That Calls Web Leads Within a Minute | Laycal',
     description,
     url: 'https://www.laycal.com/instant-lead-follow-up',
     images: [OG_IMAGE],

@@ -51,7 +51,7 @@ const inline =
   'font-medium text-neutral-200 underline decoration-white/20 underline-offset-4 transition-colors hover:text-white hover:decoration-white/60';
 
 /**
- * Content for the two search-facing solution pages. Both describe the same
+ * Content for the search-facing solution pages. All describe the same
  * product; each answers a different question a buyer types into a search box.
  */
 const SOLUTIONS = {
@@ -158,11 +158,11 @@ const SOLUTIONS = {
     ],
   },
   'instant-lead-follow-up': {
-    eyebrow: 'Instant lead follow-up',
+    eyebrow: 'Instant AI lead follow-up',
     title: 'An AI agent that calls your web leads',
     accent: 'within a minute.',
     intro:
-      'When someone fills in your form, Laycal phones them straight away. The agent asks your qualifying questions, handles objections and books the meeting on your calendar. Nobody on your team has to be free.',
+      'Laycal is automated lead follow-up by phone. When someone fills in your form, the AI agent calls them straight away, asks your qualifying questions, handles objections and books the meeting on your calendar. Nobody on your team has to be free.',
     heroTiles: ['Leads', 'Objection handled'],
     problem: {
       eyebrow: 'On the call',
@@ -235,6 +235,10 @@ const SOLUTIONS = {
     faqTitle: 'Before you connect a form.',
     faqs: [
       {
+        q: 'What is AI lead follow-up?',
+        a: 'It is software that gets back to a new lead for you, without someone on your team doing it by hand. Most tools send an email or a text. Laycal phones the lead within a minute of the form being submitted, has the conversation and books the meeting.',
+      },
+      {
         q: 'Can it qualify leads with my own questions?',
         a: 'Yes. You set the questions and what counts as a fit. The agent asks them in conversation and the answers are saved with the call summary.',
       },
@@ -257,6 +261,113 @@ const SOLUTIONS = {
       {
         q: 'Does it answer inbound calls or do cold calling?',
         a: 'No. Laycal places outbound calls to people who asked to be contacted. It is not a receptionist for incoming calls and it is not a tool for calling people who never asked to hear from you.',
+      },
+    ],
+  },
+  'ai-appointment-setter': {
+    eyebrow: 'AI appointment setter',
+    title: 'An AI appointment setter that calls your leads',
+    accent: 'and books the meeting.',
+    intro:
+      'Laycal phones each new lead within a minute of the form being submitted, asks your qualifying questions and books the appointment into a real open slot on your Google Calendar, all during the same call.',
+    heroTiles: ['Live call', 'Booked'],
+    problem: {
+      eyebrow: 'What it does',
+      title: 'It sets the appointment, not a reminder to call back.',
+      description:
+        'Setting appointments by hand means calling back, missing each other and trading times by email. The agent does it in one conversation, while the lead is still interested.',
+      items: [
+        {
+          icon: CalendarCheck,
+          title: 'Books while the lead is on the phone',
+          copy: 'It offers times that are free on your Google Calendar and creates the event before the call ends. Nobody has to confirm it afterwards.',
+        },
+        {
+          icon: ListChecks,
+          title: 'Qualifies before it books',
+          copy: 'It asks your questions first, such as the job, the budget, the timeline or the address, so only leads that fit your rules get a slot.',
+        },
+        {
+          icon: MoonStar,
+          title: 'Works when your team cannot',
+          copy: 'Evenings, weekends and busy hours. Every lead gets the call, and many calls can run at the same time when leads arrive together.',
+        },
+      ],
+    },
+    steps: {
+      title: 'From form fill to appointment, in one call.',
+      items: [
+        {
+          icon: Webhook,
+          title: 'Connect your lead source',
+          copy: 'A website form, a Google Form, an ad lead form or your CRM sends each new lead to Laycal as it arrives.',
+        },
+        {
+          icon: PhoneOutgoing,
+          title: 'The agent calls within a minute',
+          copy: 'It introduces itself as calling from your business, about the request the lead just made, and works through your questions.',
+        },
+        {
+          icon: CalendarClock,
+          title: 'The appointment is on your calendar',
+          copy: 'The lead picks a time that suits them from your open slots. The event is created with their name, phone number and what they need.',
+        },
+      ],
+    },
+    proof: {
+      eyebrow: 'After each call',
+      title: 'The appointment, the answers and the recording.',
+      description:
+        'Each call leaves an outcome, a recording and a written summary, and every booking shows up on your calendar and in Laycal.',
+      tiles: ['Calendar', 'Meetings booked', 'Transcript'],
+    },
+    note: {
+      icon: Users,
+      title: 'A human appointment setter or an AI one?',
+      body: (
+        <>
+          A person setting appointments can only call one lead at a time, during working hours. The AI agent calls every
+          lead the moment it arrives, at any hour, and books into the same calendar your team already uses. Your people
+          then spend their time in the meetings rather than chasing them. It calls people who asked to hear from you; for
+          leads already sitting in your CRM, see{' '}
+          <Link href="/lead-reactivation" className={inline}>
+            lead reactivation
+          </Link>
+          .
+        </>
+      ),
+    },
+    pricing:
+      'You pay for the minutes the agent spends on calls, not for each appointment and not for seats. No monthly minimum, so the cost follows the number of leads you get.',
+    faqTitle: 'Before you hand over your calendar.',
+    faqs: [
+      {
+        q: 'What is an AI appointment setter?',
+        a: 'It is an AI voice agent that phones your leads, qualifies them and books a meeting with your team. Laycal does this for leads who have asked to be contacted, calling each one within a minute of the request.',
+      },
+      {
+        q: 'Does it book directly on my calendar?',
+        a: 'Yes. Google Calendar is built in. The agent only offers times that are free and creates the event while the lead is still on the phone, so there is no pending queue to approve.',
+      },
+      {
+        q: 'Which leads can it call?',
+        a: 'New leads from website forms, Google Forms, ad lead forms and CRMs that can send each lead to a web address as it arrives. You can also upload a CSV of people who asked to hear from you.',
+      },
+      {
+        q: 'What kinds of appointments can it set?',
+        a: 'Any meeting your team runs from a calendar: sales calls, consultations, estimates, site visits or demos. You tell it what the meeting is, how long it lasts and when you are available.',
+      },
+      {
+        q: 'Does it do cold calling?',
+        a: 'No. It calls people who asked to be contacted. It is not a tool for calling purchased lists or people who never asked to hear from you, and it does not answer your incoming calls.',
+      },
+      {
+        q: 'How does it sound?',
+        a: 'You choose the voice from several male and female options, and it speaks English, Spanish, French and German. We play real call recordings on the demo so you can judge it yourself.',
+      },
+      {
+        q: 'How is it priced?',
+        a: 'Pay as you go, per calling minute. There are no seats, plans or charges per appointment. Your rate is confirmed on the demo.',
       },
     ],
   },

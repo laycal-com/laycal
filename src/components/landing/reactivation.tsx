@@ -26,14 +26,14 @@ export function ReactivationHero() {
           <Reveal>
             <div className="inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] py-1.5 pl-3 pr-4 font-mono text-[11px] uppercase tracking-[0.12em] text-neutral-300 backdrop-blur">
               <Dot tone="brand" pulse />
-              Lead reactivation
+              Lead and database reactivation
             </div>
             <h1 className="mt-7 max-w-[16ch] text-balance bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-[2.5rem] font-semibold leading-[1.04] tracking-[-0.04em] text-transparent sm:text-5xl lg:text-6xl">
               Turn the leads you already paid for into <span className="text-brand-soft">booked meetings.</span>
             </h1>
             <p className="mt-7 max-w-[52ch] text-pretty text-base leading-7 text-neutral-400 md:text-lg md:leading-[1.7]">
-              Upload the list sitting in your CRM. Laycal calls every lead, finds the ones who are still interested and
-              books them straight into your calendar.
+              Database reactivation, done by phone. Upload the list sitting in your CRM: Laycal calls every lead, finds the
+              ones who are still interested and books them straight into your calendar.
             </p>
           </Reveal>
           <Reveal delay={0.1} className="mt-9 flex flex-wrap items-center gap-3">
@@ -172,6 +172,14 @@ export function ReactivationConsent() {
 /* ----------------------------------- FAQ ---------------------------------- */
 
 const FAQS = [
+  {
+    q: 'What is database reactivation?',
+    a: 'It means getting back in touch with the leads and past enquiries already in your CRM, to find the ones who still want to buy. It is also called lead reactivation. Most campaigns use email or text; Laycal calls each lead, has the conversation and books the ones who are interested.',
+  },
+  {
+    q: 'Who should be on the list?',
+    a: 'People who asked to hear from you: past enquiries, quote requests that went quiet, old customers. It is not for purchased lists or people who never contacted you.',
+  },
   {
     q: 'What does the file need to contain?',
     a: 'A name and a phone number for each lead. Email, company and notes are optional. Column names are flexible.',

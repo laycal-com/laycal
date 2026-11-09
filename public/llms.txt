@@ -28,6 +28,7 @@
 - [Home](https://www.laycal.com/): what Laycal does, how it works, use cases, pricing model and FAQ.
 - [Speed to lead](https://www.laycal.com/speed-to-lead): what speed to lead means, why the first call matters and how Laycal brings it under a minute.
 - [Instant lead follow-up](https://www.laycal.com/instant-lead-follow-up): what the AI agent does on the call and how setup works.
+- [AI appointment setter](https://www.laycal.com/ai-appointment-setter): how the agent qualifies new leads and books appointments into Google Calendar during the call.
 - [Lead reactivation](https://www.laycal.com/lead-reactivation): calling an existing list of opted-in leads.
 - [Compare](https://www.laycal.com/compare): how Laycal differs from dialers and phone systems, including when it is not the right tool.
 - [Contact](https://www.laycal.com/contact): contact form and demo booking.
