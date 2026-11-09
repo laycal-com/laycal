@@ -106,16 +106,17 @@ search work, `laycal-seo`.
 - `admin/accounts` (+ `[id]`), `admin/dashboard/stats`
 
 ### Pages (`src/app/`)
-- Public: `/` (landing), `/lead-reactivation`, `/speed-to-lead`, `/instant-lead-follow-up`, `/ai-appointment-setter`, `/compare`, `/justcall-alternative`, `/nooks-alternative`, `/blogs`, `/contact`, `/privacy`, `/terms`, `/status`
+- Public: `/` (landing), `/lead-reactivation`, `/speed-to-lead`, `/instant-lead-follow-up`, `/ai-appointment-setter`, `/appointment-setting-services`, `/compare`, `/justcall-alternative`, `/nooks-alternative`, `/blogs`, `/contact`, `/privacy`, `/terms`, `/status`
 - Auth: `/sign-in`, `/sign-up`, `/onboarding`
 - Portal: `/dashboard`, `/assistants`, `/leads`, `/appointments`, `/call-summary`, `/integrations`, `/settings`, `/support`
 - Admin: `/admin/...` (`/admin/users` is the Accounts screen)
+- `public/<key>.txt` — the IndexNow key file (key `27206a0b939954a84bc5422c553f2498`); keep it, Bing and Yandex check it on every IndexNow submission
 - `public/llms.txt` — a plain-text summary of Laycal for AI assistants (facts, what it is not, links to the public pages and posts). Update it when a public page or post is added or removed, or when a product fact changes
 - Redirected in `next.config.ts`: `/features`, `/pricing`, `/about`, `/case-studies`, `/sdr`, `/blog`, and the six retired `/blogs/*-alternative-2026` posts (to the comparison pages)
 - Blog: posts are markdown files in `blogs/`, written for the buyer (lead response time, the first call, after-hours leads), not competitor roundups. The template has no markdown table support. Every post gets its own banner in `public/assets/blogs/`, drawn by `scripts/make-blog-banners.js` (add a motif, run the script); the full steps are in the `laycal-seo` skill under "Publishing a blog post"
 
 ### Components (`src/components/`)
-- `landing/` — the public page kit: `primitives.tsx` (`Shell`, `Section`, `SectionHeader`, `Reveal`, `DemoCta`), `site-nav.tsx`, `hero.tsx`, `sections.tsx`, `features.tsx`, `roi.tsx`, `pricing.tsx`, `cta.tsx`, `reactivation.tsx`, `solution.tsx` (`SOLUTIONS`: content for `/speed-to-lead`, `/instant-lead-follow-up` and `/ai-appointment-setter`), `comparison.tsx` (`COMPARISONS`: content for `/justcall-alternative`, `/nooks-alternative` and the `/compare` index), `product-tiles.tsx` (`HERO_TILES`), `providers.tsx` (`useRate()`)
+- `landing/` — the public page kit: `primitives.tsx` (`Shell`, `Section`, `SectionHeader`, `Reveal`, `DemoCta`), `site-nav.tsx`, `hero.tsx`, `sections.tsx`, `features.tsx`, `roi.tsx`, `pricing.tsx`, `cta.tsx`, `reactivation.tsx`, `solution.tsx` (`SOLUTIONS`: content for `/speed-to-lead`, `/instant-lead-follow-up`, `/ai-appointment-setter` and `/appointment-setting-services`; each page also emits its own `Service` and `BreadcrumbList` JSON-LD), `comparison.tsx` (`COMPARISONS`: content for `/justcall-alternative`, `/nooks-alternative` and the `/compare` index), `product-tiles.tsx` (`HERO_TILES`), `providers.tsx` (`useRate()`)
 - `portal/` — `portal-shell.tsx` (sidebar, account gate, `PORTAL_ROUTES`, `DARK_ROUTES`), `account-context.tsx` (`useAccount()`), `setup-guide.tsx`, `page.tsx` (`PortalPage`, `PageHeader`)
 - `dashboard/` — panels, account cards, charts
 - `auth/auth-shell.tsx`, `brand/logo-mark.tsx`

@@ -371,6 +371,112 @@ const SOLUTIONS = {
       },
     ],
   },
+  'appointment-setting-services': {
+    eyebrow: 'AI appointment setting',
+    title: 'Appointment setting that books every lead,',
+    accent: 'the minute it comes in.',
+    intro:
+      'Laycal is an appointment setting service run by an AI voice agent. It calls each new lead within a minute, qualifies them with your questions and books the appointment into your Google Calendar on the call. No agency to brief and no setters to manage.',
+    heroTiles: ['Live call', 'Booked'],
+    problem: {
+      eyebrow: 'Agency or AI',
+      title: 'What changes when the setter is an AI agent.',
+      description:
+        'An outsourced appointment setting team is people working through your leads in shifts. An AI agent works each lead the moment it arrives, and books into the calendar your team already uses.',
+      items: [
+        {
+          icon: Timer,
+          title: 'Called in a minute, not in a shift',
+          copy: 'There is no queue and no rota. A lead that comes in at seven on a Sunday evening is called at seven on a Sunday evening, within your calling hours.',
+        },
+        {
+          icon: CalendarCheck,
+          title: 'Booked into your real calendar',
+          copy: 'The agent sees your free times in Google Calendar and creates the event during the call, instead of passing on a message for someone to confirm later.',
+        },
+        {
+          icon: MessageSquareQuote,
+          title: 'Your script, on every call',
+          copy: 'It asks the questions you set and answers objections the way you told it to. Every lead gets the same careful first call, however busy the day is.',
+        },
+      ],
+    },
+    steps: {
+      title: 'Briefed once. Books from then on.',
+      items: [
+        {
+          icon: Webhook,
+          title: 'Connect where your leads come from',
+          copy: 'A website form, a Google Form, an ad lead form or your CRM sends each new lead to Laycal as it arrives. A CSV of past enquiries works too.',
+        },
+        {
+          icon: Sparkles,
+          title: 'Tell it what to ask and when you are free',
+          copy: 'Answer a few questions about your business, the meeting and your hours. Laycal writes the script and reads your availability from Google Calendar.',
+        },
+        {
+          icon: PhoneOutgoing,
+          title: 'It calls, qualifies and books',
+          copy: 'Each lead gets its own call within a minute. Leads that fit get an appointment; the rest are logged with the reason, so nothing disappears.',
+        },
+      ],
+    },
+    proof: {
+      eyebrow: 'What you see',
+      title: 'Every lead, every call, every booking.',
+      description:
+        'You see each call as it happens, then its outcome, recording and summary. Booked appointments appear on your calendar and in Laycal.',
+      tiles: ['Live feed', 'Meetings booked', 'Recording'],
+    },
+    note: {
+      icon: ClipboardList,
+      title: 'When an outsourced team is the better choice',
+      body: (
+        <>
+          If you need someone to call people who never contacted you, or to work long prospecting sequences across email
+          and LinkedIn, a human team or a different tool fits better. Laycal sets appointments with people who asked to
+          hear from you: form fills, ad leads and lists of past enquiries through{' '}
+          <Link href="/lead-reactivation" className={inline}>
+            lead reactivation
+          </Link>
+          . For how the agent runs the call itself, see the{' '}
+          <Link href="/ai-appointment-setter" className={inline}>
+            AI appointment setter
+          </Link>
+          .
+        </>
+      ),
+    },
+    pricing:
+      'You pay for the minutes the agent spends on calls. No retainer, no fee per appointment and no seats, so the cost follows the number of leads you get.',
+    faqTitle: 'Before you outsource appointment setting.',
+    faqs: [
+      {
+        q: 'What are appointment setting services?',
+        a: 'They are services that contact your leads for you and book meetings with your team. Traditionally that means an outsourced team of people making calls. Laycal does the same job with an AI voice agent that calls each lead within a minute of the request.',
+      },
+      {
+        q: 'How is this different from hiring an appointment setting company?',
+        a: 'There are no shifts and no queue, so every lead is called straight away, and the agent books directly into your Google Calendar instead of passing on a message. You also keep the script: change it once and every following call uses it.',
+      },
+      {
+        q: 'Do you charge per appointment?',
+        a: 'No. You pay per calling minute, with no retainer, seats or fee per booking. Your rate is confirmed on the demo.',
+      },
+      {
+        q: 'Can it do B2B appointment setting?',
+        a: 'Yes, when the leads asked to be contacted: demo requests, enquiry forms, ad leads or past enquiries. It is not built for cold outreach to purchased lists.',
+      },
+      {
+        q: 'Which calendars does it book into?',
+        a: 'Google Calendar. The agent only offers times that are free and creates the event while the lead is on the phone.',
+      },
+      {
+        q: 'What do you need from me to get started?',
+        a: 'A lead source that can send each new lead to a web address, a Google Calendar and a few answers about your business. Laycal is invite-only: book a demo, hear real calls, and we send an invite if it is a fit.',
+      },
+    ],
+  },
 } satisfies Record<string, Solution>;
 
 export type SolutionSlug = keyof typeof SOLUTIONS;
@@ -539,11 +645,38 @@ export function SolutionIntro({ slug }: { slug: SolutionSlug }) {
   );
 }
 
+/** Service and breadcrumb structured data for one solution page. */
+function SolutionSchema({ slug, s }: { slug: SolutionSlug; s: Solution }) {
+  const url = `https://www.laycal.com/${slug}`;
+  const data = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Service',
+        name: s.eyebrow,
+        serviceType: s.eyebrow,
+        description: s.intro,
+        url,
+        provider: { '@type': 'Organization', name: 'Laycal', url: 'https://www.laycal.com' },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Laycal', item: 'https://www.laycal.com' },
+          { '@type': 'ListItem', position: 2, name: s.eyebrow, item: url },
+        ],
+      },
+    ],
+  };
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />;
+}
+
 /** The note and pricing cards, then the FAQ. */
 export function SolutionClose({ slug }: { slug: SolutionSlug }) {
   const s: Solution = SOLUTIONS[slug];
   return (
     <>
+      <SolutionSchema slug={slug} s={s} />
       <SolutionNote s={s} />
       <SolutionFaq s={s} />
     </>

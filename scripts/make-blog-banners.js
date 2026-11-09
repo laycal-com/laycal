@@ -104,10 +104,61 @@ function afterHours() {
   ${bar(668, 428, 250)}${bar(668, 456, 320, 0.14)}${bar(668, 484, 190, 0.14)}`;
 }
 
+/* 4. Lead response: a form card on the left sends a call to a phone on the right. */
+function formToCall() {
+  const cx = 960, cy = 315;
+  let dots = '';
+  for (let i = 0; i < 6; i++) dots += `<circle cx="${790 + i * 22}" cy="${cy}" r="${i === 5 ? 5 : 4}" fill="${BRAND}" fill-opacity="${0.25 + i * 0.13}"/>`;
+  return `
+  <rect x="520" y="185" width="250" height="260" rx="24" ${cardStyle}/>
+  ${bar(552, 222, 120, 0.4)}
+  <rect x="552" y="258" width="186" height="34" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.1"/>
+  <rect x="552" y="306" width="186" height="34" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.1"/>
+  <rect x="552" y="378" width="186" height="38" rx="12" fill="${BRAND}"/>
+  ${dots}
+  <circle cx="${cx}" cy="${cy}" r="96" fill="${BRAND}" fill-opacity="0.12" stroke="${BRAND}" stroke-opacity="0.45" stroke-width="1.5"/>
+  <circle cx="${cx}" cy="${cy}" r="62" fill="url(#card)" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1.5"/>
+  <path d="M ${cx - 22} ${cy - 24} q -6 6 0 18 q 14 26 38 38 q 12 6 18 0 l 6 -8 q 2 -4 -2 -7 l -12 -8 q -4 -2 -7 1 l -5 5 q -14 -7 -21 -21 l 5 -5 q 3 -3 1 -7 l -8 -12 q -3 -4 -7 -2 z" fill="${SOFT}"/>`;
+}
+
+/* 5. Follow-up: a three-step sequence (call, message, call) ending in a booking. */
+function followUpSteps() {
+  const x = 700, ys = [150, 260, 370, 480];
+  const step = (y, i) => {
+    const last = i === ys.length - 1;
+    return `
+  <circle cx="${x}" cy="${y}" r="20" fill="${last ? BRAND : '#0a0a0a'}" stroke="${last ? BRAND : '#ffffff'}" stroke-opacity="${last ? 1 : 0.3}" stroke-width="2"/>
+  ${last ? `<path d="M ${x - 8} ${y} l 6 6 l 11 -12" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>` : `<circle cx="${x}" cy="${y}" r="6" fill="#ffffff" fill-opacity="0.5"/>`}
+  <rect x="${x + 44}" y="${y - 34}" width="${last ? 300 : 260}" height="68" rx="18" ${last
+    ? `fill="${BRAND}" fill-opacity="0.16" stroke="${BRAND}" stroke-opacity="0.55" stroke-width="1.5"`
+    : cardStyle}/>
+  ${bar(x + 70, y - 12, last ? 170 : 150, last ? 0.45 : 0.32)}${bar(x + 70, y + 10, last ? 110 : 90, 0.14)}`;
+  };
+  return `
+  <line x1="${x}" y1="${ys[0]}" x2="${x}" y2="${ys[ys.length - 1]}" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" stroke-dasharray="6 8"/>
+  ${ys.map(step).join('')}`;
+}
+
+/* 6. Consent: a form with an unmissable ticked checkbox next to its text. */
+function consentForm() {
+  return `
+  <rect x="580" y="130" width="460" height="370" rx="26" ${cardStyle}/>
+  ${bar(616, 170, 160, 0.4)}
+  <rect x="616" y="208" width="388" height="40" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.1"/>
+  <rect x="616" y="262" width="388" height="40" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.1"/>
+  <rect x="616" y="330" width="34" height="34" rx="8" fill="${BRAND}"/>
+  <path d="M 624 347 l 7 7 l 13 -14" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  ${bar(668, 332, 300, 0.3, 10)}${bar(668, 352, 250, 0.16, 10)}${bar(668, 372, 180, 0.16, 10)}
+  <rect x="616" y="420" width="388" height="46" rx="14" fill="${BRAND}" fill-opacity="0.85"/>`;
+}
+
 const banners = {
   'lead-response-time.png': frame(stopwatch(), 800, 330),
   'first-call-questions.png': frame(conversation(), 830, 320),
   'after-hours-leads.png': frame(afterHours(), 830, 300),
+  'lead-response-guide.png': frame(formToCall(), 820, 315),
+  'follow-up-with-leads.png': frame(followUpSteps(), 860, 315),
+  'express-written-consent.png': frame(consentForm(), 810, 315),
 };
 
 (async () => {

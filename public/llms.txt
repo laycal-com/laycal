@@ -29,6 +29,7 @@
 - [Speed to lead](https://www.laycal.com/speed-to-lead): what speed to lead means, why the first call matters and how Laycal brings it under a minute.
 - [Instant lead follow-up](https://www.laycal.com/instant-lead-follow-up): what the AI agent does on the call and how setup works.
 - [AI appointment setter](https://www.laycal.com/ai-appointment-setter): how the agent qualifies new leads and books appointments into Google Calendar during the call.
+- [Appointment setting services](https://www.laycal.com/appointment-setting-services): AI appointment setting compared with outsourced setting teams; pay per calling minute, no fee per appointment.
 - [Lead reactivation](https://www.laycal.com/lead-reactivation): calling an existing list of opted-in leads.
 - [Compare](https://www.laycal.com/compare): how Laycal differs from dialers and phone systems, including when it is not the right tool.
 - [Contact](https://www.laycal.com/contact): contact form and demo booking.
@@ -38,6 +39,9 @@
 - [How to measure your lead response time](https://www.laycal.com/blogs/how-to-measure-lead-response-time): a step-by-step method using data a business already has.
 - [What to ask a new lead on the first call](https://www.laycal.com/blogs/what-to-ask-a-new-lead-on-the-first-call): the opening line, qualifying questions and how to end with a booked next step.
 - [What happens to the leads that come in after hours](https://www.laycal.com/blogs/what-happens-to-after-hours-leads): how to count out-of-hours leads and the options for handling them.
+- [Lead response: a plain guide](https://www.laycal.com/blogs/lead-response): the four parts of lead response, how to measure them and how to fix the gaps.
+- [How to follow up with leads without chasing them](https://www.laycal.com/blogs/how-to-follow-up-with-leads): a call-and-message sequence, what to say and when to stop.
+- [Express written consent for calling leads](https://www.laycal.com/blogs/express-written-consent-for-calling-leads): what a US lead form's consent line should cover before calling, including with AI voices (general information, not legal advice).
 
 ## Optional
 
