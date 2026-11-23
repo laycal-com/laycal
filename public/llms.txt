@@ -30,6 +30,8 @@
 - [Instant lead follow-up](https://www.laycal.com/instant-lead-follow-up): what the AI agent does on the call and how setup works.
 - [AI appointment setter](https://www.laycal.com/ai-appointment-setter): how the agent qualifies new leads and books appointments into Google Calendar during the call.
 - [Appointment setting services](https://www.laycal.com/appointment-setting-services): AI appointment setting compared with outsourced setting teams; pay per calling minute, no fee per appointment.
+- [For roofing companies](https://www.laycal.com/roofing): roofing leads called within a minute; the questions the agent asks about the leak, the weather and the roof; inspections booked into Google Calendar.
+- [For HVAC companies](https://www.laycal.com/hvac): HVAC leads called within a minute; the questions the agent asks about the system; service visits booked into Google Calendar.
 - [Lead reactivation](https://www.laycal.com/lead-reactivation): calling an existing list of opted-in leads.
 - [Compare](https://www.laycal.com/compare): how Laycal differs from dialers and phone systems, including when it is not the right tool.
 - [Contact](https://www.laycal.com/contact): contact form and demo booking.
@@ -42,6 +44,7 @@
 - [Lead response: a plain guide](https://www.laycal.com/blogs/lead-response): the four parts of lead response, how to measure them and how to fix the gaps.
 - [How to follow up with leads without chasing them](https://www.laycal.com/blogs/how-to-follow-up-with-leads): a call-and-message sequence, what to say and when to stop.
 - [Express written consent for calling leads](https://www.laycal.com/blogs/express-written-consent-for-calling-leads): what a US lead form's consent line should cover before calling, including with AI voices (general information, not legal advice).
+- [BANT for service businesses](https://www.laycal.com/blogs/bant-lead-qualification-for-service-businesses): using budget, authority, need and timeline to qualify a new lead on the first call, in an order that suits service businesses.
 
 ## Optional
 

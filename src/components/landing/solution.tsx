@@ -6,6 +6,7 @@ import {
   CalendarClock,
   ClipboardList,
   Clock,
+  CloudLightning,
   Hourglass,
   ListChecks,
   MessageSquareQuote,
@@ -13,6 +14,7 @@ import {
   PhoneCall,
   PhoneOutgoing,
   Sparkles,
+  Thermometer,
   Timer,
   Users,
   Webhook,
@@ -21,6 +23,7 @@ import {
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card } from '@/components/ui/card';
+import { getVertical } from '@/lib/speedToLead/verticals';
 import { useRate } from './providers';
 import { DemoCta, Dot, Eyebrow, GhostLink, Reveal, Section, SectionHeader, Shell } from './primitives';
 import { HERO_TILES } from './product-tiles';
@@ -477,6 +480,216 @@ const SOLUTIONS = {
       },
     ],
   },
+  roofing: {
+    eyebrow: 'Speed to lead for roofers',
+    title: 'Every roofing lead called',
+    accent: 'within a minute.',
+    intro:
+      'You pay for roofing leads, and a homeowner with a leak rarely asks just one company. Laycal phones each roofing lead within a minute of the form being submitted, asks about the leak, the weather and the roof, and books the inspection into your Google Calendar on the same call.',
+    heroTiles: ['Live call', 'Booked'],
+    problem: {
+      eyebrow: 'Why roofing leads go cold',
+      title: 'The first roofer to call gets the first conversation.',
+      description:
+        'Most roofing leads are lost before anyone talks to them. Not because the price was wrong, but because the call-back came after another contractor had already booked the inspection.',
+      items: [
+        {
+          icon: CloudLightning,
+          title: 'Storms bring leads all at once',
+          copy: 'After hail or high wind, forms arrive in bursts while your crews are on roofs. Each lead gets its own call, and many calls can run at the same time.',
+        },
+        {
+          icon: Users,
+          title: 'They asked other roofers too',
+          copy: 'Homeowners fill in more than one form, and shared leads go to several contractors. Whoever calls first sets up the inspection.',
+        },
+        {
+          icon: Hourglass,
+          title: 'Call-backs wait for the end of the day',
+          copy: 'Your estimators are on ladders and in driveways. The call-back goes out that evening, when the homeowner has stopped answering unknown numbers.',
+        },
+      ],
+    },
+    steps: {
+      title: 'From roofing lead to booked inspection, in one call.',
+      items: [
+        {
+          icon: Webhook,
+          title: 'Connect where your leads come from',
+          copy: 'Your website form, a Google Form, an ad lead form or your CRM sends each new lead to Laycal. A lead provider that can post leads to a web address works the same way.',
+        },
+        {
+          icon: PhoneOutgoing,
+          title: 'The agent calls and asks roofing questions',
+          copy: 'Within a minute, it calls as your company and asks about the leak, recent storms, the age of the roof and past repairs.',
+        },
+        {
+          icon: CalendarCheck,
+          title: 'The inspection lands on your calendar',
+          copy: 'It offers times that are free in Google Calendar and books the inspection while the homeowner is on the phone. Visits default to an hour; you set the length.',
+        },
+      ],
+    },
+    proof: {
+      eyebrow: 'After each call',
+      title: 'What the homeowner said, and when you are going out.',
+      description:
+        'Every call leaves an outcome, a recording and a written summary with the answers to your questions, so the estimator knows about the leak before arriving.',
+      tiles: ['Transcript', 'Meetings booked', 'Recording'],
+    },
+    note: {
+      icon: ClipboardList,
+      title: 'Laycal does not sell roofing leads',
+      body: (
+        <>
+          It works on the leads you already get: from your website, your ads, a lead provider or your CRM. If you have
+          old estimate requests nobody followed up, it can call those too through{' '}
+          <Link href="/lead-reactivation" className={inline}>
+            lead reactivation
+          </Link>
+          . For why the first call matters in any trade, see{' '}
+          <Link href="/speed-to-lead" className={inline}>
+            speed to lead
+          </Link>
+          .
+        </>
+      ),
+    },
+    pricing:
+      'You pay for the minutes the agent spends on calls. No seats, no fee per lead and no monthly minimum, so a slow month costs less than a storm month.',
+    faqTitle: 'Before you connect your roofing leads.',
+    faqs: [
+      {
+        q: 'What does the agent ask a roofing lead?',
+        a: 'By default: whether water is coming in now, where the leak shows up, whether there was recent hail, storm or wind, how old the roof is and whether it has been repaired before. You can change, remove or add questions when you set up the assistant.',
+      },
+      {
+        q: 'Will it work with the roofing leads I buy?',
+        a: 'If your lead provider can send each new lead to a web address as it arrives, each lead triggers a call within a minute. Website forms, Google Forms, ad lead forms and CRMs work the same way. We check your lead sources on the demo.',
+      },
+      {
+        q: 'Does it book roof inspections on my calendar?',
+        a: 'Yes. Google Calendar is built in. The agent only offers times that are free and creates the event, with the homeowner’s name, phone number and what they need, during the call.',
+      },
+      {
+        q: 'What does it say when the homeowner asks about price?',
+        a: 'It gives the answer you set. The roofing preset says the inspection costs your set fee and that the homeowner gets a written estimate before any work starts. You can rewrite that, and add the other objections you hear.',
+      },
+      {
+        q: 'What if the homeowner does not pick up?',
+        a: 'The agent tries again later, up to three calls in total by default, and stops as soon as someone answers. You set the hours it may call, and leads that arrive outside them can wait until the morning.',
+      },
+      {
+        q: 'How is it priced?',
+        a: 'Pay as you go, per calling minute. There are no seats, plans or charges per lead or per inspection. Your rate is confirmed on the demo.',
+      },
+    ],
+  },
+  hvac: {
+    eyebrow: 'Speed to lead for HVAC',
+    title: 'Every HVAC lead called',
+    accent: 'within a minute.',
+    intro:
+      'When the AC stops in July or the heat goes out in January, the homeowner calls whoever gets back to them first. Laycal phones each HVAC lead within a minute of the form being submitted, asks what the system is doing and books the service visit into your Google Calendar on the same call.',
+    heroTiles: ['Live call', 'Booked'],
+    problem: {
+      eyebrow: 'Why HVAC leads go cold',
+      title: 'A broken system does not wait for a call-back.',
+      description:
+        'An HVAC lead is someone who is too hot or too cold right now. If your office calls back two hours later, they may already have booked someone else.',
+      items: [
+        {
+          icon: Thermometer,
+          title: 'The busy season fills your phones',
+          copy: 'The first heatwave or cold snap brings more forms than your office can call back. Each lead gets its own call, and many calls can run at the same time.',
+        },
+        {
+          icon: Users,
+          title: 'They ask several companies at once',
+          copy: 'A homeowner without cooling fills in every form they find. Whoever calls first gets the first conversation.',
+        },
+        {
+          icon: MoonStar,
+          title: 'Systems break in the evening too',
+          copy: 'Leads arrive after your office closes. The agent can call them straight away, within the calling hours you choose.',
+        },
+      ],
+    },
+    steps: {
+      title: 'From HVAC lead to booked service visit, in one call.',
+      items: [
+        {
+          icon: Webhook,
+          title: 'Connect where your leads come from',
+          copy: 'Your website form, a Google Form, an ad lead form or your CRM sends each new lead to Laycal. A lead provider that can post leads to a web address works the same way.',
+        },
+        {
+          icon: PhoneOutgoing,
+          title: 'The agent calls and asks HVAC questions',
+          copy: 'Within a minute, it calls as your company and asks whether it is heating or cooling, what the system is doing, how old it is and whether there are noises or leaks.',
+        },
+        {
+          icon: CalendarCheck,
+          title: 'The visit lands on your calendar',
+          copy: 'It offers times that are free in Google Calendar and books the visit while the homeowner is on the phone. Visits default to 90 minutes; you set the length.',
+        },
+      ],
+    },
+    proof: {
+      eyebrow: 'After each call',
+      title: 'What is wrong with the system, before the tech arrives.',
+      description:
+        'Every call leaves an outcome, a recording and a written summary with the answers to your questions, so the technician knows what to bring.',
+      tiles: ['Transcript', 'Meetings booked', 'Recording'],
+    },
+    note: {
+      icon: ClipboardList,
+      title: 'Laycal does not sell HVAC leads, or answer your phone',
+      body: (
+        <>
+          It calls the leads you already get from your website, ads, a lead provider or your CRM. It does not answer
+          incoming calls. For past customers and old quote requests nobody followed up, see{' '}
+          <Link href="/lead-reactivation" className={inline}>
+            lead reactivation
+          </Link>
+          . For why the first call matters in any trade, see{' '}
+          <Link href="/speed-to-lead" className={inline}>
+            speed to lead
+          </Link>
+          .
+        </>
+      ),
+    },
+    pricing:
+      'You pay for the minutes the agent spends on calls. No seats, no fee per lead and no monthly minimum, so the cost rises in the busy season and falls in the quiet one.',
+    faqTitle: 'Before you connect your HVAC leads.',
+    faqs: [
+      {
+        q: 'What does the agent ask an HVAC lead?',
+        a: 'By default: whether it is the air conditioning or the heating, whether the system will not turn on or runs without cooling or heating, how many systems are in the home, roughly how old it is and whether there are noises, leaks or smells. You can change, remove or add questions when you set up the assistant.',
+      },
+      {
+        q: 'Will it work with the HVAC leads I buy?',
+        a: 'If your lead provider can send each new lead to a web address as it arrives, each lead triggers a call within a minute. Website forms, Google Forms, ad lead forms and CRMs work the same way. We check your lead sources on the demo.',
+      },
+      {
+        q: 'Does it book service visits on my calendar?',
+        a: 'Yes. Google Calendar is built in. The agent only offers times that are free and creates the event, with the homeowner’s name, phone number and what they need, during the call.',
+      },
+      {
+        q: 'What does it say when the homeowner asks about price?',
+        a: 'It gives the answer you set. The HVAC preset says the diagnostic visit costs your set fee and that the technician quotes before doing any work. You can rewrite that, and add the other objections you hear.',
+      },
+      {
+        q: 'Is it an answering service for my HVAC company?',
+        a: 'No. Laycal calls people who filled in a form or asked to be contacted. It does not answer incoming calls to your business number.',
+      },
+      {
+        q: 'How is it priced?',
+        a: 'Pay as you go, per calling minute. There are no seats, plans or charges per lead or per visit. Your rate is confirmed on the demo.',
+      },
+    ],
+  },
 } satisfies Record<string, Solution>;
 
 export type SolutionSlug = keyof typeof SOLUTIONS;
@@ -642,6 +855,52 @@ export function SolutionIntro({ slug }: { slug: SolutionSlug }) {
         </div>
       </Section>
     </>
+  );
+}
+
+/** Preset text is stored for the prompt generator, with HTML apostrophes and `{{ }}` placeholders. */
+const presetText = (text: string) =>
+  text.replace(/&apos;/g, '’').replace(/'/g, '’').replace(/\{\{\s*diagnostic_fee\s*\}\}/g, '[your fee]');
+
+/** What the agent asks and answers on a call for one trade, read from its real preset. */
+export function TradeCall({ vertical, trade }: { vertical: string; trade: string }) {
+  const v = getVertical(vertical);
+  return (
+    <Section className="!pt-0">
+      <SectionHeader
+        eyebrow="On the call"
+        title={`What the agent asks ${trade} leads.`}
+        description={`These are the questions and answers Laycal starts from when you choose the ${v.label} preset. You can edit every one before the first call.`}
+      />
+      <div className="mt-12 grid gap-5 md:mt-14 lg:grid-cols-2">
+        <Reveal>
+          <Card className={`${surface} h-full p-7 md:p-9`}>
+            <Eyebrow>Qualifying questions</Eyebrow>
+            <ol className="mt-6 space-y-4">
+              {v.qualifyingQuestions.map((q, i) => (
+                <li key={q} className="flex gap-4 text-[15px] leading-6 text-neutral-300">
+                  <span className="font-mono text-xs leading-6 tracking-[0.12em] text-neutral-600">{`0${i + 1}`}</span>
+                  <span>{presetText(q)}</span>
+                </li>
+              ))}
+            </ol>
+          </Card>
+        </Reveal>
+        <Reveal delay={0.08}>
+          <Card className={`${surface} h-full p-7 md:p-9`}>
+            <Eyebrow>When the lead pushes back</Eyebrow>
+            <dl className="mt-6 space-y-6">
+              {v.objections.map((o) => (
+                <div key={o.objection}>
+                  <dt className="text-[15px] font-medium text-neutral-100">“{presetText(o.objection)}”</dt>
+                  <dd className="mt-2 text-[15px] leading-6 text-neutral-400">{presetText(o.response)}</dd>
+                </div>
+              ))}
+            </dl>
+          </Card>
+        </Reveal>
+      </div>
+    </Section>
   );
 }
 

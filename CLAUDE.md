@@ -106,7 +106,7 @@ search work, `laycal-seo`.
 - `admin/accounts` (+ `[id]`), `admin/dashboard/stats`
 
 ### Pages (`src/app/`)
-- Public: `/` (landing), `/lead-reactivation`, `/speed-to-lead`, `/instant-lead-follow-up`, `/ai-appointment-setter`, `/appointment-setting-services`, `/compare`, `/justcall-alternative`, `/nooks-alternative`, `/blogs`, `/contact`, `/privacy`, `/terms`, `/status`
+- Public: `/` (landing), `/lead-reactivation`, `/speed-to-lead`, `/instant-lead-follow-up`, `/ai-appointment-setter`, `/appointment-setting-services`, `/roofing`, `/hvac`, `/compare`, `/justcall-alternative`, `/nooks-alternative`, `/blogs`, `/contact`, `/privacy`, `/terms`, `/status`
 - Auth: `/sign-in`, `/sign-up`, `/onboarding`
 - Portal: `/dashboard`, `/assistants`, `/leads`, `/appointments`, `/call-summary`, `/integrations`, `/settings`, `/support`
 - Admin: `/admin/...` (`/admin/users` is the Accounts screen)
@@ -116,7 +116,7 @@ search work, `laycal-seo`.
 - Blog: posts are markdown files in `blogs/`, written for the buyer (lead response time, the first call, after-hours leads), not competitor roundups. The template has no markdown table support. Every post gets its own banner in `public/assets/blogs/`, drawn by `scripts/make-blog-banners.js` (add a motif, run the script); the full steps are in the `laycal-seo` skill under "Publishing a blog post"
 
 ### Components (`src/components/`)
-- `landing/` — the public page kit: `primitives.tsx` (`Shell`, `Section`, `SectionHeader`, `Reveal`, `DemoCta`), `site-nav.tsx`, `hero.tsx`, `sections.tsx`, `features.tsx`, `roi.tsx`, `pricing.tsx`, `cta.tsx`, `reactivation.tsx`, `solution.tsx` (`SOLUTIONS`: content for `/speed-to-lead`, `/instant-lead-follow-up`, `/ai-appointment-setter` and `/appointment-setting-services`; each page also emits its own `Service` and `BreadcrumbList` JSON-LD), `comparison.tsx` (`COMPARISONS`: content for `/justcall-alternative`, `/nooks-alternative` and the `/compare` index), `product-tiles.tsx` (`HERO_TILES`), `providers.tsx` (`useRate()`)
+- `landing/` — the public page kit: `primitives.tsx` (`Shell`, `Section`, `SectionHeader`, `Reveal`, `DemoCta`), `site-nav.tsx`, `hero.tsx`, `sections.tsx`, `features.tsx`, `roi.tsx`, `pricing.tsx`, `cta.tsx`, `reactivation.tsx`, `solution.tsx` (`SOLUTIONS`: content for `/speed-to-lead`, `/instant-lead-follow-up`, `/ai-appointment-setter`, `/appointment-setting-services` and the trade pages `/roofing` and `/hvac`, which add `TradeCall`: the questions and objection answers read from that trade's preset in `src/lib/speedToLead/verticals.ts`; each page also emits its own `Service` and `BreadcrumbList` JSON-LD), `comparison.tsx` (`COMPARISONS`: content for `/justcall-alternative`, `/nooks-alternative` and the `/compare` index), `product-tiles.tsx` (`HERO_TILES`), `providers.tsx` (`useRate()`)
 - `portal/` — `portal-shell.tsx` (sidebar, account gate, `PORTAL_ROUTES`, `DARK_ROUTES`), `account-context.tsx` (`useAccount()`), `setup-guide.tsx`, `page.tsx` (`PortalPage`, `PageHeader`)
 - `dashboard/` — panels, account cards, charts
 - `auth/auth-shell.tsx`, `brand/logo-mark.tsx`
@@ -211,6 +211,7 @@ Production values live in Vercel.
 10. After changing a Mongoose schema, restart the dev server: the compiled model is cached and new fields are silently dropped until then.
 11. Vercel's free plan only schedules daily, so the every-minute wake-up comes from cron-job.org. If it stops, waiting leads are not called; `WAKEUP_STOPPED` is logged, sent to Sentry and emailed to `CONTACT_EMAIL`.
 12. To exercise call flows without ringing a phone, run a second dev server with `VAPI_BASE_URL` pointing at a stand-in that answers `POST /call` and `GET /call/:id`, and post end-of-call reports to `/api/webhooks/vapi` by hand.
+13. `src/app/sitemap.ts` is built once per deploy (`force-static`). Do not give it a timed `revalidate`: on Vercel the regenerated sitemap cannot read `blogs/` and drops every post.
 
 ## When adding features
 

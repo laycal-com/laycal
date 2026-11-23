@@ -41,6 +41,8 @@ You will not always need all five, and the wording changes by business. The orde
 - What is the address, and is it a house or a flat?
 - Will someone be home, and is there anything we should know about access?
 
+Each trade has its own version of these. For the full lists we start from, see the qualifying questions for [roofing leads](/roofing) and [HVAC leads](/hvac).
+
 **E-commerce** (considered or made-to-order products)
 
 - What are you looking for, and what will it be used for?
@@ -54,6 +56,10 @@ You will not always need all five, and the wording changes by business. The orde
 - How are you handling this today?
 - How many people would use it, and what is your role in the decision?
 - What timeline are you working to?
+
+## Where BANT fits
+
+If you were taught to qualify with BANT (budget, authority, need, timeline), the five questions above cover it, in a different order. Need and timeline come first because that is what the lead called about; authority comes third; budget comes last, and is often better answered than asked. There is more on this in [BANT for service businesses](/blogs/bant-lead-qualification-for-service-businesses).
 
 ## What not to ask
 

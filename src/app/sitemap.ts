@@ -16,6 +16,8 @@ const staticRoutes = [
   { url: '/instant-lead-follow-up', priority: 0.9, changeFrequency: 'monthly' as const, lastModified: '2026-11-09' },
   { url: '/ai-appointment-setter', priority: 0.9, changeFrequency: 'monthly' as const, lastModified: '2026-11-09' },
   { url: '/appointment-setting-services', priority: 0.9, changeFrequency: 'monthly' as const, lastModified: '2026-11-09' },
+  { url: '/roofing', priority: 0.8, changeFrequency: 'monthly' as const, lastModified: '2026-11-23' },
+  { url: '/hvac', priority: 0.8, changeFrequency: 'monthly' as const, lastModified: '2026-11-23' },
   { url: '/lead-reactivation', priority: 0.8, changeFrequency: 'monthly' as const, lastModified: '2026-11-09' },
   { url: '/blogs', priority: 0.7, changeFrequency: 'weekly' as const, lastModified: '2026-10-11' },
   { url: '/contact', priority: 0.8, changeFrequency: 'monthly' as const, lastModified: '2026-10-10' },
@@ -123,7 +125,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return validEntries;
 }
 
-export const revalidate = 3600;
+// Built once per deploy. A timed revalidation re-ran this on Vercel, where the
+// blogs/ folder is not in the function bundle, and dropped every post.
+export const dynamic = 'force-static';
 
 // Add explicit content type for better compatibility
 export const contentType = 'application/xml';

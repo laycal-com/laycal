@@ -152,6 +152,21 @@ function consentForm() {
   <rect x="616" y="420" width="388" height="46" rx="14" fill="${BRAND}" fill-opacity="0.85"/>`;
 }
 
+/* 7. Qualification: four criteria cards in a grid, three ticked and the last one in blue. */
+function qualifyGrid() {
+  const cells = [[600, 140], [830, 140], [600, 340], [830, 340]];
+  return cells.map(([x, y], i) => {
+    const last = i === cells.length - 1;
+    return `
+  <rect x="${x}" y="${y}" width="200" height="160" rx="22" ${last
+    ? `fill="${BRAND}" fill-opacity="0.16" stroke="${BRAND}" stroke-opacity="0.55" stroke-width="1.5"`
+    : cardStyle}/>
+  <circle cx="${x + 40}" cy="${y + 42}" r="16" fill="${last ? BRAND : '#0a0a0a'}" stroke="${last ? BRAND : '#ffffff'}" stroke-opacity="${last ? 1 : 0.3}" stroke-width="2"/>
+  <path d="M ${x + 33} ${y + 42} l 5 5 l 10 -10" fill="none" stroke="#fff" stroke-opacity="${last ? 1 : 0.6}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  ${bar(x + 28, y + 86, 120, last ? 0.45 : 0.32)}${bar(x + 28, y + 110, 84, 0.14)}`;
+  }).join('');
+}
+
 const banners = {
   'lead-response-time.png': frame(stopwatch(), 800, 330),
   'first-call-questions.png': frame(conversation(), 830, 320),
@@ -159,6 +174,7 @@ const banners = {
   'lead-response-guide.png': frame(formToCall(), 820, 315),
   'follow-up-with-leads.png': frame(followUpSteps(), 860, 315),
   'express-written-consent.png': frame(consentForm(), 810, 315),
+  'bant-qualification.png': frame(qualifyGrid(), 815, 320),
 };
 
 (async () => {
